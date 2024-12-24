@@ -1,0 +1,16 @@
+# Ignore node_modules directory
+node_modules/
+
+# Ignore build directories
+dist/
+dist-ssr/
+
+# Ignore Firebase Admin SDK service account JSON file
+firebaseAdminSDK.json
+
+# Ignore environment variable files (for local development)
+*.local
+.env
+
+# Optional: Ignore other files you don't want in version control
+*.log
