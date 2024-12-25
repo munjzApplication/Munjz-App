@@ -1,5 +1,5 @@
 import express from "express";
-import { createPricing, editPricing } from "../../../../controllers/Admin/Services/consultation/pricingController.js";
+import { createPricing, editPricing } from "../../../../controllers/Admin/Services/Consultation/pricingController.js";
 import { protectAdmin } from "../../../../middlewares/adminMiddleware.js";
 const router = express.Router();
 
