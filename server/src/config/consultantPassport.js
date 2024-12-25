@@ -6,8 +6,7 @@ import ConsultantProfile from "../models/Consultant/User.js";
 import { generateConsultantUniqueId } from "../helper/consultant/consultantHelper.js";
 
 dotenv.config();
-console.log("Google Client ID:", process.env.CONSULTANT_GOOGLE_CLIENT_ID);
-console.log("Google Client Secret:", process.env.CONSULTANT_GOOGLE_CLIENT_SECRET);
+
 // Google Authentication for Consultants
 passport.use(
   "consultant-google",
