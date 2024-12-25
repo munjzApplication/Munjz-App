@@ -4,7 +4,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import { connectDB } from "./config/db.js";
 import consultantRoute from "./routes/Consultant/consultantRoute.js";
-import customerRoute from './routes/Customer/customerRoutes.js';
+import customerRoute from "./routes/Customer/customerRoutes.js";
 import adminRoute from "./routes/Admin/adminRoutes.js";
 import consultantPassport from "./config/consultantPassport.js";
 import customerPassport from "./config/customerPassport.js";
@@ -45,9 +45,6 @@ app.use(
 app.use(consultantPassport.initialize());
 app.use(consultantPassport.session());
 
-// Database connection
-connectDB();
-
 // Routes
 app.use("/api/consultant", consultantRoute);
 app.use("/api/customer", customerRoute);
@@ -65,4 +62,6 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  // Database connection
+  connectDB();
 });
