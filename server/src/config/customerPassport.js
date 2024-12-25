@@ -1,6 +1,5 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { Strategy as FacebookStrategy } from "passport-facebook"; 
 import dotenv from "dotenv";
 import CustomerProfile from "../models/Customer/customerModels/customerModel.js";
 import { generateCustomerUniqueId } from "../helper/customer/customerHelper.js";
