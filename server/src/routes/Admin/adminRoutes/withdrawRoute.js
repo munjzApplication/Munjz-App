@@ -1,5 +1,5 @@
 import express from 'express';
-import { updateWithdrawalStatus } from "../../../controllers/Admin/Services/consultation/withdrawRequestController.js";
+import { updateWithdrawalStatus } from "../../../controllers/Admin/Services/Consultation/withdrawRequestController.js";
 
 const router = express.Router();
 
