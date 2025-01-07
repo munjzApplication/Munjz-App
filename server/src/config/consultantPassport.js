@@ -14,7 +14,7 @@ passport.use(
     {
       clientID: process.env.CONSULTANT_GOOGLE_CLIENT_ID,
       clientSecret: process.env.CONSULTANT_GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:8000/api/consultant/auth/google/callback",
+      callbackURL: process.env.CONSULTANT_GOOGLE_CALLBACK_URL,
       scope: ["profile", "email"]
     },
 
@@ -51,9 +51,9 @@ passport.use(
   "consultant-facebook",
   new FacebookStrategy(
     {
-      clientID: process.env.FACEBOOK_CLIENT_ID,
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
-      callbackURL: "http://localhost:8000/api/consultant/auth/facebook/callback",
+      clientID: process.env.CONSULTANT_FACEBOOK_CLIENT_ID,
+      clientSecret: process.env.CONSULTANT_FACEBOOK_CLIENT_SECRET,
+      callbackURL: process.env.CONSULTANT_FACEBOOK_CALLBACK_URL,
       profileFields: ["id", "emails", "name", "picture.type(large)"]
     },
     async (accessToken, refreshToken, profile, done) => {

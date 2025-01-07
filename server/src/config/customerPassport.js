@@ -13,7 +13,7 @@ passport.use(
     {
       clientID: process.env.CUSTOMER_GOOGLE_CLIENT_ID,
       clientSecret: process.env.CUSTOMER_GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:8000/api/customer/auth/google/callback",
+      callbackURL: process.env.CUSTOMER_GOOGLE_CALLBACK_URL,
       scope: ["profile", "email"]
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -41,12 +41,52 @@ passport.use(
   )
 );
 
+// Facebook Authentication for Consultants
+passport.use(
+  "customer-facebook",
+  new FacebookStrategy(
+    {
+      clientID: process.env.CUSTOMER_FACEBOOK_CLIENT_ID,
+      clientSecret: process.env.CUSTOMER_FACEBOOK_CLIENT_SECRET,
+      callbackURL: process.env.CUSTOMER_FACEBOOK_CALLBACK_URL,
+      profileFields: ["id", "emails", "name", "picture.type(large)"]
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        let user = await CustomerProfile.findOne({ facebookId: profile.id });
+
+        if (!user) {
+          const consultantUniqueId = await generateCustomerUniqueId();
+          user = new CustomerProfile({
+            Name: `${profile.name.givenName} ${profile.name.familyName}` || "N/A",
+            email: profile.emails?.[0]?.value || null,
+            facebookId: profile.id,
+            profilePhoto: profile.photos?.[0]?.value || null,
+            consultantUniqueId
+          });
+          await user.save();
+        }
+
+        return done(null, user);
+      } catch (error) {
+        console.error(
+          "Error during Facebook authentication (Customer):",
+          error
+        );
+        return done(error);
+      }
+    }
+  )
+);
+
 
 
 passport.serializeUser((user, done) => {
   if (user.googleId) {
     done(null, { id: user.id, platform: "google", type: "customer" });
-  } 
+  } else if (user.facebookId) {
+    done(null, { id: user.id, platform: "facebook", type: "customer" });
+  }
 });
 
 passport.deserializeUser(async (obj, done) => {

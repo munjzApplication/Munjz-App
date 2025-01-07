@@ -148,7 +148,6 @@ export const googleCallback = (req, res, next) => {
 
       const token = generateToken(user._id);
 
-      console.log("Authentication successful for user:", user);
 
       res.status(200).json({
         success: true,

@@ -1,5 +1,5 @@
 import express from 'express';
-import { Register  , Login , Profile, googleAuth ,googleCallback,verifyEmail} from '../../../controllers/Customer/customerController/authController.js'
+import { Register  , Login , Profile, googleAuth ,googleCallback,verifyEmail, facebookAuth,facebookCallback} from '../../../controllers/Customer/customerController/authController.js'
 import { authenticateUser } from '../../../middlewares/customerMiddleware.js';
 
 
@@ -12,6 +12,9 @@ router.get('/verify-email', verifyEmail);
 router.get("/google", googleAuth);
 router.get("/google/callback",googleCallback);
 router.get("/profile",authenticateUser,Profile)
+
+router.get("/facebook", facebookAuth);
+router.get("/facebook/callback", facebookCallback);
 
 
 export default router;
