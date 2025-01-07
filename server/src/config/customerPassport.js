@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as FacebookStrategy } from "passport-facebook"; 
 import dotenv from "dotenv";
 import CustomerProfile from "../models/Customer/customerModels/customerModel.js";
 import { generateCustomerUniqueId } from "../helper/customer/customerHelper.js";
@@ -56,13 +57,13 @@ passport.use(
         let user = await CustomerProfile.findOne({ facebookId: profile.id });
 
         if (!user) {
-          const consultantUniqueId = await generateCustomerUniqueId();
+          const customerUniqueId = await generateCustomerUniqueId();
           user = new CustomerProfile({
             Name: `${profile.name.givenName} ${profile.name.familyName}` || "N/A",
             email: profile.emails?.[0]?.value || null,
             facebookId: profile.id,
             profilePhoto: profile.photos?.[0]?.value || null,
-            consultantUniqueId
+            customerUniqueId
           });
           await user.save();
         }
