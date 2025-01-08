@@ -6,7 +6,8 @@ const consultantProfileSchema = new mongoose.Schema({
     type: String,
     unique: true,
     sparse: true,
-    match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"]
+    match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
+    default: null
   },
   profilePhoto: {
     type: String
@@ -14,7 +15,8 @@ const consultantProfileSchema = new mongoose.Schema({
   phoneNumber: {
     type: String,
     unique: true,
-    sparse: true
+    sparse: true,
+    default: null
   },
   consultantUniqueId: {
     type: String,
