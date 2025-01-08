@@ -107,7 +107,7 @@ export const Login = async (req, res, next) => {
     if (!user.emailVerified) {
       return res.status(403).json({
         message:
-          "Your email is not verified. Please verify your email to log in.",
+          "Your email is not verified. Please verify your email to log in."
       });
     }
 
@@ -131,7 +131,7 @@ export const Login = async (req, res, next) => {
       {
         type: "login",
         status: "completed",
-        customerId: user._id.toString(),
+        customerId: user._id.toString()
       }
     );
 
@@ -140,15 +140,18 @@ export const Login = async (req, res, next) => {
       token,
       user: {
         id: user._id,
+        customerUniqueId: user.customerUniqueId,
+        Name: user.Name,
         email: user.email,
-        isLoggedIn: user.isLoggedIn,
-      },
+        countryCode: user.countryCode,
+        phoneNumber: user.phoneNumber,
+        creationDate: user.creationDate
+      }
     });
   } catch (error) {
     next(error);
   }
 };
-
 
 // Google Authentication Initiation
 export const googleAuth = (req, res, next) => {
@@ -236,7 +239,7 @@ export const verifyEmail = async (req, res, next) => {
       {
         type: "email_verification",
         status: "completed",
-        customerId: user._id.toString(),
+        customerId: user._id.toString()
       }
     );
 
@@ -249,7 +252,7 @@ export const verifyEmail = async (req, res, next) => {
         customerId: user._id.toString(),
         customerName: user.Name,
         customerEmail: user.email,
-        customerPhone: user.phoneNumber,
+        customerPhone: user.phoneNumber
       }
     );
 
@@ -258,8 +261,8 @@ export const verifyEmail = async (req, res, next) => {
         message: "Customer registered",
         customerName: user.Name,
         customerEmail: user.email,
-        customerPhone: user.phoneNumber,
-      },
+        customerPhone: user.phoneNumber
+      }
     });
     await notification.save();
 
@@ -268,17 +271,20 @@ export const verifyEmail = async (req, res, next) => {
       user: {
         id: user._id,
         Name: user.Name,
-        email: user.email,
-      },
+        email: user.email
+      }
     });
   } catch (error) {
     next(error);
   }
 };
 
-
-export const facebookAuth = (req, res , next) => {
-  passport.authenticate("customer-facebook" , { sxope: ["email"]})(req, res , next);
+export const facebookAuth = (req, res, next) => {
+  passport.authenticate("customer-facebook", { sxope: ["email"] })(
+    req,
+    res,
+    next
+  );
 };
 
 export const facebookCallback = (req, res, next) => {
@@ -316,4 +322,3 @@ export const facebookCallback = (req, res, next) => {
     }
   )(req, res, next);
 };
-

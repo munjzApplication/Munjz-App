@@ -36,7 +36,7 @@ export const Register = async (req, res, next) => {
       phoneNumber,
       password: hashedPassword,
       emailVerified: false,
-      consultantUniqueId 
+      consultantUniqueId
     });
 
     await newUser.save();
@@ -51,9 +51,9 @@ export const Register = async (req, res, next) => {
           consultantId: newUser._id,
           email: newUser.email,
           phoneNumber: newUser.phoneNumber,
-          registrationDate: new Date(),
-        },
-      },
+          registrationDate: new Date()
+        }
+      }
     });
     await notification.save();
 
@@ -68,7 +68,7 @@ export const Register = async (req, res, next) => {
         Name: newUser.Name,
         email: newUser.email,
         phoneNumber: newUser.phoneNumber,
-        consultantUniqueId, 
+        consultantUniqueId,
         creationDate: newUser.creationDate
       }
     });
@@ -109,7 +109,11 @@ export const Login = async (req, res, next) => {
       token,
       user: {
         id: user._id,
-        email: user.email
+        Name: user.Name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        consultantUniqueId: user.consultantUniqueId,
+        creationDate: user.creationDate
       }
     });
   } catch (error) {
@@ -147,7 +151,6 @@ export const googleCallback = (req, res, next) => {
       }
 
       const token = generateToken(user._id);
-
 
       res.status(200).json({
         success: true,
@@ -210,7 +213,11 @@ export const verifyEmail = async (req, res, next) => {
   }
 };
 export const facebookAuth = (req, res, next) => {
-  passport.authenticate("consultant-facebook", { scope: ["email"] })(req, res, next);
+  passport.authenticate("consultant-facebook", { scope: ["email"] })(
+    req,
+    res,
+    next
+  );
 };
 
 export const facebookCallback = (req, res, next) => {
