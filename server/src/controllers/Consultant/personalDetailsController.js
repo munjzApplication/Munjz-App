@@ -4,7 +4,7 @@ export const savePersonalDetails = async (req, res, next) => {
   const consultantId = req.user._id;
   const { country, languages, areaOfPractices, experience, biography } =
     req.body;
-  const profilePicture = req.file;
+    const profilePicture = req.files?.profilePicture?.[0];
 
   // Ensure that the comma-separated strings are converted to arrays
   const languagesArray = languages

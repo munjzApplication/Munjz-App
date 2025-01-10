@@ -67,9 +67,42 @@ export const Register = async (req, res, next) => {
         id: newUser._id,
         Name: newUser.Name,
         email: newUser.email,
+        emailVerified: newUser.emailVerified,
         phoneNumber: newUser.phoneNumber,
         consultantUniqueId,
         creationDate: newUser.creationDate
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyEmail = async (req, res, next) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({ message: "No token provided." });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await ConsultantProfile.findById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User noty found." });
+    }
+
+    // Update email verification status
+    user.emailVerified = true;
+    await user.save();
+
+    res.status(200).json({
+      message: "Email verified successfully!",
+      user: {
+        id: user._id,
+        Name: user.Name,
+        email: user.email
       }
     });
   } catch (error) {
@@ -181,37 +214,6 @@ export const Profile = (req, res) => {
   });
 };
 
-export const verifyEmail = async (req, res, next) => {
-  try {
-    const { token } = req.query;
-
-    if (!token) {
-      return res.status(400).json({ message: "No token provided." });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await ConsultantProfile.findById(decoded.id);
-
-    if (!user) {
-      return res.status(404).json({ message: "User noty found." });
-    }
-
-    // Update email verification status
-    user.emailVerified = true;
-    await user.save();
-
-    res.status(200).json({
-      message: "Email verified successfully!",
-      user: {
-        id: user._id,
-        Name: user.Name,
-        email: user.email
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 export const facebookAuth = (req, res, next) => {
   passport.authenticate("consultant-facebook", { scope: ["email"] })(
     req,
