@@ -1,17 +1,19 @@
 import express from 'express';
-import { Register  , Login , googleAuth ,googleCallback,verifyEmailAndCompleteRegistration,facebookAuth,facebookCallback} from '../../../controllers/Consultant/authController.js'
+import { Register  , Login , Profile, googleAuth ,googleCallback,verifyEmail,facebookAuth,facebookCallback,TempConsultantRegister} from '../../../controllers/Consultant/authController.js'
 import { protect } from '../../../middlewares/authMiddleware.js';
 
 
 const router = express.Router()
 
-
+router.post('/send-verification-email',TempConsultantRegister)
 router.post('/register', Register);
 router.post('/login',Login)
-router.get('/verify-email', verifyEmailAndCompleteRegistration);
+router.get('/verify-email', verifyEmail);
 
 router.get("/google", googleAuth);
 router.get("/google/callback",googleCallback);
+router.get("/profile",protect,Profile)
+
 router.get("/facebook", facebookAuth);
 router.get("/facebook/callback", facebookCallback);
 
