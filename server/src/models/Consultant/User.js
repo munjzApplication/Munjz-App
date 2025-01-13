@@ -26,7 +26,6 @@ const consultantProfileSchema = new mongoose.Schema({
 
   emailVerified: {
     type: Boolean,
-    default: false,
     sparse: true
   },
   creationDate: {

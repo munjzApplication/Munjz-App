@@ -9,6 +9,7 @@ const idProofSchema = new mongoose.Schema({
     nationalId: {
         type: String,
         required: true,
+        unique: true,
     },
     frontsideId: {
         type: String, 

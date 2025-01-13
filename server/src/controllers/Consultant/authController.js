@@ -2,14 +2,69 @@ import ConsultantProfile from "../../models/Consultant/User.js";
 import bcrypt from "bcrypt";
 import passport from "passport";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { sendVerificationEmail } from "../../utils/email.js";
 import { generateConsultantUniqueId } from "../../helper/consultant/consultantHelper.js";
 import Notification from "../../models/Admin/notificationModels/notificationModel.js";
+import TempUser from "../../models/Consultant/tempUser.js";
 
 const generateToken = id => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
+};
+
+export const TempRegister = async (req, res, next) => {
+  const { Name, email } = req.body;
+
+  try {
+    // Check if user already exists in TempUsers or Users
+    const existingTempUser = await TempUser.findOne({ email });
+    const existingUser = await ConsultantProfile.findOne({ email });
+    if (existingTempUser || existingUser) {
+      return res.status(400).json({ message: "Email already registered." });
+    }
+
+    // Generate verification token
+    const token = crypto.randomBytes(32).toString("hex");
+
+    // Save user data in TempUser collection
+    const tempUser = new TempUser({
+      Name,
+      email,
+      verificationToken: token,
+      emailVerified: false // Always set to false initially
+    });
+    await tempUser.save();
+
+    // Send verification email
+    const verificationUrl = process.env.BASE_URL_CONSULTANT;
+    await sendVerificationEmail(tempUser, verificationUrl); // Pass the URL to the email helper function
+
+    res.status(200).json({ message: "Verification email sent." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyEmail = async (req, res, next) => {
+  const { token } = req.query;
+
+  try {
+    // Find the temp user by token
+    const tempUser = await TempUser.findOne({ verificationToken: token });
+    if (!tempUser) {
+      return res.status(400).json({ message: "session expired" });
+    }
+    tempUser.emailVerified = true;
+    await tempUser.save();
+
+    res
+      .status(200)
+      .json({ message: "Email verified and registration complete." });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const Register = async (req, res, next) => {
@@ -20,28 +75,28 @@ export const Register = async (req, res, next) => {
       return res.status(400).json({ message: "Phone number is required." });
     }
 
-    const existingUser = await ConsultantProfile.findOne({ email });
-    if (existingUser) {
-      return res
-        .status(409)
-        .json({ message: "User with this email already exists." });
-    }
+    // Check if the user exists in ConsultantProfile and is verified
+    const TempUserData = await TempUser.findOne({ email, emailVerified: true });
 
+    if (!TempUserData || !TempUserData.emailVerified) {
+      return res
+        .status(400)
+        .json({ message: "Please verify your email first." });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
     const consultantUniqueId = await generateConsultantUniqueId();
-
     const newUser = new ConsultantProfile({
       Name,
       email,
       phoneNumber,
       password: hashedPassword,
-      emailVerified: false,
+      emailVerified: true,
       consultantUniqueId
     });
-
     await newUser.save();
-    await sendVerificationEmail(newUser, process.env.BASE_URL_CONSULTANT);
-
+    // Delete TempUser entry after successful user creation
+    await TempUser.deleteOne({ email });
+    // Send notification for new consultant registration
     const notification = new Notification({
       notificationDetails: {
         type: "Registration",
@@ -60,50 +115,9 @@ export const Register = async (req, res, next) => {
     const token = generateToken(newUser._id);
 
     res.status(201).json({
-      message:
-        "User registered successfully. Please check your email for verification.",
+      message: "User registered successfully.",
       token,
-      user: {
-        id: newUser._id,
-        Name: newUser.Name,
-        email: newUser.email,
-        emailVerified: newUser.emailVerified,
-        phoneNumber: newUser.phoneNumber,
-        consultantUniqueId,
-        creationDate: newUser.creationDate
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const verifyEmail = async (req, res, next) => {
-  try {
-    const { token } = req.query;
-
-    if (!token) {
-      return res.status(400).json({ message: "No token provided." });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await ConsultantProfile.findById(decoded.id);
-
-    if (!user) {
-      return res.status(404).json({ message: "User noty found." });
-    }
-
-    // Update email verification status
-    user.emailVerified = true;
-    await user.save();
-
-    res.status(200).json({
-      message: "Email verified successfully!",
-      user: {
-        id: user._id,
-        Name: user.Name,
-        email: user.email
-      }
+      newUser
     });
   } catch (error) {
     next(error);

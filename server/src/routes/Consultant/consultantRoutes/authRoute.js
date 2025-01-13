@@ -1,10 +1,11 @@
 import express from 'express';
-import { Register  , Login , Profile, googleAuth ,googleCallback,verifyEmail,facebookAuth,facebookCallback} from '../../../controllers/Consultant/authController.js'
+import { Register  , Login , Profile, googleAuth ,googleCallback,verifyEmail,facebookAuth,facebookCallback,TempRegister} from '../../../controllers/Consultant/authController.js'
 import { protect } from '../../../middlewares/authMiddleware.js';
 
 
 const router = express.Router()
 
+router.post('/send-verification-email',TempRegister)
 router.post('/register', Register);
 router.post('/login',Login)
 router.get('/verify-email', verifyEmail);
