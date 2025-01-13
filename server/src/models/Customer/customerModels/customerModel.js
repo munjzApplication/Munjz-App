@@ -25,8 +25,7 @@ const customerProfileSchema = new mongoose.Schema({
   },
   emailVerified: {
     type: Boolean,
-    default: false,
-    sparse: true
+    default: false, 
   },
   creationDate: {
     type: Date,

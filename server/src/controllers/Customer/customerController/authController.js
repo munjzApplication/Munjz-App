@@ -153,60 +153,6 @@ export const Login = async (req, res, next) => {
   }
 };
 
-// Google Authentication Initiation
-export const googleAuth = (req, res, next) => {
-  passport.authenticate("customer-google", { scope: ["profile", "email"] })(
-    req,
-    res,
-    next
-  );
-};
-
-// Google Authentication Callback
-export const googleCallback = (req, res, next) => {
-  passport.authenticate(
-    "customer-google",
-    { failureRedirect: "/" },
-    async (err, user, info) => {
-      if (err || !user) {
-        return res.status(500).json({
-          success: false,
-          message: "Authentication failed",
-          error: err || info
-        });
-      }
-
-      const token = generateToken(user._id, user.emailVerified);
-
-      res.status(200).json({
-        success: true,
-        message: "Authentication successful!",
-        token,
-        user: {
-          id: user._id,
-          Name: user.Name,
-          email: user.email
-        }
-      });
-    }
-  )(req, res, next);
-};
-
-// Profile Endpoint
-export const Profile = (req, res) => {
-  if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
-  }
-
-  res.json({
-    success: true,
-    user: {
-      Name: req.user.Name,
-      email: req.user.email,
-      profilePhoto: req.user.profilePhoto
-    }
-  });
-};
 
 // Email Verification
 export const verifyEmail = async (req, res, next) => {
@@ -279,33 +225,73 @@ export const verifyEmail = async (req, res, next) => {
   }
 };
 
-export const facebookAuth = (req, res, next) => {
-  passport.authenticate("customer-facebook", { sxope: ["email"] })(
+// Google Authentication
+export const googleAuth = (req, res, next) => {
+  passport.authenticate("customer-google", { scope: ["profile", "email"] })(
     req,
     res,
     next
   );
 };
 
+// Google Authentication Callback
+export const googleCallback = (req, res, next) => {
+  passport.authenticate(
+    "customer-google",
+    { failureRedirect: "/" },
+    async (err, user, info) => {
+      if (err || !user) {
+        console.error("Google Authentication error:", err || info);
+        return res.status(500).json({
+          success: false,
+          message: "Google authentication failed.",
+          error: err || info,
+        });
+      }
+
+     
+
+      const token = generateToken(user._id);
+
+      res.status(200).json({
+        success: true,
+        message: "Google authentication successful!",
+        token,
+        user: {
+          id: user._id,
+          Name: user.Name,
+          email: user.email,
+        },
+      });
+    }
+  )(req, res, next);
+};
+
+// Facebook Authentication
+export const facebookAuth = (req, res, next) => {
+  passport.authenticate("customer-facebook", { scope: ["email"] })(
+    req,
+    res,
+    next
+  );
+};
+
+// Facebook Authentication Callback
 export const facebookCallback = (req, res, next) => {
   passport.authenticate(
     "customer-facebook",
     { failureRedirect: "/" },
     async (err, user, info) => {
-      if (err) {
-        console.error("Facebook Authentication error:", err);
+      if (err || !user) {
+        console.error("Facebook Authentication error:", err || info);
         return res.status(500).json({
           success: false,
           message: "Facebook authentication failed.",
-          error: err
+          error: err || info,
         });
       }
 
-      if (!user) {
-        return res
-          .status(401)
-          .json({ success: false, message: "User not found." });
-      }
+     
 
       const token = generateToken(user._id);
 
@@ -316,9 +302,10 @@ export const facebookCallback = (req, res, next) => {
         user: {
           id: user._id,
           Name: user.Name,
-          email: user.email
-        }
+          email: user.email,
+        },
       });
     }
   )(req, res, next);
 };
+

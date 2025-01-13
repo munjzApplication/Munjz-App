@@ -14,115 +14,73 @@ const generateToken = id => {
   });
 };
 
-export const TempRegister = async (req, res, next) => {
-  const { Name, email } = req.body;
-
+export const Register = async (req, res, next) => {
   try {
-    // Check if user already exists in TempUsers or Users
+    const { Name, email, phoneNumber, password } = req.body;
+
+    // Check if the user already exists in TempUser or ConsultantProfile
     const existingTempUser = await TempUser.findOne({ email });
     const existingUser = await ConsultantProfile.findOne({ email });
     if (existingTempUser || existingUser) {
       return res.status(400).json({ message: "Email already registered." });
     }
 
-    // Generate verification token
-    const token = crypto.randomBytes(32).toString("hex");
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationToken = crypto.randomBytes(32).toString("hex");
 
     // Save user data in TempUser collection
     const tempUser = new TempUser({
       Name,
       email,
-      verificationToken: token,
-      emailVerified: false // Always set to false initially
+      phoneNumber,
+      password: hashedPassword, // Store the hashed password
+      verificationToken,
+      emailVerified: false,
     });
     await tempUser.save();
 
-    // Send verification email
-    const verificationUrl = process.env.BASE_URL_CONSULTANT;
-    await sendVerificationEmail(tempUser, verificationUrl); // Pass the URL to the email helper function
+    const verificationUrl = process.env.BASE_URL_CONSULTANT
+    await sendVerificationEmail(tempUser, verificationUrl);
 
-    res.status(200).json({ message: "Verification email sent." });
+    res.status(201).json({
+      message: "Registration initiated. Please verify your email to complete the process.",
+    });
   } catch (error) {
     next(error);
   }
 };
 
-export const verifyEmail = async (req, res, next) => {
+
+export const verifyEmailAndCompleteRegistration = async (req, res, next) => {
   const { token } = req.query;
 
   try {
-    // Find the temp user by token
+    // Find user in TempUser collection
     const tempUser = await TempUser.findOne({ verificationToken: token });
     if (!tempUser) {
-      return res.status(400).json({ message: "session expired" });
-    }
-    tempUser.emailVerified = true;
-    await tempUser.save();
-
-    res
-      .status(200)
-      .json({ message: "Email verified and registration complete." });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const Register = async (req, res, next) => {
-  try {
-    const { Name, email, phoneNumber, password } = req.body;
-
-    if (!phoneNumber) {
-      return res.status(400).json({ message: "Phone number is required." });
+      return res.status(400).json({ message: "Invalid or expired token." });
     }
 
-    // Check if the user exists in ConsultantProfile and is verified
-    const TempUserData = await TempUser.findOne({ email, emailVerified: true });
-
-    if (!TempUserData || !TempUserData.emailVerified) {
-      return res
-        .status(400)
-        .json({ message: "Please verify your email first." });
-    }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const consultantUniqueId = await generateConsultantUniqueId();
+    // Transfer data to ConsultantProfile
     const newUser = new ConsultantProfile({
-      Name,
-      email,
-      phoneNumber,
-      password: hashedPassword,
+      Name: tempUser.Name,
+      email: tempUser.email,
+      phoneNumber: tempUser.phoneNumber,
+      password: tempUser.password, // Already hashed
       emailVerified: true,
-      consultantUniqueId
+      consultantUniqueId: await generateConsultantUniqueId(),
     });
     await newUser.save();
-    // Delete TempUser entry after successful user creation
-    await TempUser.deleteOne({ email });
-    // Send notification for new consultant registration
-    const notification = new Notification({
-      notificationDetails: {
-        type: "Registration",
-        title: "New Consultant Registration",
-        message: `${Name} has successfully registered as a consultant.`,
-        additionalDetails: {
-          consultantId: newUser._id,
-          email: newUser.email,
-          phoneNumber: newUser.phoneNumber,
-          registrationDate: new Date()
-        }
-      }
-    });
-    await notification.save();
 
-    const token = generateToken(newUser._id);
+    // Delete tempUser after successful creation
+    await TempUser.deleteOne({ _id: tempUser._id });
 
-    res.status(201).json({
-      message: "User registered successfully.",
-      token,
-      newUser
-    });
+    res.status(200).json({ message: "Email verified and registration complete." });
   } catch (error) {
     next(error);
   }
 };
+
 
 export const Login = async (req, res, next) => {
   try {
@@ -168,6 +126,7 @@ export const Login = async (req, res, next) => {
   }
 };
 
+
 export const googleAuth = (req, res, next) => {
   passport.authenticate("consultant-google", { scope: ["profile", "email"] })(
     req,
@@ -175,58 +134,39 @@ export const googleAuth = (req, res, next) => {
     next
   );
 };
-
-export const googleCallback = (req, res, next) => {
+export const googleCallback = async (req, res, next) => {
   passport.authenticate(
     "consultant-google",
     { failureRedirect: "/" },
     async (err, user, info) => {
-      if (err) {
-        console.error("Authentication error:", err);
-        return res.status(500).json({
-          success: false,
-          message: "Authentication error",
-          error: err
-        });
-      }
-
-      if (!user) {
-        console.warn("User not found:", info);
-        return res
-          .status(401)
-          .json({ success: false, message: "User not found" });
-      }
-
-      const token = generateToken(user._id);
-
-      res.status(200).json({
-        success: true,
-        message: "Authentication successful!",
-        token,
-        user: {
-          id: user._id,
-          Name: user.Name,
-          email: user.email
+      try {
+        if (err || !user) {
+          console.error("Google Authentication error:", err || info);
+          return res.status(500).json({
+            success: false,
+            message: "Google authentication failed.",
+            error: err || info,
+          });
         }
-      });
+  
+
+      
+        // Generate a token for the user
+        const token = generateToken(user._id);
+
+        res.status(200).json({
+          success: true,
+          message: "Google authentication successful!",
+          token,
+          user
+        });
+      } catch (error) {
+        next(error);
+      }
     }
   )(req, res, next);
 };
 
-export const Profile = (req, res) => {
-  if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
-  }
-
-  res.json({
-    success: true,
-    user: {
-      Name: req.user.Name,
-      email: req.user.email,
-      profilePhoto: req.user.profilePhoto
-    }
-  });
-};
 
 export const facebookAuth = (req, res, next) => {
   passport.authenticate("consultant-facebook", { scope: ["email"] })(
@@ -235,39 +175,34 @@ export const facebookAuth = (req, res, next) => {
     next
   );
 };
-
-export const facebookCallback = (req, res, next) => {
+export const facebookCallback = async (req, res, next) => {
   passport.authenticate(
     "consultant-facebook",
     { failureRedirect: "/" },
     async (err, user, info) => {
-      if (err) {
-        console.error("Facebook Authentication error:", err);
-        return res.status(500).json({
-          success: false,
-          message: "Facebook authentication failed.",
-          error: err
-        });
-      }
-
-      if (!user) {
-        return res
-          .status(401)
-          .json({ success: false, message: "User not found." });
-      }
-
-      const token = generateToken(user._id);
-
-      res.status(200).json({
-        success: true,
-        message: "Facebook authentication successful!",
-        token,
-        user: {
-          id: user._id,
-          Name: user.Name,
-          email: user.email
+      try {
+        if (err || !user) {
+          console.error("Facebook Authentication error:", err || info);
+          return res.status(500).json({
+            success: false,
+            message: "Facebook authentication failed.",
+            error: err || info,
+          });
         }
-      });
+
+
+        // Generate a token for the user
+        const token = generateToken(existingUser._id);
+
+        res.status(200).json({
+          success: true,
+          message: "Facebook authentication successful!",
+          token,
+          user
+        });
+      } catch (error) {
+        next(error);
+      }
     }
   )(req, res, next);
 };
