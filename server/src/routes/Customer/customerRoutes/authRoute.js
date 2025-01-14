@@ -15,10 +15,12 @@ import {
 const router = express.Router();
 
 router.post("/send-verification-email", TempCustomerRegister);
+router.get("/verify-email", verifyEmail);
+router.post("/isEmailVerified", isEmailVerified);
+
 router.post("/register", Register);
 router.post("/login", Login);
-router.get("/verify-email", verifyEmail);
-router.get("/isEmailVerified", isEmailVerified);
+
 
 router.get("/google", googleAuth);
 router.get("/google/callback", googleCallback);

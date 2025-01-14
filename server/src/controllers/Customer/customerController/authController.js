@@ -9,6 +9,7 @@ import Wallet from "../../../models/Customer/customerModels/walletModel.js";
 import Notification from "../../../models/Admin/notificationModels/notificationModel.js";
 import { notificationService } from "../../../service/sendPushNotification.js";
 import TempCustomer from "../../../models/Customer/customerModels/TempCustomerModel.js";
+
 const generateToken = (id, emailVerified) => {
   return jwt.sign({ id, emailVerified }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
@@ -19,30 +20,26 @@ export const TempCustomerRegister = async (req, res, next) => {
   const { Name, email } = req.body;
 
   try {
-    // Check if user already exists in TempUsers or Users
     const existingTempUser = await TempCustomer.findOne({ email });
     const existingUser = await CustomerProfile.findOne({ email });
     if (existingTempUser || existingUser) {
-      return res.status(400).json({ message: "Email already registered." });
+      return res.status(400).json({ message: "The provided email is already registered." });
     }
 
-    // Generate verification token
     const token = crypto.randomBytes(32).toString("hex");
 
-    // Save user data in TempUser collection
-    const tempconstomerUser = new TempCustomer({
+    const tempCustomerUser = new TempCustomer({
       Name,
       email,
       verificationToken: token,
-      emailVerified: false // Always set to false initially
+      emailVerified: false
     });
-    await tempconstomerUser.save();
+    await tempCustomerUser.save();
 
-    // Send verification email
     const verificationUrl = process.env.BASE_URL_CUSTOMER;
-    await sendVerificationEmail(tempconstomerUser, verificationUrl); // Pass the URL to the email helper function
+    await sendVerificationEmail(tempCustomerUser, verificationUrl);
 
-    res.status(200).json({ message: "Verification email sent." });
+    res.status(200).json({ message: "Verification email has been sent. Please check your inbox." });
   } catch (error) {
     next(error);
   }
@@ -52,20 +49,22 @@ export const verifyEmail = async (req, res, next) => {
   const { token } = req.query;
 
   try {
-    // Find the temp user by token
-    const tempconstomerUser = await TempCustomer.findOne({
-      verificationToken: token
-    });
+    const tempCustomerUser = await TempCustomer.findOne({ verificationToken: token });
 
-    if (!tempconstomerUser) {
-      return res.status(400).json({ message: "session expired" });
+    if (!tempCustomerUser) {
+      return res.status(400).json({ message: "Verification session has expired. Please register again." });
     }
-    tempconstomerUser.emailVerified = true;
-    await tempconstomerUser.save();
 
-    res
-      .status(200)
-      .json({ message: "Email verified and registration complete." });
+    tempCustomerUser.emailVerified = true;
+    await tempCustomerUser.save();
+
+    await notificationService.sendToCustomer(
+      tempCustomerUser._id,
+      "Email Verified Successfully",
+      "Your email has been verified successfully. You can now proceed with registration."
+    );
+
+    res.status(200).json({ message: "Email verified successfully. You may complete your registration." });
   } catch (error) {
     next(error);
   }
@@ -82,18 +81,13 @@ export const isEmailVerified = async (req, res, next) => {
     const user = await TempCustomer.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found." });
+      return res.status(404).json({ message: "No user found with the provided email." });
     }
 
-    if (user.emailVerified) {
-      return res
-        .status(200)
-        .json({ message: "Email is verified.", emailVerified: true });
-    } else {
-      return res
-        .status(200)
-        .json({ message: "Email is not verified.", emailVerified: false });
-    }
+    const message = user.emailVerified
+      ? "Email is verified."
+      : "Email is not verified. Please verify to continue.";
+    res.status(200).json({ message, emailVerified: user.emailVerified });
   } catch (error) {
     next(error);
   }
@@ -107,19 +101,13 @@ export const Register = async (req, res, next) => {
       return res.status(400).json({ message: "Phone number is required." });
     }
 
-    const TempCustomerData = await TempCustomer.findOne({
-      email,
-      emailVerified: true
-    });
+    const tempCustomerData = await TempCustomer.findOne({ email, emailVerified: true });
 
-    if (!TempCustomerData || !TempCustomerData.emailVerified) {
-      return res
-        .status(400)
-        .json({ message: "Please verify your email first." });
+    if (!tempCustomerData) {
+      return res.status(400).json({ message: "Please verify your email before completing registration." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const customerUniqueId = await generateCustomerUniqueId();
 
     const newUser = new CustomerProfile({
@@ -134,31 +122,35 @@ export const Register = async (req, res, next) => {
 
     await newUser.save();
     await TempCustomer.deleteOne({ email });
-    const newWallet = new Wallet({
-      customerId: newUser._id,
-      balance: 0
-    });
 
+    const newWallet = new Wallet({ customerId: newUser._id, balance: 0 });
     await newWallet.save();
-
-    await sendVerificationEmail(newUser, process.env.BASE_URL_CUSTOMER);
 
     await notificationService.sendToCustomer(
       newUser._id,
-      "Welcome to Our Platform",
-      "Please verify your email to complete registration",
-      {
-        type: "registration",
-        status: "pending_verification",
-        customerId: newUser._id.toString()
-      }
+      "Registration Successful",
+      "Welcome to our platform! Your registration is complete."
     );
+
+    const adminNotification = new Notification({
+      notificationDetails: {
+        type: "Registration",
+        title: "New Customer Registration",
+        message: `${Name} has successfully registered as a Customer.`,
+        additionalDetails: {
+          customerId: newUser._id,
+          email: newUser.email,
+          phoneNumber: newUser.phoneNumber,
+          registrationDate: new Date()
+        }
+      }
+    });
+    await adminNotification.save();
 
     const token = generateToken(newUser._id, newUser.emailVerified);
 
     res.status(201).json({
-      message:
-        "User registered successfully. Please check your email for verification.",
+      message: "Registration successful. Welcome!",
       token,
       user: {
         id: newUser._id,
@@ -168,60 +160,45 @@ export const Register = async (req, res, next) => {
         countryCode: newUser.countryCode,
         phoneNumber: newUser.phoneNumber,
         creationDate: newUser.creationDate
-      }
+      },
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Login
 export const Login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and Password are required." });
+      return res.status(400).json({ message: "Both email and password are required." });
     }
 
     const user = await CustomerProfile.findOne({ email });
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid email or password." });
+      return res.status(401).json({ message: "Incorrect email or password." });
     }
 
-    // Check if email is verified
     if (!user.emailVerified) {
-      return res.status(403).json({
-        message:
-          "Your email is not verified. Please verify your email to log in."
-      });
+      return res.status(403).json({ message: "Email not verified. Please verify your email to log in." });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid email or password." });
+      return res.status(401).json({ message: "Incorrect email or password." });
     }
 
-    // Update `isLoggedIn` field
     user.isLoggedIn = true;
     await user.save();
 
-    // Generate JWT token
     const token = generateToken(user._id, user.emailVerified);
 
-    // Notify the customer about the successful login
     await notificationService.sendToCustomer(
       user._id,
-      "Login Successful",
-      "You have successfully logged into your account. If this wasn't you, please reset your password immediately.",
-      {
-        type: "login",
-        status: "completed",
-        customerId: user._id.toString()
-      }
+      "Successful Login",
+      "You have logged in successfully. If this wasn't you, please reset your password immediately."
     );
 
     res.status(200).json({
@@ -242,82 +219,74 @@ export const Login = async (req, res, next) => {
   }
 };
 
-// Google Authentication
 export const googleAuth = (req, res, next) => {
-  passport.authenticate("customer-google", { scope: ["profile", "email"] })(
-    req,
-    res,
-    next
-  );
+  passport.authenticate("customer-google", { scope: ["profile", "email"] })(req, res, next);
 };
 
-// Google Authentication Callback
 export const googleCallback = (req, res, next) => {
-  passport.authenticate(
-    "customer-google",
-    { failureRedirect: "/" },
-    async (err, user, info) => {
-      if (err || !user) {
-        console.error("Google Authentication error:", err || info);
-        return res.status(500).json({
-          success: false,
-          message: "Google authentication failed.",
-          error: err || info
-        });
-      }
-
-      const token = generateToken(user._id);
-
-      res.status(200).json({
-        success: true,
-        message: "Google authentication successful!",
-        token,
-        user: {
-          id: user._id,
-          Name: user.Name,
-          email: user.email
-        }
+  passport.authenticate("customer-google", { failureRedirect: "/" }, async (err, user, info) => {
+    if (err || !user) {
+      console.error("Google Authentication error:", err || info);
+      return res.status(500).json({
+        success: false,
+        message: "Google authentication failed. Please try again.",
+        error: err || info
       });
     }
-  )(req, res, next);
+
+    const token = generateToken(user._id, user.emailVerified);
+
+    await notificationService.sendToCustomer(
+      user._id,
+      "Google Authentication Successful",
+      "You have successfully signed in using Google."
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Google authentication successful.",
+      token,
+      user: {
+        id: user._id,
+        Name: user.Name,
+        email: user.email
+      }
+    });
+  })(req, res, next);
 };
 
-// Facebook Authentication
 export const facebookAuth = (req, res, next) => {
-  passport.authenticate("customer-facebook", { scope: ["email"] })(
-    req,
-    res,
-    next
-  );
+  passport.authenticate("customer-facebook", { scope: ["email"] })(req, res, next);
 };
 
-// Facebook Authentication Callback
 export const facebookCallback = (req, res, next) => {
-  passport.authenticate(
-    "customer-facebook",
-    { failureRedirect: "/" },
-    async (err, user, info) => {
-      if (err || !user) {
-        console.error("Facebook Authentication error:", err || info);
-        return res.status(500).json({
-          success: false,
-          message: "Facebook authentication failed.",
-          error: err || info
-        });
-      }
-
-      const token = generateToken(user._id);
-
-      res.status(200).json({
-        success: true,
-        message: "Facebook authentication successful!",
-        token,
-        user: {
-          id: user._id,
-          Name: user.Name,
-          email: user.email
-        }
+  passport.authenticate("customer-facebook", { failureRedirect: "/" }, async (err, user, info) => {
+    if (err || !user) {
+      console.error("Facebook Authentication error:", err || info);
+      return res.status(500).json({
+        success: false,
+        message: "Facebook authentication failed. Please try again.",
+        error: err || info
       });
     }
-  )(req, res, next);
+
+    const token = generateToken(user._id, user.emailVerified);
+
+    await notificationService.sendToCustomer(
+      user._id,
+      "Facebook Authentication Successful",
+      "You have successfully signed in using Facebook."
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Facebook authentication successful.",
+      token,
+      user: {
+        id: user._id,
+        Name: user.Name,
+        email: user.email
+      }
+    });
+  })(req, res, next);
 };

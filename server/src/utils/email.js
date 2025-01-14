@@ -35,7 +35,7 @@ export const sendVerificationEmail = async (user, verificationUrl) => {
           display: inline-block;
           padding: 10px 20px;
           color: #fff;
-          background-color:rgb(37, 35, 35);
+          background-color:rgb(36, 83, 193);
           text-decoration: none;
           border-radius: 5px;
         }
