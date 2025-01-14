@@ -8,8 +8,8 @@ const transport = Nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+    pass: process.env.EMAIL_PASS
+  }
 });
 
 export const sendVerificationEmail = async (user, verificationUrl) => {
@@ -44,14 +44,12 @@ export const sendVerificationEmail = async (user, verificationUrl) => {
   </html>
 `;
 
-
-
   try {
     await transport.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Email Verification",
-      html: htmlContent,
+      html: htmlContent
     });
 
     console.log(`Verification email sent to ${email}`);

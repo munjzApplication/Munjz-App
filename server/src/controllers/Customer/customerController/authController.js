@@ -10,6 +10,7 @@ import Notification from "../../../models/Admin/notificationModels/notificationM
 import { notificationService } from "../../../service/sendPushNotification.js";
 import TempCustomer from "../../../models/Customer/customerModels/TempCustomerModel.js";
 
+
 const generateToken = (id, emailVerified) => {
   return jwt.sign({ id, emailVerified }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
@@ -101,8 +102,14 @@ export const Register = async (req, res, next) => {
       return res.status(400).json({ message: "Phone number is required." });
     }
 
-    const tempCustomerData = await TempCustomer.findOne({ email, emailVerified: true });
+    // Check if the customer is already registered
+    const existingCustomer = await CustomerProfile.findOne({ email });
+    if (existingCustomer) {
+      return res.status(400).json({ message: "The email is already registered." });
+    }
 
+    // Check if the email has been verified in TempCustomer
+    const tempCustomerData = await TempCustomer.findOne({ email, emailVerified: true });
     if (!tempCustomerData) {
       return res.status(400).json({ message: "Please verify your email before completing registration." });
     }
@@ -166,6 +173,7 @@ export const Register = async (req, res, next) => {
     next(error);
   }
 };
+
 
 export const Login = async (req, res, next) => {
   try {
