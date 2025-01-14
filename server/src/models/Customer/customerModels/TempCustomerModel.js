@@ -8,7 +8,7 @@ const TempCustomerSchema = new mongoose.Schema({
   createdAt: { 
     type: Date, 
     default: Date.now,
-    expires: 24 * 60 * 60 // Auto-delete after 24 hours if not verified
+    expires: 10
   }
 });
 

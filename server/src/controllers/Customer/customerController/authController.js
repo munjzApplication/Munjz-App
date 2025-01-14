@@ -71,6 +71,34 @@ export const verifyEmail = async (req, res, next) => {
   }
 };
 
+export const isEmailVerified = async (req, res, next) => {
+  const { email } = req.body;
+
+  try {
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    const user = await TempCustomer.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.emailVerified) {
+      return res
+        .status(200)
+        .json({ message: "Email is verified.", emailVerified: true });
+    } else {
+      return res
+        .status(200)
+        .json({ message: "Email is not verified.", emailVerified: false });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const Register = async (req, res, next) => {
   try {
     const { Name, email, phoneNumber, password, countryCode } = req.body;
