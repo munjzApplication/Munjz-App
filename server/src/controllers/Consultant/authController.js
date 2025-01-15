@@ -101,15 +101,19 @@ export const Register = async (req, res, next) => {
       return res.status(400).json({ message: "Phone number is required." });
     }
 
+        // Check if the customer is already registered
+        const existingCustomer = await ConsultantProfile.findOne({ email });
+        if (existingCustomer) {
+          return res.status(400).json({ message: "The email is already registered." });
+        }
+
     const TempConsultantData = await TempConsultant.findOne({
       email,
       emailVerified: true
     });
 
-    if (!TempConsultantData || !TempConsultantData.emailVerified) {
-      return res
-        .status(400)
-        .json({ message: "Please verify your email before completing registration." });
+    if (!TempConsultantData) {
+      return res.status(400).json({ message: "Please verify your email before completing registration." });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const consultantUniqueId = await generateConsultantUniqueId();
@@ -122,7 +126,7 @@ export const Register = async (req, res, next) => {
       consultantUniqueId
     });
     await newUser.save();
-    await TempUser.deleteOne({ email });
+    await TempConsultantData.deleteOne({ email });
 
     await notificationService.sendToConsultant(
       newUser._id,
