@@ -160,7 +160,7 @@ export const Register = async (req, res, next) => {
         email: newUser.email,
         phoneNumber: newUser.phoneNumber,
         consultantUniqueId: newUser.consultantUniqueId,
-        creationDate: newUser
+        creationDate: newUser.creationDate
       }
     });
   } catch (error) {
