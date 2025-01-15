@@ -1,11 +1,57 @@
 import CustomerProfile from "../../../models/Customer/customerModels/customerModel.js";
 import bcrypt from "bcrypt";
 import { uploadFileToS3 } from "../../../utils/s3Uploader.js";
-
 import courtServiceDetailsModel from "../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import notaryServiceDetailsModel from "../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import { notificationService } from "../../../service/sendPushNotification.js";
-// Get Profile
+
+export const profileSetup = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { country } = req.body;
+    const file = req.file;
+
+    if (!country) {
+      return res.status(400).json({ message: "Country is required." });
+    }
+
+    if (!file) {
+      return res.status(400).json({ message: "Profile picture is required." });
+    }
+
+    const profilePhoto = await uploadFileToS3(file, "profile-pictures");
+
+    const userProfile = await CustomerProfile.findById(userId);
+
+    if (!userProfile) {
+      return res.status(404).json({ message: "User profile not found." });
+    }
+
+    userProfile.profilePhoto = profilePhoto;
+    userProfile.country = country;
+
+    await userProfile.save();
+
+    try {
+      await notificationService.sendToCustomer(
+        userId,
+        "Profile Setup Completed",
+        "Your profile has been successfully set up with the added details.",
+        { profilePhoto, country }
+      );
+    } catch (pushError) {
+      console.error("Error sending profile setup notification:", pushError);
+    }
+
+    // Respond with success
+    res.status(200).json({
+      message: "Profile setup completed successfully."
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getProfile = async (req, res, next) => {
   try {
     const { id } = req.params;

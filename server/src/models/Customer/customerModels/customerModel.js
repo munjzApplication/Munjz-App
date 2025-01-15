@@ -50,6 +50,9 @@ const customerProfileSchema = new mongoose.Schema({
   countryCode: {
     type: String
   },
+  country: {
+    type: String
+  },
   location: {
     type: String
   },
