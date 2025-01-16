@@ -11,33 +11,41 @@ export const profileSetup = async (req, res, next) => {
     const { country } = req.body;
     const file = req.file;
 
+    // Validate required fields
     if (!country) {
       return res.status(400).json({ message: "Country is required." });
     }
 
-    if (!file) {
-      return res.status(400).json({ message: "Profile picture is required." });
+    let profilePhoto;
+
+    if (file) {
+      // If a file is uploaded, upload it to S3
+      profilePhoto = await uploadFileToS3(file, "profile-pictures");
+    } else {
+      // Use a dummy profile picture if no file is uploaded
+      profilePhoto =
+        "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.istockphoto.com%2Fphotos%2Fprofile-image&psig=AOvVaw0976QLRIgmgsTEgmK5V0A8&ust=1737094267990000&source=images&cd=vfe&opi=89978449&ved=0CBEQjRxqFwoTCOitzM3K-YoDFQAAAAAdAAAAABA_"; // Replace with your dummy image URL
     }
 
-    const profilePhoto = await uploadFileToS3(file, "profile-pictures");
-
+    // Fetch the user profile
     const userProfile = await CustomerProfile.findById(userId);
 
     if (!userProfile) {
       return res.status(404).json({ message: "User profile not found." });
     }
 
+    // Update the profile with the provided details
     userProfile.profilePhoto = profilePhoto;
     userProfile.country = country;
 
     await userProfile.save();
 
+    // Send notification (handle errors internally)
     try {
       await notificationService.sendToCustomer(
         userId,
-        "Profile Setup Completed",
-        "Your profile has been successfully set up with the added details.",
-        { profilePhoto, country }
+        "Welcome!",
+        "Your registration and profile setup are fully completed. You can now start exploring the platform."
       );
     } catch (pushError) {
       console.error("Error sending profile setup notification:", pushError);
@@ -45,7 +53,9 @@ export const profileSetup = async (req, res, next) => {
 
     // Respond with success
     res.status(200).json({
-      message: "Profile setup completed successfully."
+      message: "Welcome to Munjz Application",
+      details:
+        "Your account registrations are fully completed. You can now start exploring the platform."
     });
   } catch (error) {
     next(error);

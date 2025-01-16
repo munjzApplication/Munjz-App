@@ -157,7 +157,7 @@ export const Register = async (req, res, next) => {
     const token = generateToken(newUser._id, newUser.emailVerified);
 
     res.status(201).json({
-      message: "Registration successful. Welcome!",
+      message: "Registration successful",
       token,
       user: {
         id: newUser._id,
