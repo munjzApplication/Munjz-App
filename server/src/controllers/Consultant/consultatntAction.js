@@ -19,25 +19,30 @@ export const handleConsultantAction = async (req, res, next) => {
     } = req.body;
 
     // Ensure all required fields are present
-    if (
-      !consultantId ||
-      !idProof?.nationalId ||
-      !req.files?.profilePicture ||
-      !req.files?.frontsideId ||
-      !req.files?.backsideId ||
-      !req.files?.educationalCertificates ||
-      !req.files?.experienceCertificates ||
-      !personalDetails?.country ||
-      !personalDetails?.languages ||
-      !personalDetails?.areaOfPractices ||
-      !personalDetails?.experience ||
-      !personalDetails?.biography ||
-      !bankDetails?.holderName ||
-      !bankDetails?.accountNumber ||
-      !bankDetails?.bankName ||
-      !bankDetails?.iban
-    ) {
-      return res.status(400).json({ error: "All fields are required." });
+    const missingFields = [];
+
+    if (!consultantId) missingFields.push("consultantId");
+    if (!idProof?.nationalId) missingFields.push("idProof.nationalId");
+    if (!req.files?.profilePicture) missingFields.push("profilePicture");
+    if (!req.files?.frontsideId) missingFields.push("frontsideId");
+    if (!req.files?.backsideId) missingFields.push("backsideId");
+    if (!req.files?.educationalCertificates) missingFields.push("educationalCertificates");
+    if (!req.files?.experienceCertificates) missingFields.push("experienceCertificates");
+    if (!personalDetails?.country) missingFields.push("personalDetails.country");
+    if (!personalDetails?.languages) missingFields.push("personalDetails.languages");
+    if (!personalDetails?.areaOfPractices) missingFields.push("personalDetails.areaOfPractices");
+    if (!personalDetails?.experience) missingFields.push("personalDetails.experience");
+    if (!personalDetails?.biography) missingFields.push("personalDetails.biography");
+    if (!bankDetails?.holderName) missingFields.push("bankDetails.holderName");
+    if (!bankDetails?.accountNumber) missingFields.push("bankDetails.accountNumber");
+    if (!bankDetails?.bankName) missingFields.push("bankDetails.bankName");
+    if (!bankDetails?.iban) missingFields.push("bankDetails.iban");
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({ 
+        error: "Some fields are missing.", 
+        missingFields 
+      });
     }
 
     // Check for existing National ID

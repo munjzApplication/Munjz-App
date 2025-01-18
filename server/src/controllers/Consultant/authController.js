@@ -192,7 +192,7 @@ export const Login = async (req, res, next) => {
       return res.status(401).json({ message: "Incorrect email or password." });
     }
 
-    const token = generateToken(user._id , newUser.emailVerified);
+    const token = generateToken(user._id , user.emailVerified);
 
     await notificationService.sendToConsultant(
       user._id,
