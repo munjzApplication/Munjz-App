@@ -17,6 +17,8 @@ export const handleConsultantAction = async (req, res, next) => {
       personalDetails,
       bankDetails
     } = req.body;
+    console.log("req.body",req.body);
+    console.log("req.files",req.files);
 
     // Ensure all required fields are present
     const missingFields = [];
@@ -90,7 +92,7 @@ export const handleConsultantAction = async (req, res, next) => {
     });
     const savedPersonalDetails = await personalDetailsData.save({ session });
 
-    // Save BankDetails data
+   
     const bankDetailsData = new BankDetails({
       consultantId,
       holderName: bankDetails.holderName,
@@ -100,11 +102,11 @@ export const handleConsultantAction = async (req, res, next) => {
     });
     const savedBankDetails = await bankDetailsData.save({ session });
 
-    // Commit the transaction
+   
     await session.commitTransaction();
     session.endSession();
 
-    // Send response with saved data in the requested format
+    
     res.status(201).json({
       message: "Consultant data saved successfully.",
       data: {
@@ -114,7 +116,7 @@ export const handleConsultantAction = async (req, res, next) => {
       }
     });
   } catch (error) {
-    // Abort the transaction in case of any error
+  
     await session.abortTransaction();
     session.endSession();
     next(error);
