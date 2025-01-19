@@ -19,6 +19,9 @@ export const handleConsultantAction = async (req, res, next) => {
     } = req.body;
     console.log("req.body",req.body);
     console.log("req.files",req.files);
+    console.log("personalDetails:", JSON.parse(req.body.personalDetails));
+console.log("idProof:", JSON.parse(req.body.idProof));
+console.log("bankDetails:", JSON.parse(req.body.bankDetails));
 
     // Ensure all required fields are present
     const missingFields = [];
