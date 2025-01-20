@@ -14,23 +14,15 @@ export const handleConsultantAction = async (req, res, next) => {
     const consultantId = req.user._id;
 
     const {
-      personalDetails: {
-        country,
-        languages,
-        areaOfPractices,
-        experience,
-        biography
-      },
-      idProof: {
-        nationalId
-      },
-      bankDetails: {
-        holderName,
-        accountNumber,
-        bankName,
-        iban
-      }
-    } = req.body;
+      country,
+      languages,
+      areaOfPractices,
+      experience,
+      biography
+    } = req.body.personalDetails;
+
+    const nationalId = req.body.idProof?.nationalId;
+    const { holderName, accountNumber, bankName, iban } = req.body.bankDetails;
 
     console.log("req.body", req.body);
     console.log("req.files", req.files);
