@@ -9,8 +9,8 @@ router.post(
     { name: "profilePicture", maxCount: 1 },
     { name: "frontsideId", maxCount: 1 },
     { name: "backsideId", maxCount: 1 },
-    { name: "educationalCertificates", maxCount: 1 },
-    { name: "experienceCertificates", maxCount: 1 },
+    { name: "educationalCertificates", maxCount: 5 },
+    { name: "experienceCertificates", maxCount: 5 },
   ]),
   handleConsultantAction
 );
