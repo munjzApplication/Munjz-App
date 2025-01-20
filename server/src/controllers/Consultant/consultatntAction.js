@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import consultationDetails from "../../models/Admin/consultantModels/consultationModel.js";
+import ConsultantProfile from "../../models/Consultant/User.js";
 import IDProof from "../../models/Consultant/idProof.js";
 import PersonalDetails from "../../models/Consultant/personalDetails.js";
 import BankDetails from "../../models/Consultant/bankDetails.js";
@@ -13,26 +13,21 @@ export const handleConsultantAction = async (req, res, next) => {
   try {
     const consultantId = req.user._id;
 
-     // Parse stringified JSON fields in req.body
-     const personalDetails = JSON.parse(req.body.personalDetails);
-     const idProof = JSON.parse(req.body.idProof);
-     const bankDetails = JSON.parse(req.body.bankDetails);
- 
-     const {
-       country,
-       languages,
-       areaOfPractices,
-       experience,
-       biography
-     } = personalDetails;
- 
-     const { nationalId } = idProof;
-     const { holderName, accountNumber, bankName, iban } = bankDetails;
- 
-     console.log("Parsed Data:", { personalDetails, idProof, bankDetails });
- 
-     console.log("req.body", req.body);
-     console.log("req.files", req.files);
+    // Parse stringified JSON fields in req.body
+    const personalDetails = JSON.parse(req.body.personalDetails);
+    const idProof = JSON.parse(req.body.idProof);
+    const bankDetails = JSON.parse(req.body.bankDetails);
+
+    const { country, languages, areaOfPractices, experience, biography } =
+      personalDetails;
+
+    const { nationalId } = idProof;
+    const { holderName, accountNumber, bankName, iban } = bankDetails;
+
+    console.log("Parsed Data:", { personalDetails, idProof, bankDetails });
+
+    console.log("req.body", req.body);
+    console.log("req.files", req.files);
 
     // Ensure all required fields are present
     const missingFields = [];
@@ -42,8 +37,10 @@ export const handleConsultantAction = async (req, res, next) => {
     if (!req.files?.profilePicture) missingFields.push("profilePicture");
     if (!req.files?.frontsideId) missingFields.push("frontsideId");
     if (!req.files?.backsideId) missingFields.push("backsideId");
-    if (!req.files?.educationalCertificates) missingFields.push("educationalCertificates");
-    if (!req.files?.experienceCertificates) missingFields.push("experienceCertificates");
+    if (!req.files?.educationalCertificates)
+      missingFields.push("educationalCertificates");
+    if (!req.files?.experienceCertificates)
+      missingFields.push("experienceCertificates");
     if (!country) missingFields.push("country");
     if (!languages) missingFields.push("languages");
     if (!areaOfPractices) missingFields.push("areaOfPractices");
@@ -60,29 +57,69 @@ export const handleConsultantAction = async (req, res, next) => {
         missingFields
       });
     }
+    // Check if ConsultantProfile already exists (to avoid redundant creation)
+    const existingProfile = await ConsultantProfile.findOne({
+      _id: consultantId
+    }).session(session);
 
+    if (!existingProfile) {
+      return res
+        .status(404)
+        .json({ error: "Consultant profile does not exist." });
+    }
     // Check if consultant already exists in any of the necessary models
-    const existingPersonalDetails = await consultationDetails.findOne({ consultantId }).session(session);
+    const existingPersonalDetails = await PersonalDetails.findOne({
+      consultantId
+    }).session(session);
     if (existingPersonalDetails) {
-      return res.status(400).json({ error: "You are already registered as a consultant." });
+      return res
+        .status(400)
+        .json({ error: "You are already registered as a consultant." });
     }
 
-    const existingIdProof = await IDProof.findOne({ nationalId }).session(session);
+    const existingIdProof = await IDProof.findOne({ nationalId }).session(
+      session
+    );
     if (existingIdProof) {
-      return res.status(400).json({ error: "The provided National ID is already registered." });
+      return res
+        .status(400)
+        .json({ error: "The provided National ID is already registered." });
     }
 
-    const existingBankDetails = await BankDetails.findOne({ consultantId }).session(session);
+    const existingBankDetails = await BankDetails.findOne({
+      consultantId
+    }).session(session);
     if (existingBankDetails) {
-      return res.status(400).json({ error: "Bank details are already registered." });
+      return res
+        .status(400)
+        .json({ error: "Bank details are already registered." });
     }
 
     // Upload files to S3
-    const profilePictureUrl = await uploadFileToS3(req.files.profilePicture[0], "ConsultantprofileImages");
-    const frontsideIdUrl = await uploadFileToS3(req.files.frontsideId[0], "frontsideId");
-    const backsideIdUrl = await uploadFileToS3(req.files.backsideId[0], "backsideId");
-    const educationalCertificateUrl = await uploadFileToS3(req.files.educationalCertificates[0], "educationalCertificate");
-    const experienceCertificateUrl = await uploadFileToS3(req.files.experienceCertificates[0], "experienceCertificate");
+    const profilePictureUrl = await uploadFileToS3(
+      req.files.profilePicture[0],
+      "ConsultantprofileImages"
+    );
+    const frontsideIdUrl = await uploadFileToS3(
+      req.files.frontsideId[0],
+      "frontsideId"
+    );
+    const backsideIdUrl = await uploadFileToS3(
+      req.files.backsideId[0],
+      "backsideId"
+    );
+    const educationalCertificateUrl = await uploadFileToS3(
+      req.files.educationalCertificates[0],
+      "educationalCertificate"
+    );
+    const experienceCertificateUrl = await uploadFileToS3(
+      req.files.experienceCertificates[0],
+      "experienceCertificate"
+    );
+
+    // Update ConsultantProfile only for profilePicture
+    existingProfile.profilePhoto = profilePictureUrl;
+    await existingProfile.save({ session });
 
     // Save IDProof data
     const idProofData = new IDProof({
@@ -103,7 +140,9 @@ export const handleConsultantAction = async (req, res, next) => {
 
     // Save PersonalDetails data
     const languagesArray = languages.split(",").map((lang) => lang.trim());
-    const areaOfPracticesArray = areaOfPractices.split(",").map((area) => area.trim());
+    const areaOfPracticesArray = areaOfPractices
+      .split(",")
+      .map((area) => area.trim());
 
     const personalDetailsData = new PersonalDetails({
       consultantId,
@@ -143,12 +182,7 @@ export const handleConsultantAction = async (req, res, next) => {
     );
 
     res.status(201).json({
-      message: "Consultant data saved successfully.",
-      data: {
-        idProof: savedIDProof,
-        personalDetails: savedPersonalDetails,
-        bankDetails: savedBankDetails
-      }
+      message: "Consultant Registered successfully."
     });
   } catch (error) {
     await session.abortTransaction();
