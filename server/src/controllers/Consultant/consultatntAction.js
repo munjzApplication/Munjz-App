@@ -13,24 +13,24 @@ export const handleConsultantAction = async (req, res, next) => {
   try {
     const consultantId = req.user._id;
 
-  const {
-    personalDetails: {
-      country,
-      languages,
-      areaOfPractices,
-      experience,
-      biography
-    },
-    idProof: {
-      nationalId
-    },
-    bankDetails: {
-      holderName,
-      accountNumber,
-      bankName,
-      iban
-    }
-  } = req.body;
+    const {
+      personalDetails: {
+        country,
+        languages,
+        areaOfPractices,
+        experience,
+        biography
+      },
+      idProof: {
+        nationalId
+      },
+      bankDetails: {
+        holderName,
+        accountNumber,
+        bankName,
+        iban
+      }
+    } = req.body;
 
     console.log("req.body", req.body);
     console.log("req.files", req.files);
@@ -54,11 +54,11 @@ export const handleConsultantAction = async (req, res, next) => {
     if (!accountNumber) missingFields.push("accountNumber");
     if (!bankName) missingFields.push("bankName");
     if (!iban) missingFields.push("iban");
-    
+
     if (missingFields.length > 0) {
-      return res.status(400).json({ 
-        error: "Some fields are missing.", 
-        missingFields 
+      return res.status(400).json({
+        error: "Some fields are missing.",
+        missingFields
       });
     }
 
@@ -68,16 +68,15 @@ export const handleConsultantAction = async (req, res, next) => {
       return res.status(400).json({ error: "You are already registered as a consultant." });
     }
 
-    const existingIdProof = await IDProof.findOne({ nationalId:nationalId }).session(session);
+    const existingIdProof = await IDProof.findOne({ nationalId }).session(session);
     if (existingIdProof) {
       return res.status(400).json({ error: "The provided National ID is already registered." });
     }
 
-    const existingBankDetails = await consultationDetails.findOne({ consultantId }).session(session);
+    const existingBankDetails = await BankDetails.findOne({ consultantId }).session(session);
     if (existingBankDetails) {
       return res.status(400).json({ error: "Bank details are already registered." });
     }
-
 
     // Upload files to S3
     const profilePictureUrl = await uploadFileToS3(req.files.profilePicture[0], "ConsultantprofileImages");
@@ -89,7 +88,7 @@ export const handleConsultantAction = async (req, res, next) => {
     // Save IDProof data
     const idProofData = new IDProof({
       consultantId,
-      nationalId: nationalId,
+      nationalId,
       frontsideId: frontsideIdUrl,
       backsideId: backsideIdUrl,
       educationalCertificates: educationalCertificateUrl,
@@ -118,33 +117,32 @@ export const handleConsultantAction = async (req, res, next) => {
     });
     const savedPersonalDetails = await personalDetailsData.save({ session });
 
-   
+    // Save BankDetails data
     const bankDetailsData = new BankDetails({
       consultantId,
-      holderName: holderName,
-      accountNumber: accountNumber,
-      bankName: bankName,
-      iban: iban
+      holderName,
+      accountNumber,
+      bankName,
+      iban
     });
     const savedBankDetails = await bankDetailsData.save({ session });
 
-   
     await session.commitTransaction();
     session.endSession();
-        // Notify the consultant
-        await notificationService.sendToConsultant(
-          consultantId,
-          "Registration Successful",
-          "Your consultant registration has been successfully completed."
-        );
-        
-        // Notify the admin
-        await notificationService.sendToAdmin(
-          "New Consultant Registered",
-          `A new consultant with ID ${consultantId} has registered.`
-        );
-        
-    
+
+    // Notify the consultant
+    await notificationService.sendToConsultant(
+      consultantId,
+      "Registration Successful",
+      "Your consultant registration has been successfully completed."
+    );
+
+    // Notify the admin
+    await notificationService.sendToAdmin(
+      "New Consultant Registered",
+      `A new consultant with ID ${consultantId} has registered.`
+    );
+
     res.status(201).json({
       message: "Consultant data saved successfully.",
       data: {
@@ -154,7 +152,6 @@ export const handleConsultantAction = async (req, res, next) => {
       }
     });
   } catch (error) {
-  
     await session.abortTransaction();
     session.endSession();
     next(error);
