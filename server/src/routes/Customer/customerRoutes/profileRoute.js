@@ -18,14 +18,14 @@ const router = express.Router();
 
 router.post('/profile-setup', upload.single("profilePicture"), profileSetup);
 
-router.get("/get-profile/:id", getProfile);
-router.put("/update-profile/:id", updateProfile);
-router.delete("/delete-profile/:id", deleteProfile);
-router.put("/change-password/:id", changePassword);
+router.get("/get-profile", getProfile);
+router.put("/update-profile", updateProfile);
+router.delete("/delete-profile", deleteProfile);
+router.put("/change-password", changePassword);
 router.post("/forgot-password", forgotPassword);
 router.post("/logout", logoutProfile);
-router.put("/update-profile-picture/:id",upload.single("profilePicture"),updateProfilePicture);
+router.put("/update-profile-picture",upload.single("profilePicture"),updateProfilePicture);
 
-router.get("/getservices/:id", getAllServices);
+router.get("/getservices", getAllServices);
 
 export default router;

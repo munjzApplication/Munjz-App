@@ -64,26 +64,37 @@ export const profileSetup = async (req, res, next) => {
 
 export const getProfile = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const profile = await CustomerProfile.findById(id);
+    const userId = req.user._id;
+
+    // Fetch the profile while excluding the password field
+    const profile = await CustomerProfile.findById(userId, { password: 0 });
+    
     if (!profile) {
       return res.status(404).json({ message: "Profile not found." });
     }
-    res.status(200).json({ profile });
+
+    // Avoid sending any sensitive data
+    const filteredProfile = {
+      ...profile.toObject(),
+      password: undefined, // Ensure password is not passed if included
+    };
+
+    res.status(200).json({ profile: filteredProfile });
   } catch (error) {
     next(error);
   }
 };
 
+
 // Update Profile
 export const updateProfile = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const userId = req.user._id;
     const updates = req.body;
     console.log("pppop", updates);
 
     const updatedProfile = await CustomerProfile.findByIdAndUpdate(
-      id,
+      userId,
       updates,
       { new: true }
     );
@@ -94,7 +105,7 @@ export const updateProfile = async (req, res, next) => {
     // Push Notification
     try {
       await notificationService.sendToCustomer(
-        id,
+        userId,
         "Profile Updated",
         "Your profile has been updated successfully.",
         { updatedFields: updates }
@@ -115,7 +126,7 @@ export const updateProfile = async (req, res, next) => {
 // Update Profile Picture
 export const updateProfilePicture = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const userId = req.user._id;
     const file = req.file;
 
     if (!file) {
@@ -125,7 +136,7 @@ export const updateProfilePicture = async (req, res, next) => {
     const imageUrl = await uploadFileToS3(file, "profile-pictures");
 
     const updatedProfile = await CustomerProfile.findByIdAndUpdate(
-      id,
+      userId,
       { imageUrl },
       { new: true }
     );
@@ -137,7 +148,7 @@ export const updateProfilePicture = async (req, res, next) => {
     // Push Notification
     try {
       await notificationService.sendToCustomer(
-        id,
+        userId,
         "Profile Picture Updated",
         "Your profile picture has been updated successfully.",
         { imageUrl }
@@ -161,9 +172,9 @@ export const updateProfilePicture = async (req, res, next) => {
 // Delete Profile
 export const deleteProfile = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const userId = req.user._id;
 
-    const deletedProfile = await CustomerProfile.findByIdAndDelete(id);
+    const deletedProfile = await CustomerProfile.findByIdAndDelete(userId);
     if (!deletedProfile) {
       return res.status(404).json({ message: "Profile not found." });
     }
@@ -177,10 +188,10 @@ export const deleteProfile = async (req, res, next) => {
 // Change Password
 export const changePassword = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const userId = req.user._id;
     const { currentPassword, newPassword } = req.body;
 
-    const user = await CustomerProfile.findById(id);
+    const user = await CustomerProfile.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
@@ -202,7 +213,7 @@ export const changePassword = async (req, res, next) => {
     // Push Notification
     try {
       await notificationService.sendToCustomer(
-        id,
+        userId,
         "Password Changed",
         "Your password has been changed successfully.",
         {}
@@ -274,10 +285,10 @@ export const logoutProfile = async (req, res, next) => {
 };
 
 export const getAllServices = async (req, res) => {
-  const { id } = req.params;
+  const userId = req.user._id;
 
   try {
-    const courtService = await notaryServiceDetailsModel.findById(id);
+    const courtService = await notaryServiceDetailsModel.findById(userId);
 
     if (!courtService) {
       return res.status(404).json({
