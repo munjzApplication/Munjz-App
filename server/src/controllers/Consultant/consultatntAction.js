@@ -13,7 +13,6 @@ export const handleConsultantAction = async (req, res, next) => {
   try {
     const consultantId = req.user._id;
 
-    // Extract nested data from req.body
   const {
     personalDetails: {
       country,
