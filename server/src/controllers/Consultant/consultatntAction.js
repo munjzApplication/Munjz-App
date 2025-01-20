@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import consultationDetails from "../../models/Admin/consultantModels/consultationModel.js";
 import IDProof from "../../models/Consultant/idProof.js";
 import PersonalDetails from "../../models/Consultant/personalDetails.js";
 import BankDetails from "../../models/Consultant/bankDetails.js";
@@ -12,21 +13,25 @@ export const handleConsultantAction = async (req, res, next) => {
   try {
     const consultantId = req.user._id;
 
-    // Extract body data
-    const {
-      'personalDetails.country': country,
-      'personalDetails.languages': languages,
-      'personalDetails.areaOfPractices': areaOfPractices,
-      'personalDetails.experience': experience,
-      'personalDetails.biography': biography,
-      'idProof.nationalId': nationalId,
-      'bankDetails.holderName': holderName,
-      'bankDetails.accountNumber': accountNumber,
-      'bankDetails.bankName': bankName,
-      'bankDetails.iban': iban
-    } = req.body;
-
-    const files = req.files;
+    // Extract nested data from req.body
+  const {
+    personalDetails: {
+      country,
+      languages,
+      areaOfPractices,
+      experience,
+      biography
+    },
+    idProof: {
+      nationalId
+    },
+    bankDetails: {
+      holderName,
+      accountNumber,
+      bankName,
+      iban
+    }
+  } = req.body;
 
     console.log("req.body", req.body);
     console.log("req.files", req.files);
@@ -35,21 +40,21 @@ export const handleConsultantAction = async (req, res, next) => {
     const missingFields = [];
 
     if (!consultantId) missingFields.push("consultantId");
-    if (!nationalId) missingFields.push("idProof.nationalId");
+    if (!nationalId) missingFields.push("nationalId");
     if (!req.files?.profilePicture) missingFields.push("profilePicture");
     if (!req.files?.frontsideId) missingFields.push("frontsideId");
     if (!req.files?.backsideId) missingFields.push("backsideId");
     if (!req.files?.educationalCertificates) missingFields.push("educationalCertificates");
     if (!req.files?.experienceCertificates) missingFields.push("experienceCertificates");
-    if (!country) missingFields.push("personalDetails.country");
-    if (!languages) missingFields.push("personalDetails.languages");
-    if (!areaOfPractices) missingFields.push("personalDetails.areaOfPractices");
-    if (!experience) missingFields.push("personalDetails.experience");
-    if (!biography) missingFields.push("personalDetails.biography");
-    if (!holderName) missingFields.push("bankDetails.holderName");
-    if (!accountNumber) missingFields.push("bankDetails.accountNumber");
-    if (!bankName) missingFields.push("bankDetails.bankName");
-    if (!iban) missingFields.push("bankDetails.iban");
+    if (!country) missingFields.push("country");
+    if (!languages) missingFields.push("languages");
+    if (!areaOfPractices) missingFields.push("areaOfPractices");
+    if (!experience) missingFields.push("experience");
+    if (!biography) missingFields.push("biography");
+    if (!holderName) missingFields.push("holderName");
+    if (!accountNumber) missingFields.push("accountNumber");
+    if (!bankName) missingFields.push("bankName");
+    if (!iban) missingFields.push("iban");
     
     if (missingFields.length > 0) {
       return res.status(400).json({ 
@@ -59,7 +64,7 @@ export const handleConsultantAction = async (req, res, next) => {
     }
 
     // Check if consultant already exists in any of the necessary models
-    const existingPersonalDetails = await PersonalDetails.findOne({ consultantId }).session(session);
+    const existingPersonalDetails = await consultationDetails.findOne({ consultantId }).session(session);
     if (existingPersonalDetails) {
       return res.status(400).json({ error: "You are already registered as a consultant." });
     }
@@ -69,7 +74,7 @@ export const handleConsultantAction = async (req, res, next) => {
       return res.status(400).json({ error: "The provided National ID is already registered." });
     }
 
-    const existingBankDetails = await BankDetails.findOne({ consultantId }).session(session);
+    const existingBankDetails = await consultationDetails.findOne({ consultantId }).session(session);
     if (existingBankDetails) {
       return res.status(400).json({ error: "Bank details are already registered." });
     }
