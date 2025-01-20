@@ -13,16 +13,21 @@ export const handleConsultantAction = async (req, res, next) => {
   try {
     const consultantId = req.user._id;
 
+    const { personalDetails, idProof, bankDetails } = req.body;
+
+    // Directly parse nested JSON (assuming content is structured JSON in req.body)
     const {
       country,
       languages,
       areaOfPractices,
       experience,
-      biography
-    } = req.body.personalDetails;
+      biography,
+    } = personalDetails; // No JSON.parse needed if directly nested
 
-    const nationalId = req.body.idProof?.nationalId;
-    const { holderName, accountNumber, bankName, iban } = req.body.bankDetails;
+    const { nationalId } = idProof;
+    const { holderName, accountNumber, bankName, iban } = bankDetails;
+
+    console.log("Parsed Data:", { personalDetails, idProof, bankDetails });
 
     console.log("req.body", req.body);
     console.log("req.files", req.files);
