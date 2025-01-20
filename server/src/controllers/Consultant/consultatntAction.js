@@ -40,6 +40,7 @@ export const handleConsultantAction = async (req, res, next) => {
     const { nationalId } = IdProof;
     const { holderName, accountNumber, bankName, iban } = BankDetails;
 
+    // Ensure all required fields are present
     const missingFields = [];
 
     if (!consultantId) missingFields.push("consultantId");
@@ -62,10 +63,11 @@ export const handleConsultantAction = async (req, res, next) => {
     if (missingFields.length > 0) {
       return res.status(400).json({
         error: "Some fields are missing.",
-        missingFields,
+        missingFields
       });
     }
 
+    // Check if consultant already exists in any of the necessary models
     const existingPersonalDetails = await consultationDetails.findOne({ consultantId }).session(session);
     if (existingPersonalDetails) {
       return res.status(400).json({ error: "You are already registered as a consultant." });
@@ -81,12 +83,14 @@ export const handleConsultantAction = async (req, res, next) => {
       return res.status(400).json({ error: "Bank details are already registered." });
     }
 
+    // Upload files to S3
     const profilePictureUrl = await uploadFileToS3(req.files.profilePicture[0], "ConsultantprofileImages");
     const frontsideIdUrl = await uploadFileToS3(req.files.frontsideId[0], "frontsideId");
     const backsideIdUrl = await uploadFileToS3(req.files.backsideId[0], "backsideId");
     const educationalCertificateUrl = await uploadFileToS3(req.files.educationalCertificates[0], "educationalCertificate");
     const experienceCertificateUrl = await uploadFileToS3(req.files.experienceCertificates[0], "experienceCertificate");
 
+    // Save IDProof data
     const idProofData = new IDProof({
       consultantId,
       nationalId,
@@ -98,43 +102,47 @@ export const handleConsultantAction = async (req, res, next) => {
         frontsideId: "pending",
         backsideId: "pending",
         educationalCertificates: "pending",
-        experienceCertificates: "pending",
-      },
+        experienceCertificates: "pending"
+      }
     });
     const savedIDProof = await idProofData.save({ session });
 
+    // Save PersonalDetails data
     const languagesArray = languages.split(",").map((lang) => lang.trim());
     const areaOfPracticesArray = areaOfPractices.split(",").map((area) => area.trim());
 
     const personalDetailsData = new PersonalDetails({
       consultantId,
       profilePicture: profilePictureUrl,
-      country,
+      country: country,
       languages: languagesArray,
       areaOfPractices: areaOfPracticesArray,
-      experience,
-      biography,
+      experience: experience,
+      biography: biography
     });
     const savedPersonalDetails = await personalDetailsData.save({ session });
 
+    // Save BankDetails data
     const bankDetailsData = new BankDetails({
       consultantId,
       holderName,
       accountNumber,
       bankName,
-      iban,
+      iban
     });
     const savedBankDetails = await bankDetailsData.save({ session });
 
     await session.commitTransaction();
     session.endSession();
 
+    // Notify the consultant
     await notificationService.sendToConsultant(
       consultantId,
       "Registration Successful",
       "Your consultant registration has been successfully completed."
     );
 
+    // Notify the admin
     await notificationService.sendToAdmin(
       "New Consultant Registered",
       `A new consultant with ID ${consultantId} has registered.`
@@ -145,8 +153,8 @@ export const handleConsultantAction = async (req, res, next) => {
       data: {
         idProof: savedIDProof,
         personalDetails: savedPersonalDetails,
-        bankDetails: savedBankDetails,
-      },
+        bankDetails: savedBankDetails
+      }
     });
   } catch (error) {
     await session.abortTransaction();
