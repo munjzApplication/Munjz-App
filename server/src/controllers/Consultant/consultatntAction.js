@@ -13,32 +13,26 @@ export const handleConsultantAction = async (req, res, next) => {
   try {
     const consultantId = req.user._id;
 
-    const { personalDetails, idProof, bankDetails } = req.body;
-
-    // Parse JSON strings from req.body to log structured data
-    const PersonalDetails = JSON.parse(personalDetails);
-    const IdProof = JSON.parse(idProof);
-    const BankDetails = JSON.parse(bankDetails);
-
-    console.log("parsed Data:", {
-      personalDetails: PersonalDetails,
-      idProof: IdProof,
-      bankDetails: BankDetails,
-    });
-
-    console.log("req.body", req.body);
-    console.log("req.files", req.files);
-
-    const {
-      country,
-      languages,
-      areaOfPractices,
-      experience,
-      biography,
-    } = PersonalDetails;
-
-    const { nationalId } = IdProof;
-    const { holderName, accountNumber, bankName, iban } = BankDetails;
+     // Parse stringified JSON fields in req.body
+     const personalDetails = JSON.parse(req.body.personalDetails);
+     const idProof = JSON.parse(req.body.idProof);
+     const bankDetails = JSON.parse(req.body.bankDetails);
+ 
+     const {
+       country,
+       languages,
+       areaOfPractices,
+       experience,
+       biography
+     } = personalDetails;
+ 
+     const { nationalId } = idProof;
+     const { holderName, accountNumber, bankName, iban } = bankDetails;
+ 
+     console.log("Parsed Data:", { personalDetails, idProof, bankDetails });
+ 
+     console.log("req.body", req.body);
+     console.log("req.files", req.files);
 
     // Ensure all required fields are present
     const missingFields = [];
