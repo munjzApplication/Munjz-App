@@ -1,6 +1,6 @@
 import express from 'express';
 import { getAllPayments ,deletePendingPayment , editPendingPayment} from '../../../controllers/Admin/adminControllers/getAllPaymentsController.js';
-
+import { } from '../../../controllers/Admin/adminControllers/getAllConsultantData.js';
 const router = express.Router();
 
 

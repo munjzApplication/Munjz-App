@@ -11,7 +11,7 @@ import courtServiceRequestRoute from '../Admin/services/courtServices/courtServi
 import adminFollowerUpdateRoute from '../Admin/adminRoutes/adminFollowerUpdateRoute.js';
 import notaryServiceRequestRoute from '../Admin/services/notaryServices/notaryServiceReqRoutes.js';
 import translationRoute from '../Admin/services/Translation/translationReqRoute.js';
-import allPaymentsRoute from '../Admin/adminRoutes/getAllPaymentsRoute.js';
+import getAllConsultantDatasRoute from './adminRoutes/getAllConsultantDatasRoute.js';
 import invoiceRoute from '../Admin/invoice/invoiceRoute.js';
 import adminNotificationRoutes from "./notification/notificationRoute.js";
 import adminNewsRoutes from "./adminRoutes/newsRoutes.js";
@@ -48,7 +48,7 @@ router.use('/notary-service-requests', notaryServiceRequestRoute);
 router.use('/translations', protectAdmin, translationRoute);
 
 // Payment and Invoice Routes
-router.use('/payments',protectAdmin, allPaymentsRoute);
+router.use('/payments',protectAdmin, getAllConsultantDatasRoute);
 router.use('/invoices', protectAdmin,invoiceRoute);
 
 // Admin-related Routes

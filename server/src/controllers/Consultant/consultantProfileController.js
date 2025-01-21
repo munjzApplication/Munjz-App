@@ -2,6 +2,7 @@ import ConsultantProfile from "../../models/Consultant/User.js";
 import PersonalDetails from "../../models/Consultant/personalDetails.js";
 import bcrypt from "bcrypt";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
+import{notificationService} from "../../service/sendPushNotification.js";
 
 export const getConsultantProfile = async (req, res) => {
   try {
