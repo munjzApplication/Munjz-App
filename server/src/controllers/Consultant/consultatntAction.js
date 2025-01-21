@@ -117,10 +117,6 @@ export const handleConsultantAction = async (req, res, next) => {
       "experienceCertificate"
     );
 
-    // Update ConsultantProfile only for profilePicture
-    existingProfile.profilePhoto = profilePictureUrl;
-    await existingProfile.save({ session });
-
     // Save IDProof data
     const idProofData = new IDProof({
       consultantId,
