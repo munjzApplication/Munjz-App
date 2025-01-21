@@ -53,10 +53,10 @@ export const getConsultantProfile = async (req, res) => {
 
 export const changePassword = async (req, res, next) => {
   try {
-    const { oldPassword, newPassword } = req.body;
+    const { currentPassword, newPassword } = req.body;
     const consultantId = req.user._id;
 
-    if (!oldPassword || !newPassword) {
+    if (!currentPassword || !newPassword) {
       return res.status(400).json({ message: "Both Current and new passwords are required." });
     }
 
@@ -69,7 +69,7 @@ export const changePassword = async (req, res, next) => {
       return res.status(400).json({ message: "Password not set. Please contact support." });
     }
 
-    const isMatch = await bcrypt.compare(oldPassword, consultant.password);
+    const isMatch = await bcrypt.compare(currentPassword, consultant.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Current password is incorrect." });
     }
