@@ -53,49 +53,43 @@ export const getConsultantProfile = async (req, res) => {
 
 export const changePassword = async (req, res, next) => {
   try {
-    const userId = req.user._id;
-    const { currentPassword, newPassword } = req.body;
+    const { oldPassword, newPassword } = req.body;
+    const consultantId = req.user._id;
 
-    // Retrieve the user profile based on the provided userId
-    const user = await ConsultantProfile.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found. Please check your credentials and try again."
-      });
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: "Both Current and new passwords are required." });
     }
 
-    // Verify the current password matches the stored password
-    const isPasswordValid = await bcrypt.compare(
-      currentPassword,
-      user.password
-    );
-    if (!isPasswordValid) {
-      return res.status(400).json({
-        message:
-          "The current password you entered is incorrect. Please try again."
-      });
+    const consultant = await ConsultantProfile.findById(consultantId);
+    if (!consultant) {
+      return res.status(404).json({ message: "Consultant not found." });
     }
 
-    // Hash and update the new password
+    if (!consultant.password) {
+      return res.status(400).json({ message: "Password not set. Please contact support." });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, consultant.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect." });
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    await user.save();
+    consultant.password = hashedPassword;
+    await consultant.save();
 
-    // Send a notification to the consultant confirming the password change
+    // Optional: Send notification
     try {
       await notificationService.sendToConsultant(
-        userId,
-        "Password Change Confirmation",
-        "Your password has been updated successfully. If you did not make this change, please contact support immediately.",
-        {}
+        consultantId,
+        "Password Changed",
+        "Your password has been updated successfully."
       );
-    } catch (pushError) {
-      console.error("Error sending password change notification:", pushError);
+    } catch (notificationError) {
+      console.error("Error sending password change notification:", notificationError);
     }
 
-    res
-      .status(200)
-      .json({ message: "Your password has been changed successfully." });
+    res.status(200).json({ message: "Password updated successfully." });
   } catch (error) {
     next(error);
   }
