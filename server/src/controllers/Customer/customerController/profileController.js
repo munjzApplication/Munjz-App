@@ -68,7 +68,7 @@ export const getProfile = async (req, res, next) => {
 
     // Fetch the profile while excluding the password field
     const profile = await CustomerProfile.findById(userId, { password: 0 });
-    
+
     if (!profile) {
       return res.status(404).json({ message: "Profile not found." });
     }
@@ -76,7 +76,7 @@ export const getProfile = async (req, res, next) => {
     // Avoid sending any sensitive data
     const filteredProfile = {
       ...profile.toObject(),
-      password: undefined, // Ensure password is not passed if included
+      password: undefined 
     };
 
     res.status(200).json({ profile: filteredProfile });
@@ -84,7 +84,6 @@ export const getProfile = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // Update Profile
 export const updateProfile = async (req, res, next) => {
@@ -102,7 +101,6 @@ export const updateProfile = async (req, res, next) => {
       return res.status(404).json({ message: "Profile not found." });
     }
 
-    // Push Notification
     try {
       await notificationService.sendToCustomer(
         userId,
@@ -116,7 +114,6 @@ export const updateProfile = async (req, res, next) => {
 
     res.status(200).json({
       message: "Profile updated successfully.",
-      profile: updatedProfile
     });
   } catch (error) {
     next(error);
@@ -130,39 +127,43 @@ export const updateProfilePicture = async (req, res, next) => {
     const file = req.file;
 
     if (!file) {
-      return res.status(400).json({ message: "No file uploaded." });
+      return res.status(400).json({
+        message: "No file uploaded. Please provide a valid image file."
+      });
     }
 
-    const imageUrl = await uploadFileToS3(file, "profile-pictures");
+    // Upload the file to the S3 bucket
+    const profilePhotoUrl = await uploadFileToS3(file, "CustomerProfile-pic");
 
     const updatedProfile = await CustomerProfile.findByIdAndUpdate(
       userId,
-      { imageUrl },
+      { profilePhoto: profilePhotoUrl },
       { new: true }
     );
 
     if (!updatedProfile) {
-      return res.status(404).json({ message: "Profile not found." });
+      return res.status(404).json({
+        message: "Profile update failed. Please try again."
+      });
     }
 
-    // Push Notification
     try {
       await notificationService.sendToCustomer(
         userId,
         "Profile Picture Updated",
-        "Your profile picture has been updated successfully.",
-        { imageUrl }
+        "Your profile picture has been successfully updated. You can view the changes in your profile.",
+        { profilePhoto: profilePhotoUrl }
       );
-    } catch (pushError) {
+    } catch (notificationError) {
       console.error(
-        "Error sending profile picture update notification:",
-        pushError
+        "Error sending notification for profile picture update:",
+        notificationError
       );
     }
 
+    // Respond with success
     res.status(200).json({
-      message: "Profile picture updated successfully.",
-      profile: updatedProfile
+      message: "Your profile picture has been successfully updated."
     });
   } catch (error) {
     next(error);
