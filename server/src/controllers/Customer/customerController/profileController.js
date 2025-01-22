@@ -143,7 +143,8 @@ export const updateProfilePicture = async (req, res, next) => {
 
     if (!updatedProfile) {
       return res.status(404).json({
-        message: "Profile update failed. Please try again."
+        message: "Profile update failed. Please try again.",
+        profilePhoto: profilePhotoUrl
       });
     }
 
