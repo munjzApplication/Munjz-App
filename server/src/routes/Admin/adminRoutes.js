@@ -48,7 +48,7 @@ router.use('/notary-service-requests', notaryServiceRequestRoute);
 router.use('/translations', protectAdmin, translationRoute);
 
 // Payment and Invoice Routes
-router.use('/payments',protectAdmin, getAllConsultantDatasRoute);
+router.use('/getDatas',protectAdmin, getAllConsultantDatasRoute);
 router.use('/invoices', protectAdmin,invoiceRoute);
 
 // Admin-related Routes
