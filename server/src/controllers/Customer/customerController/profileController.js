@@ -164,7 +164,8 @@ export const updateProfilePicture = async (req, res, next) => {
 
     // Respond with success
     res.status(200).json({
-      message: "Your profile picture has been successfully updated."
+      message: "Your profile picture has been successfully updated.",
+      profilePhoto: profilePhotoUrl
     });
   } catch (error) {
     next(error);
