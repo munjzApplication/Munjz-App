@@ -162,32 +162,3 @@ export const updateProfilePicture = async (req, res, next) => {
     next(error);
   }
 };
-export const forgotPassword = async (req, res, next) => {
-  try {
-    const { email, newPassword } = req.body;
-
-    const consultant = await ConsultantProfile.findOne({ email });
-    if (!consultant) {
-      return res.status(404).json({ message: "consultant not found." });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    consultant.password = hashedPassword;
-    await consultant.save();
-
-    try {
-      await notificationService.sendToConsultant(
-        consultant._id,
-        "Password Reset",
-        "Your password has been reset successfully.",
-        {}
-      );
-    } catch (pushError) {
-      console.error("Error sending password reset notification:", pushError);
-    }
-    res.status(200).json({ message: "Password reset successfully." });
-  } catch (error) {
-    next(error);
-  }
-};

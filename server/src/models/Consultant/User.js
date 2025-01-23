@@ -47,7 +47,15 @@ const consultantProfileSchema = new mongoose.Schema({
     type: String,
     unique: true,
     sparse: true
-  }
+  },
+  resetOtpHash: {
+    type: String, // To store the hashed OTP
+    default: null,
+  },
+  resetOtpExpiry: {
+    type: Date, // To store the OTP expiration timestamp
+    default: null,
+  },
 });
 
 const ConsultantProfile = mongoose.model(
