@@ -52,7 +52,7 @@ export const getAllConsultantData = async (req, res) => {
       }
     ]);
 
-    const groupedConsultants = {
+    const ConsultantDatas = {
       active: [],
       pending: [],
       declined: []
@@ -60,19 +60,19 @@ export const getAllConsultantData = async (req, res) => {
 
     consultantData.forEach(consultant => {
       if (consultant.idProofStatus === "approved") {
-        groupedConsultants.active.push(consultant);
+        ConsultantDatas.active.push(consultant);
       } else if (consultant.idProofStatus === "pending") {
-        groupedConsultants.pending.push(consultant);
+        ConsultantDatas.pending.push(consultant);
       } else if (consultant.idProofStatus === "rejected") {
-        groupedConsultants.declined.push(consultant);
+        ConsultantDatas.declined.push(consultant);
       }
     });
 
-    console.log(groupedConsultants);
+    console.log(ConsultantDatas);
     
     return res.status(200).json({
       message: "Consultant data fetched successfully.",
-      groupedConsultants
+      ConsultantDatas
     });
   } catch (error) {
     res.status(404).json({ message: error.message });
