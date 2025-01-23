@@ -2,7 +2,6 @@ import express from "express";
 import {
   logoutProfile,
   getProfile,
-  forgotPassword,
   changePassword,
   deleteProfile,
   updateProfile,
@@ -22,7 +21,6 @@ router.get("/get-profile", getProfile);
 router.put("/update-profile", updateProfile);
 router.delete("/delete-profile", deleteProfile);
 router.put("/change-password", changePassword);
-router.post("/forgot-password", forgotPassword);
 router.post("/logout", logoutProfile);
 router.put("/update-profile-picture",upload.single("profilePicture"),updateProfilePicture);
 

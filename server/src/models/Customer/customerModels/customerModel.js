@@ -59,6 +59,14 @@ const customerProfileSchema = new mongoose.Schema({
   activityStatus: {
     type: Boolean
   },
+  resetOtpHash: {
+    type: String, // To store the hashed OTP
+    default: null,
+  },
+  resetOtpExpiry: {
+    type: Date, // To store the OTP expiration timestamp
+    default: null,
+  },
 
   isLoggedIn: { type: Boolean, default: false },
 

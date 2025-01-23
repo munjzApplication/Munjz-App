@@ -8,21 +8,17 @@ export const sendPasswordResetOTP = async (req, res, next) => {
   try {
     const { email } = req.body;
 
-    // Find consultant profile
     const consultant = await ConsultantProfile.findOne({ email });
 
     // Always respond with a success message, regardless of whether the consultant exists
     if (!consultant) {
-      return res
-        .status(200)
-        .json({
-          message:
-            "If this email is registered, you will receive an OTP shortly."
-        });
+      return res.status(200).json({
+        message: "If this email is registered, you will receive an OTP shortly."
+      });
     }
 
-    // Generate a secure random OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate a secure random OTP (4 digits)
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
     const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
 
     // Store OTP hash and expiration time (10 minutes)
@@ -109,19 +105,17 @@ export const sendPasswordResetOTP = async (req, res, next) => {
         `
     });
 
-    res
-      .status(200)
-      .json({
-        message: "If this email is registered, you will receive an OTP shortly."
-      });
+    res.status(200).json({
+      message: "If this email is registered, you will receive an OTP shortly."
+    });
   } catch (error) {
     next(error);
   }
 };
 
-export const resetPassword = async (req, res, next) => {
+export const verifyOTP = async (req, res, next) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const { email, otp } = req.body;
 
     const consultant = await ConsultantProfile.findOne({ email });
     if (!consultant) {
@@ -130,23 +124,51 @@ export const resetPassword = async (req, res, next) => {
         .json({ message: "Invalid email or OTP. Please try again." });
     }
 
-    // Verify the OTP hash and expiration
+    // Verify OTP hash and expiration
     const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
     if (
       !consultant.resetOtpHash ||
       consultant.resetOtpExpiry < Date.now() ||
       consultant.resetOtpHash !== otpHash
     ) {
+      // Clear expired OTP fields
+      consultant.resetOtpHash = undefined;
+      consultant.resetOtpExpiry = undefined;
+      await consultant.save();
+
       return res
         .status(400)
         .json({ message: "Invalid or expired OTP. Please request a new one." });
     }
 
-    // Hash the new password and save
+    // If OTP is valid, clear OTP from the database
+    consultant.resetOtpHash = undefined;
+    consultant.resetOtpExpiry = undefined;
+    await consultant.save();
+
+    res.status(200).json({
+      message: "OTP verified successfully. You can now reset your password."
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    const consultant = await ConsultantProfile.findOne({ email });
+    if (!consultant) {
+      return res
+        .status(400)
+        .json({ message: "Invalid email. Please try again." });
+    }
+
+    // Hash the new password and save it
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     consultant.password = hashedPassword;
-    consultant.resetOtpHash = undefined; // Clear OTP after use
-    consultant.resetOtpExpiry = undefined;
+
     await consultant.save();
 
     // Send notification
@@ -161,12 +183,10 @@ export const resetPassword = async (req, res, next) => {
       console.error("Error sending password reset notification:", pushError);
     }
 
-    res
-      .status(200)
-      .json({
-        message:
-          "Password has been reset successfully. You can now log in with your new password."
-      });
+    res.status(200).json({
+      message:
+        "Password has been reset successfully. You can now log in with your new password."
+    });
   } catch (error) {
     next(error);
   }

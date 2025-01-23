@@ -230,37 +230,6 @@ export const changePassword = async (req, res, next) => {
   }
 };
 
-// Forgot Password
-export const forgotPassword = async (req, res, next) => {
-  try {
-    const { email, newPassword } = req.body;
-
-    const user = await CustomerProfile.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    user.password = hashedPassword;
-    await user.save();
-
-    try {
-      await notificationService.sendToCustomer(
-        user._id,
-        "Password Reset",
-        "Your password has been reset successfully.",
-        {}
-      );
-    } catch (pushError) {
-      console.error("Error sending password reset notification:", pushError);
-    }
-    res.status(200).json({ message: "Password reset successfully." });
-  } catch (error) {
-    next(error);
-  }
-};
-
 // Logout
 export const logoutProfile = async (req, res, next) => {
   try {

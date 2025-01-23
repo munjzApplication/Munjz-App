@@ -1,6 +1,7 @@
 import express from "express";
 import authRoute from "./customerRoutes/authRoute.js";
 import profileRoute from "./customerRoutes/profileRoute.js";
+import customerForgotRoute from "./customerRoutes/customerForgotRoute.js";
 import callActivity from "./customerRoutes/callActivityRoutes.js";
 import transactionRoute from "./services/consultation/transactionRoute.js";
 import favRoute from "./services/consultation/favRoute.js";
@@ -20,6 +21,7 @@ const router = express.Router();
 
 router.use("/auth", authRoute);
 router.use("/profile",authenticateUser, profileRoute);
+router.use("/forgot-password", customerForgotRoute);
 router.use("/activity",authenticateUser, callActivity);
 router.use('/transaction',authenticateUser,transactionRoute);
 router.use('/fav',authenticateUser,favRoute);

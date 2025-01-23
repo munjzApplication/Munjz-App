@@ -69,8 +69,11 @@ export const getAllConsultantData = async (req, res) => {
     });
 
     console.log(groupedConsultants);
-
-    res.status(200).json(groupedConsultants);
+    
+    return res.status(200).json({
+      message: "Consultant data fetched successfully.",
+      groupedConsultants
+    });
   } catch (error) {
     res.status(404).json({ message: error.message });
   }
