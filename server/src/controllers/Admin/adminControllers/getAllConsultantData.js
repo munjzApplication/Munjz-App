@@ -39,8 +39,8 @@ export const getAllConsultantData = async (req, res) => {
       },
       {
         $project: {
-          _id: 0,
-          Id: "$ConsultantProfile.consultantUniqueId",
+          _id: "$ConsultantProfile._id",
+          ConsultantId: "$ConsultantProfile.consultantUniqueId",
           Name: "$ConsultantProfile.Name",
           email: "$ConsultantProfile.email",
           creationDate: "$ConsultantProfile.creationDate",
