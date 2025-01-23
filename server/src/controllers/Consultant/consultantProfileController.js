@@ -15,9 +15,9 @@ export const getConsultantProfile = async (req, res) => {
 
     const userId = req.user._id;
 
-    // Fetch consultant profile
+    // Fetch consultant profile (exclude password, resetOtpHash, and resetOtpExpiry)
     const profile = await ConsultantProfile.findById(userId).select(
-      "-password"
+      "-password -resetOtpHash -resetOtpExpiry"
     );
     if (!profile) {
       return res.status(404).json({ message: "Consultant profile not found." });
@@ -50,6 +50,7 @@ export const getConsultantProfile = async (req, res) => {
       .json({ message: "An error occurred while fetching the profile." });
   }
 };
+
 
 export const changePassword = async (req, res, next) => {
   try {

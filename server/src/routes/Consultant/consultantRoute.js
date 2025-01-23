@@ -13,7 +13,7 @@ const router = express.Router();
 
 router.use("/auth", authRoute);
 router.use("/consultantDetails", protect, consultantDetailsRoute);
-router.use("/consultantProfile", consultantProfileRoute);
+router.use("/consultantProfile", protect,consultantProfileRoute);
 router.use("/consulatntForgot", consultantForgotRoute);
 
 router.use("/withdraw", protect, withdraw);
