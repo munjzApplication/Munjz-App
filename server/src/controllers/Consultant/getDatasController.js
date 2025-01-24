@@ -2,10 +2,11 @@ import BankDetails from "../../models/Consultant/bankDetails.js";
 import IDProof from "../../models/Consultant/idProof.js";
 import PersonalDetails from "../../models/Consultant/personalDetails.js";
 import { formatDate } from "../../helper/dateFormatter.js";
-
+import mongoose from "mongoose";
 export const getBankDetails = async (req, res) => {
   try {
     const { consultantId } = req.params;
+
     console.log(consultantId);
 
     const consultantBankDetails = await BankDetails.findOne({ consultantId });
@@ -14,12 +15,14 @@ export const getBankDetails = async (req, res) => {
       const bankDetailsObject = consultantBankDetails.toObject();
 
       if (bankDetailsObject.creationDate) {
-        bankDetailsObject.creationDate = formatDate(bankDetailsObject.creationDate);
+        bankDetailsObject.creationDate = formatDate(
+          bankDetailsObject.creationDate
+        );
       }
 
       res.status(200).json({
         message: "Consultant Bank Details fetched successfully.",
-        consultantBankDetails: bankDetailsObject,
+        consultantBankDetails: bankDetailsObject
       });
     } else {
       res.status(404).json({ message: "No bank details found." });
@@ -32,6 +35,7 @@ export const getBankDetails = async (req, res) => {
 export const getIdProof = async (req, res) => {
   try {
     const { consultantId } = req.params;
+
     console.log(consultantId);
 
     const consultantIdProof = await IDProof.findOne({ consultantId });
@@ -40,12 +44,14 @@ export const getIdProof = async (req, res) => {
       const IdProofDetailsObject = consultantIdProof.toObject();
 
       if (IdProofDetailsObject.creationDate) {
-        IdProofDetailsObject.creationDate = formatDate(IdProofDetailsObject.creationDate);
+        IdProofDetailsObject.creationDate = formatDate(
+          IdProofDetailsObject.creationDate
+        );
       }
 
       res.status(200).json({
         message: "Consultant IdProof Details fetched successfully.",
-        consultantIdProof: IdProofDetailsObject,
+        consultantIdProof: IdProofDetailsObject
       });
     } else {
       res.status(404).json({ message: "No ID proof details found." });
@@ -58,20 +64,23 @@ export const getIdProof = async (req, res) => {
 export const getPersonalDetails = async (req, res) => {
   try {
     const { consultantId } = req.params;
-    console.log(consultantId);
 
-    const consultantPersonalDetails = await PersonalDetails.findOne({ consultantId });
+    const consultantPersonalDetails = await PersonalDetails.findOne({
+      consultantId
+    });
 
     if (consultantPersonalDetails) {
       const PersonalDetailsObject = consultantPersonalDetails.toObject();
 
       if (PersonalDetailsObject.createdAt) {
-        PersonalDetailsObject.createdAt = formatDate(PersonalDetailsObject.createdAt);
+        PersonalDetailsObject.createdAt = formatDate(
+          PersonalDetailsObject.createdAt
+        );
       }
 
       res.status(200).json({
         message: "Consultant Personal Details fetched successfully.",
-        consultantPersonalDetails: PersonalDetailsObject,
+        consultantPersonalDetails: PersonalDetailsObject
       });
     } else {
       res.status(404).json({ message: "No personal details found." });

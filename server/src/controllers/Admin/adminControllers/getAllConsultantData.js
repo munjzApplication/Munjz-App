@@ -1,8 +1,9 @@
-import ConsultantProfile from "../../../models/Consultant/User.js";
+import mongoose from 'mongoose'; 
 import PersonalDetails from "../../../models/Consultant/personalDetails.js";
 import IdProof from "../../../models/Consultant/idProof.js";
 
-export const getAllConsultantData = async (req, res) => {
+
+export const getAllConsultantData = async (req, res , next) => {
   try {
     const { status } = req.query;
 
@@ -92,23 +93,45 @@ export const getAllConsultantData = async (req, res) => {
       ConsultantDatas
     });
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    next(error);
   }
 };
+
+
 
 export const getConsultantDocs = async (req, res) => {
   try {
     const { consultantId } = req.params;
     console.log(consultantId);
 
+    // Check if the consultantId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(consultantId)) {
+      return res.status(400).json({
+        
+        message: "Invalid consultant ID format.",
+      });
+    }
+
+    // Now proceed with the query since the consultantId is valid
     const consultantDocs = await IdProof.findOne({ consultantId });
     console.log(consultantDocs);
 
+    // If no documents found, return an error message
+    if (!consultantDocs) {
+      return res.status(404).json({
+    
+        message: "Consultant not found.",
+      });
+    }
+
+    // Return the consultant documents if found
     res.status(200).json({
+      
       message: "Consultant Documents fetched successfully.",
-      consultantDocs
+      consultantDocs,
     });
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    next(error);
+    
   }
 };
