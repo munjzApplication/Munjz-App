@@ -9,6 +9,6 @@ router.delete('/deletePendingPayment/:id',deletePendingPayment);
 router.put('/editPendingPayment/:id',editPendingPayment);
 
 router.get('/getAllConsultantData',getAllConsultantData);
-router.get('/getDocs',getConsultantDocs);
+router.get('/getDocs/:consultantId',getConsultantDocs);
 
 export default router;

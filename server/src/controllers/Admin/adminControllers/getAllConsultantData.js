@@ -82,10 +82,13 @@ export const getAllConsultantData = async (req, res) => {
 
 export const getConsultantDocs = async (req, res) => {
     try {
-        const { consultantId } = req.query;
+        const { consultantId } = req.params;
+        console.log(consultantId);
+        
     
         const consultantDocs = await IdProof.findOne({ consultantId });
-    
+        console.log(consultantDocs);
+        
         res.status(200).json(consultantDocs);
     } catch (error) {
         res.status(404).json({ message: error.message });
