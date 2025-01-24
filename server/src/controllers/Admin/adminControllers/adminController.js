@@ -16,10 +16,11 @@ export const Login = async (req, res ,next) => {
     }
 
     const token = jwt.sign(
-      { id: admin._id, role: "admin" },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { id: admin._id, role: "admin" }, 
+      process.env.JWT_SECRET,           
+      { expiresIn: process.env.JWT_EXPIRES_IN }     
     );
+    
 
     res.status(200).json({ message: "Login successful", token });
   } catch (error) {
