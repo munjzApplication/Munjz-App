@@ -117,6 +117,7 @@ export const verifyOTP = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
 
+    // Fetch the consultant by email
     const customer = await CustomerProfile.findOne({ email });
     if (!customer) {
       return res
@@ -124,24 +125,24 @@ export const verifyOTP = async (req, res, next) => {
         .json({ message: "Invalid email or OTP. Please try again." });
     }
 
-    // Verify OTP hash and expiration
-    const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
-    if (
-      !customer.resetOtpHash ||
-      customer.resetOtpExpiry < Date.now() ||
-      customer.resetOtpHash !== otpHash
-    ) {
-      // Clear expired OTP fields
-      customer.resetOtpHash = undefined;
-      customer.resetOtpExpiry = undefined;
-      await customer.save();
-
-      return res
-        .status(400)
-        .json({ message: "Invalid or expired OTP. Please request a new one." });
+    // Check if OTP has expired
+    if (customer.resetOtpExpiry < Date.now()) {
+      return res.status(400).json({
+        message: "OTP has expired. Please request a new one."
+      });
     }
 
-    // If OTP is valid, clear OTP from the database
+    // Generate hash of the entered OTP
+    const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
+
+    // Compare the stored OTP hash with the generated one
+    if (customer.resetOtpHash !== otpHash) {
+      return res
+        .status(400)
+        .json({ message: "Invalid OTP. Please try again." });
+    }
+
+    // OTP is correct, clear hash and expiry
     customer.resetOtpHash = undefined;
     customer.resetOtpExpiry = undefined;
     await customer.save();
@@ -150,6 +151,7 @@ export const verifyOTP = async (req, res, next) => {
       message: "OTP verified successfully. You can now reset your password."
     });
   } catch (error) {
+    console.error("Error in verifyOTP function:", error.message);
     next(error);
   }
 };

@@ -1,8 +1,11 @@
 import ConsultantProfile from "../../models/Consultant/User.js";
 import PersonalDetails from "../../models/Consultant/personalDetails.js";
+import IDProof from "../../models/Consultant/idProof.js";
+import BankDetails from "../../models/Consultant/bankDetails.js";
 import bcrypt from "bcrypt";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import{notificationService} from "../../service/sendPushNotification.js";
+import mongoose from "mongoose";
 
 export const getConsultantProfile = async (req, res) => {
   try {
@@ -164,4 +167,34 @@ export const updateProfilePicture = async (req, res, next) => {
   }
 };
 
+export const deleteProfile = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const consultantId = req.user._id;
 
+    // Delete Consultant Profile
+    const deletedProfile = await ConsultantProfile.findByIdAndDelete(consultantId, { session });
+    if (!deletedProfile) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "Profile not found." });
+    }
+
+    // Delete associated data
+    await PersonalDetails.deleteMany({ consultantId }, { session });
+    await IDProof.deleteMany({ consultantId }, { session });
+    await BankDetails.deleteMany({ consultantId }, { session });
+
+    // Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Profile and all associated data deleted successfully." });
+  } catch (error) {
+    // Rollback transaction
+    await session.abortTransaction();
+    session.endSession();
+    next(error);
+  }
+};

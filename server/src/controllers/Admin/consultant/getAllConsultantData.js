@@ -1,7 +1,8 @@
-import mongoose from 'mongoose'; 
 import PersonalDetails from "../../../models/Consultant/personalDetails.js";
 import IdProof from "../../../models/Consultant/idProof.js";
-
+import BankDetails from "../../../models/Consultant/bankDetails.js";
+import consultantProfile from "../../../models/Consultant/User.js";
+import { formatDate } from "../../../helper/dateFormatter.js";
 
 export const getAllConsultantData = async (req, res , next) => {
   try {
@@ -53,18 +54,7 @@ export const getAllConsultantData = async (req, res , next) => {
       }
     ]);
     // Function to format creationDate
-    const formatDate = isoDate => {
-      const date = new Date(isoDate);
-      const day = date.getDate();
-      const month = date.getMonth() + 1; // Months are zero-indexed
-      const year = date.getFullYear();
-      const hours = date.getHours().toString().padStart(2, "0");
-      const minutes = date.getMinutes().toString().padStart(2, "0");
-      return `${day}.${month}.${year} ${hours}:${minutes}`;
-    };
-
-    // Format the creationDate for each consultant
-    consultantData.forEach(consultant => {
+    consultantData.forEach((consultant) => {
       if (consultant.creationDate) {
         consultant.creationDate = formatDate(consultant.creationDate);
       }
@@ -86,7 +76,7 @@ export const getAllConsultantData = async (req, res , next) => {
       }
     });
 
-    console.log(ConsultantDatas);
+   
 
     return res.status(200).json({
       message: "Consultant data fetched successfully.",
@@ -103,14 +93,6 @@ export const getConsultantDocs = async (req, res) => {
   try {
     const { consultantId } = req.params;
     console.log(consultantId);
-
-    // Check if the consultantId is a valid ObjectId
-    if (!mongoose.Types.ObjectId.isValid(consultantId)) {
-      return res.status(400).json({
-        
-        message: "Invalid consultant ID format.",
-      });
-    }
 
     // Now proceed with the query since the consultantId is valid
     const consultantDocs = await IdProof.findOne({ consultantId });
@@ -133,5 +115,64 @@ export const getConsultantDocs = async (req, res) => {
   } catch (error) {
     next(error);
     
+  }
+};
+
+export const getConsultantBankDetails = async (req, res) => {
+  try {
+    const { consultantId } = req.params;
+    console.log(consultantId);
+
+    // Now proceed with the query since the consultantId is valid
+    const bankDetails = await BankDetails.findOne({ consultantId });
+    console.log(bankDetails);
+
+    // If no documents found, return an error message
+    if (!bankDetails) {
+      return res.status(404).json({
+        
+        message: "Consultant not found.",
+      });
+    }
+
+    // Return the consultant documents if found
+    res.status(200).json({
+      
+      message: "Consultant Bank Details fetched successfully.",
+      bankDetails,
+    });
+  } catch (error) {
+    next(error);
+    
+  }
+}
+
+export const getConsultantData = async (req, res, next) => {
+  try {
+    const { consultantId } = req.params;
+
+    console.log(consultantId);
+
+    // Query consultant data excluding the "password" field
+    const consultantData = await consultantProfile.findOne({ _id: consultantId }).select(
+      "-password -resetOtpHash -resetOtpExpiry"
+    );
+    
+    console.log(consultantData);
+
+    // If no documents found, return an error message
+    if (!consultantData) {
+      return res.status(404).json({
+        message: "Consultant not found.",
+      });
+    }
+
+    // Return the consultant documents if found
+    res.status(200).json({
+      message: "Consultant Data fetched successfully.",
+      consultantData,
+    });
+  } catch (error) {
+    next(error);
   }
 };

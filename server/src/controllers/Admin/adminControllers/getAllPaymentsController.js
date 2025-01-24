@@ -51,13 +51,13 @@ export const getAllPayments = async (req, res, next) => {
 };
 
 export const deletePendingPayment = async (req, res, next) => {
-  const { id } = req.params;
+  const { consultantId } = req.params;
   try {
     // Attempt to delete the record from both models (Court and Notary)
     const deletedPayment =
-      (await CourtServiceAdditionalPayment.findByIdAndDelete(id)) ||
-      (await NotaryServiceAdditionalPayment.findByIdAndDelete(id)) ||
-      (await TranslationAdditionalPayments.findByIdAndDelete(id));
+      (await CourtServiceAdditionalPayment.findByIdAndDelete(consultantId)) ||
+      (await NotaryServiceAdditionalPayment.findByIdAndDelete(consultantId)) ||
+      (await TranslationAdditionalPayments.findByIdAndDelete(consultantId));
 
     if (!deletedPayment) {
       return res
@@ -74,7 +74,7 @@ export const deletePendingPayment = async (req, res, next) => {
 };
 
 export const editPendingPayment = async (req, res, next) => {
-  const { id } = req.params;
+  const { consultantId } = req.params;
   const { amount, markPaid } = req.body;
 
   try {
@@ -83,15 +83,15 @@ export const editPendingPayment = async (req, res, next) => {
 
     // Check explicitly in each service by `caseId`
     if (!payment) {
-      payment = await CourtServiceAdditionalPayment.findOne({ caseId: id });
+      payment = await CourtServiceAdditionalPayment.findOne({ caseId: consultantId });
       if (payment) serviceName = "Court Service";
     }
     if (!payment) {
-      payment = await NotaryServiceAdditionalPayment.findOne({ caseId: id });
+      payment = await NotaryServiceAdditionalPayment.findOne({ caseId: consultantId });
       if (payment) serviceName = "Notary Service";
     }
     if (!payment) {
-      payment = await TranslationAdditionalPayments.findOne({ caseId: id });
+      payment = await TranslationAdditionalPayments.findOne({ caseId: consultantId });
       if (payment) serviceName = "Translation Service";
     }
 
@@ -132,10 +132,6 @@ export const editPendingPayment = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Error updating payment:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong!",
-      error: error.message
-    });
+    next(error);
   }
 };
