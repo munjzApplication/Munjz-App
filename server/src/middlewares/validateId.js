@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 export const validateConsultantId = (req, res, next) => {
     const { consultantId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(consultantId)) {

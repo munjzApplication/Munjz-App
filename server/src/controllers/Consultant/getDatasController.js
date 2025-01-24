@@ -2,7 +2,7 @@ import BankDetails from "../../models/Consultant/bankDetails.js";
 import IDProof from "../../models/Consultant/idProof.js";
 import PersonalDetails from "../../models/Consultant/personalDetails.js";
 import { formatDate } from "../../helper/dateFormatter.js";
-import mongoose from "mongoose";
+
 export const getBankDetails = async (req, res) => {
   try {
     const { consultantId } = req.params;
