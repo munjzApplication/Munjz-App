@@ -117,12 +117,9 @@ export const verifyOTP = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
 
-  
-
     // Fetch the consultant by email
     const consultant = await ConsultantProfile.findOne({ email });
     if (!consultant) {
-    
       return res
         .status(400)
         .json({ message: "Invalid email or OTP. Please try again." });
@@ -131,13 +128,13 @@ export const verifyOTP = async (req, res, next) => {
     console.log("Consultant found:", {
       email: consultant.email,
       resetOtpExpiry: consultant.resetOtpExpiry,
-      resetOtpHash: consultant.resetOtpHash,
+      resetOtpHash: consultant.resetOtpHash
     });
 
     // Check if OTP has expired
     if (consultant.resetOtpExpiry < Date.now()) {
       return res.status(400).json({
-        message: "OTP has expired. Please request a new one.",
+        message: "OTP has expired. Please request a new one."
       });
     }
 
@@ -151,21 +148,19 @@ export const verifyOTP = async (req, res, next) => {
         .json({ message: "Invalid OTP. Please try again." });
     }
 
-
     // OTP is correct, clear hash and expiry
     consultant.resetOtpHash = undefined;
     consultant.resetOtpExpiry = undefined;
     await consultant.save();
 
     res.status(200).json({
-      message: "OTP verified successfully. You can now reset your password.",
+      message: "OTP verified successfully. You can now reset your password."
     });
   } catch (error) {
     console.error("Error in verifyOTP function:", error.message);
     next(error);
   }
 };
-
 
 export const resetPassword = async (req, res, next) => {
   try {
