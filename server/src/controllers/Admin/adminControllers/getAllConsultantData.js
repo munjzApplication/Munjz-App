@@ -51,24 +51,23 @@ export const getAllConsultantData = async (req, res) => {
         }
       }
     ]);
-      // Function to format creationDate
-      const formatDate = (isoDate) => {
-        const date = new Date(isoDate);
-        const day = date.getDate();
-        const month = date.getMonth() + 1; // Months are zero-indexed
-        const year = date.getFullYear();
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        return `${day}.${month}.${year} ${hours}:${minutes}`;
-      };
-  
-      // Format the creationDate for each consultant
-      consultantData.forEach((consultant) => {
-        if (consultant.creationDate) {
-          consultant.creationDate = formatDate(consultant.creationDate);
-        }
-      });
-      
+    // Function to format creationDate
+    const formatDate = isoDate => {
+      const date = new Date(isoDate);
+      const day = date.getDate();
+      const month = date.getMonth() + 1; // Months are zero-indexed
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, "0");
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+      return `${day}.${month}.${year} ${hours}:${minutes}`;
+    };
+
+    // Format the creationDate for each consultant
+    consultantData.forEach(consultant => {
+      if (consultant.creationDate) {
+        consultant.creationDate = formatDate(consultant.creationDate);
+      }
+    });
 
     const ConsultantDatas = {
       active: [],
@@ -87,7 +86,7 @@ export const getAllConsultantData = async (req, res) => {
     });
 
     console.log(ConsultantDatas);
-    
+
     return res.status(200).json({
       message: "Consultant data fetched successfully.",
       ConsultantDatas
@@ -97,20 +96,19 @@ export const getAllConsultantData = async (req, res) => {
   }
 };
 
-
 export const getConsultantDocs = async (req, res) => {
-    try {
-        const { consultantId } = req.params;
-        console.log(consultantId);
-        
-    
-        const consultantDocs = await IdProof.findOne({ consultantId });
-        console.log(consultantDocs);
-        
-        res.status(200).json({
-          message: "Consultant Documents fetched successfully.",
-          consultantDocs});
-    } catch (error) {
-        res.status(404).json({ message: error.message });
-    }
-    }
+  try {
+    const { consultantId } = req.params;
+    console.log(consultantId);
+
+    const consultantDocs = await IdProof.findOne({ consultantId });
+    console.log(consultantDocs);
+
+    res.status(200).json({
+      message: "Consultant Documents fetched successfully.",
+      consultantDocs
+    });
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
