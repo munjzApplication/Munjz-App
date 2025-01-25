@@ -118,13 +118,42 @@ export const getConsultantDocs = async (req, res) => {
   }
 };
 
+export const getConsultantDocuments = async (req, res) => {
+  try {
+    const { consultantId } = req.params;
+    console.log(consultantId);
+
+    // Now proceed with the query since the consultantId is valid
+    const consultantDocs = await IdProof.findOne({ consultantId });
+    console.log(consultantDocs);
+
+    // If no documents found, return an error message
+    if (!consultantDocs) {
+      return res.status(404).json({
+      
+        message: "Consultant not found.",
+      });
+    }
+
+    // Return the consultant documents if found
+    res.status(200).json({
+      
+      message: "Consultant Documents fetched successfully.",
+      consultantDocs,
+    });
+  } catch (error) {
+    next(error);
+    
+  }
+}
+
 export const getConsultantBankDetails = async (req, res) => {
   try {
     const { consultantId } = req.params;
     console.log(consultantId);
 
     // Now proceed with the query since the consultantId is valid
-    const bankDetails = await IdProof.findOne({ consultantId });
+    const bankDetails = await BankDetails.findOne({ consultantId });
     console.log(bankDetails);
 
     // If no documents found, return an error message

@@ -1,6 +1,6 @@
 import express from 'express';
 import { getAllPayments ,deletePendingPayment , editPendingPayment} from '../../../controllers/Admin/adminControllers/getAllPaymentsController.js';
-import { getAllConsultantData ,getConsultantDocs ,getConsultantBankDetails ,getConsultantData} from '../../../controllers/Admin/consultant/getAllConsultantData.js';
+import { getAllConsultantData ,getConsultantDocs ,getConsultantBankDetails ,getConsultantData,getConsultantDocuments} from '../../../controllers/Admin/consultant/getAllConsultantData.js';
 import { validateConsultantId } from '../../../middlewares/validateId.js';
 const router = express.Router();
 
@@ -11,6 +11,7 @@ router.put('/editPendingPayment/:consultantId',validateConsultantId,editPendingP
 
 router.get('/getAllConsultantData',getAllConsultantData);
 router.get('/getDocs/:consultantId',validateConsultantId,getConsultantDocs);
+router.get('/getDocuments/:consultantId',validateConsultantId,getConsultantDocuments);
 router.get("/getBankDetails/:consultantId",validateConsultantId,getConsultantBankDetails);
 router.get("/getConsultantData/:consultantId",validateConsultantId,getConsultantData);
 
