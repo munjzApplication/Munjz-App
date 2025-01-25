@@ -32,7 +32,7 @@ export const getBankDetails = async (req, res) => {
   }
 };
 
-export const getIdProof = async (req, res) => {
+export const getDocuments = async (req, res) => {
   try {
     const { consultantId } = req.params;
 
@@ -50,7 +50,7 @@ export const getIdProof = async (req, res) => {
       }
 
       res.status(200).json({
-        message: "Consultant IdProof Details fetched successfully.",
+        message: "Consultant Documents  fetched successfully.",
         consultantIdProof: IdProofDetailsObject
       });
     } else {
