@@ -5,6 +5,9 @@ export const protectAdmin = async (req, res, next) => {
   let token;
 
   console.log("Checking for authorization header...");
+  // In the `protectAdmin` middleware
+console.log('Headers:', req.headers);
+
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
