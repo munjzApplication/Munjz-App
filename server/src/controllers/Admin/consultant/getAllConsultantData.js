@@ -124,7 +124,7 @@ export const getConsultantBankDetails = async (req, res) => {
     console.log(consultantId);
 
     // Now proceed with the query since the consultantId is valid
-    const bankDetails = await BankDetails.findOne({ consultantId });
+    const bankDetails = await IdProof.findOne({ consultantId });
     console.log(bankDetails);
 
     // If no documents found, return an error message
