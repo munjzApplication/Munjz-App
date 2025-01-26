@@ -49,13 +49,17 @@ const consultantProfileSchema = new mongoose.Schema({
     sparse: true
   },
   resetOtpHash: {
-    type: String, // To store the hashed OTP
-    default: null,
+    type: String,
+    default: null
   },
   resetOtpExpiry: {
-    type: Date, // To store the OTP expiration timestamp
-    default: null,
+    type: Date,
+    default: null
   },
+  isBlocked: {
+    type: Boolean,
+    default: false
+  }
 });
 
 const ConsultantProfile = mongoose.model(
