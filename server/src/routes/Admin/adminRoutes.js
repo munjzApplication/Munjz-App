@@ -17,6 +17,7 @@ import adminNotificationRoutes from "./notification/notificationRoute.js";
 import blockConsultantRoute from "./adminRoutes/blockUnblockConsultantRoute.js";
 import adminNewsRoutes from "./adminRoutes/newsRoutes.js";
 import getAllCustomerDatasRoute from "./adminRoutes/getAllCustomerDatasRoute.js";
+import blockCustomerRoute from "./adminRoutes/blockUnblockCustomerRoute.js";
 
 import { protectAdmin } from "../../middlewares/adminMiddleware.js";
 
@@ -37,6 +38,7 @@ router.use("/document-check", protectAdmin, documentCheckRoute);
 router.use("/manageConsultant", protectAdmin, blockConsultantRoute);
 
 // customer Routes
+router.use("/manageCustomer", protectAdmin, blockCustomerRoute);
 router.use("/manageCustomer",protectAdmin, getAllCustomerDatasRoute)
 
 // Withdraw Request Route

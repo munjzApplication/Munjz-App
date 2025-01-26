@@ -67,6 +67,10 @@ const customerProfileSchema = new mongoose.Schema({
     type: Date, // To store the OTP expiration timestamp
     default: null,
   },
+  isBlocked: {
+    type: Boolean,
+    default: false
+  },
 
   isLoggedIn: { type: Boolean, default: false },
 
