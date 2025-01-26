@@ -49,7 +49,9 @@ export const getAllConsultantData = async (req, res , next) => {
           phoneNumber: "$ConsultantProfile.phoneNumber",
           country: "$country",
           profilePicture: "$profilePicture",
-          idProofStatus: "$IdProof.status"
+          idProofStatus: "$IdProof.status",
+          isBlocked: "$ConsultantProfile.isBlocked"
+
         }
       }
     ]);
@@ -67,6 +69,9 @@ export const getAllConsultantData = async (req, res , next) => {
     };
 
     consultantData.forEach(consultant => {
+      if (consultant.isBlocked) {  
+        ConsultantDatas.declined.push(consultant);
+      } else
       if (consultant.idProofStatus === "approved") {
         ConsultantDatas.active.push(consultant);
       } else if (consultant.idProofStatus === "pending") {

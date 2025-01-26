@@ -16,6 +16,7 @@ import invoiceRoute from "../Admin/invoice/invoiceRoute.js";
 import adminNotificationRoutes from "./notification/notificationRoute.js";
 import blockConsultantRoute from "./adminRoutes/blockUnblockConsultantRoute.js";
 import adminNewsRoutes from "./adminRoutes/newsRoutes.js";
+import getAllCustomerDatasRoute from "./adminRoutes/getAllCustomerDatasRoute.js";
 
 import { protectAdmin } from "../../middlewares/adminMiddleware.js";
 
@@ -31,9 +32,12 @@ router.use("/dividend", protectAdmin, dividendRoute);
 // Consultation Routes
 router.use("/consultation", protectAdmin, consultationRoute);
 
-// Document Check Route
+// consultant Routes
 router.use("/document-check", protectAdmin, documentCheckRoute);
 router.use("/manageConsultant", protectAdmin, blockConsultantRoute);
+
+// customer Routes
+router.use("/manageCustomer",protectAdmin, getAllCustomerDatasRoute)
 
 // Withdraw Request Route
 router.use("/withdraw-request", protectAdmin, withdrawRequestRoute);
