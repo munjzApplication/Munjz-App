@@ -6,6 +6,7 @@ import consultantForgotRoute from "./consultantRoutes/consultantForgotRoute.js";
 import consultantGetRoute from "./consultantRoutes/getDatasRoute.js";
 import withdraw from "./consultantRoutes/withdrawRoute.js";
 import notificationRoute from "./consultantRoutes/notificationRoute.js";
+import consultantreuploadRoute from "./consultantRoutes/reUploadDocumentsRoute.js";
 
 import { protect } from "../../middlewares/authMiddleware.js";
 
@@ -16,6 +17,7 @@ router.use("/auth", authRoute);
 router.use("/consultantDetails", protect, consultantDetailsRoute);
 router.use("/consultantProfile", protect,consultantProfileRoute);
 router.use("/consulatntForgot", consultantForgotRoute);
+router.use("/reupload", protect, consultantreuploadRoute);
 
 router.use("/withdraw", protect, withdraw);
 router.use("/notification",protect,notificationRoute)

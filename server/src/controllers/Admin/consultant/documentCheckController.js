@@ -81,7 +81,7 @@ export const handleDocumentStatus = async (req, res, next) => {
     const responseMessage =
       action === "approve"
         ? `The document '${documentType}' has been approved successfully.`
-        : `The document '${documentType}' has been rejected. Please ensure the document meets the required standards and re-upload it.`;
+        : `The document '${documentType}' has been rejected.`;
 
     // Send notification to the consultant
     await sendNotificationToConsultant(
