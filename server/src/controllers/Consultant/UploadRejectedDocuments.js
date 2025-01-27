@@ -9,6 +9,10 @@ export const UploadRejectedDocuments = async (req, res, next) => {
     console.log("req.files", req.files);
     console.log(consultantId);
 
+    // Check if files are provided in the request
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).json({ message: "No files were uploaded." });
+    }
     // Extract files from the request
     const {
       frontsideId,
@@ -16,7 +20,7 @@ export const UploadRejectedDocuments = async (req, res, next) => {
       educationalCertificates,
       experienceCertificates
     } = req.files;
-    
+
     const consultant = await ConsultantProfile.findById(consultantId);
     if (!consultant) {
       return res
