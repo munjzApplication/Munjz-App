@@ -20,11 +20,11 @@ const idProofSchema = new mongoose.Schema({
         required: true,
     },
     educationalCertificates: {
-        type: [String], 
+        type: String, 
         required: true,
     },
     experienceCertificates: {
-        type: [String], 
+        type: String, 
         required: true,
     },
     documentStatus: {

@@ -13,34 +13,24 @@ export const UploadRejectedDocuments = async (req, res, next) => {
     if (!req.files || Object.keys(req.files).length === 0) {
       return res.status(400).json({ message: "No files were uploaded." });
     }
+
     // Extract files from the request
-    const {
-      frontsideId,
-      backsideId,
-      educationalCertificates,
-      experienceCertificates
-    } = req.files;
+    const { frontsideId, backsideId, educationalCertificates, experienceCertificates } = req.files;
 
     const consultant = await ConsultantProfile.findById(consultantId);
     if (!consultant) {
-      return res
-        .status(400)
-        .json({ message: "Consultant not found with this ID" });
+      return res.status(400).json({ message: "Consultant not found with this ID" });
     }
+
     // Fetch the IDProof details for the consultant
     const idProofDetails = await IDProof.findOne({ consultantId });
     if (!idProofDetails) {
-      return res
-        .status(400)
-        .json({ message: "IDProof not found for this consultant" });
+      return res.status(400).json({ message: "IDProof not found for this consultant" });
     }
 
     // Update only the changed fields
     if (frontsideId) {
-      const frontsideIdUrl = await uploadFileToS3(
-        frontsideId[0],
-        "frontsideId"
-      );
+      const frontsideIdUrl = await uploadFileToS3(frontsideId[0], "frontsideId");
       idProofDetails.frontsideId = frontsideIdUrl;
       idProofDetails.documentStatus.frontsideId = "pending"; // Reset status
     }
@@ -52,22 +42,22 @@ export const UploadRejectedDocuments = async (req, res, next) => {
     }
 
     if (educationalCertificates) {
-      const educationalCertificateUrls = await Promise.all(
-        educationalCertificates.map(file =>
-          uploadFileToS3(file, "educationalCertificates")
-        )
+      // Handle single file upload and store as a string
+      const educationalCertificateUrl = await uploadFileToS3(
+        educationalCertificates[0],
+        "educationalCertificates"
       );
-      idProofDetails.educationalCertificates = educationalCertificateUrls;
+      idProofDetails.educationalCertificates = educationalCertificateUrl;
       idProofDetails.documentStatus.educationalCertificates = "pending"; // Reset status
     }
 
     if (experienceCertificates) {
-      const experienceCertificateUrls = await Promise.all(
-        experienceCertificates.map(file =>
-          uploadFileToS3(file, "experienceCertificates")
-        )
+      // Handle single file upload and store as a string
+      const experienceCertificateUrl = await uploadFileToS3(
+        experienceCertificates[0],
+        "experienceCertificates"
       );
-      idProofDetails.experienceCertificates = experienceCertificateUrls;
+      idProofDetails.experienceCertificates = experienceCertificateUrl;
       idProofDetails.documentStatus.experienceCertificates = "pending"; // Reset status
     }
 
