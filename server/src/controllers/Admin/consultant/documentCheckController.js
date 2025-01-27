@@ -11,7 +11,7 @@ export const handleDocumentStatus = async (req, res, next) => {
     // Validate consultantId format
     if (!mongoose.Types.ObjectId.isValid(consultantId)) {
       return res.status(400).json({
-        error: "Invalid consultant ID format.",
+        error: "Invalid consultant ID format."
       });
     }
 
@@ -21,7 +21,7 @@ export const handleDocumentStatus = async (req, res, next) => {
     const consultant = await Consultant.findById(consultantId);
     if (!consultant) {
       return res.status(404).json({
-        error: "The provided consultant is invalid. Please check and try again.",
+        error: "The provided consultant is invalid. Please check and try again."
       });
     }
 
@@ -29,21 +29,23 @@ export const handleDocumentStatus = async (req, res, next) => {
     const idProof = await IDProof.findOne({ consultantId });
     if (!idProof) {
       return res.status(404).json({
-        error: "No ID Proof found for the specified consultant. Please verify the consultant ID.",
+        error:
+          "No ID Proof found for the specified consultant. Please verify the consultant ID."
       });
     }
 
     // Validate action type
     if (!["approve", "reject"].includes(action)) {
       return res.status(400).json({
-        error: "Invalid action. The action must be either 'approve' or 'reject'.",
+        error:
+          "Invalid action. The action must be either 'approve' or 'reject'."
       });
     }
 
     // Validate documentType
     if (!idProof.documentStatus.hasOwnProperty(documentType)) {
       return res.status(400).json({
-        error: `Invalid document type: '${documentType}'.`,
+        error: `Invalid document type: '${documentType}'.`
       });
     }
 
@@ -53,20 +55,18 @@ export const handleDocumentStatus = async (req, res, next) => {
 
     // Check overall status of IDProof
     const allDocumentsApproved = Object.values(idProof.documentStatus).every(
-      (status) => status === "approved"
+      status => status === "approved"
     );
     const allDocumentsRejected = Object.values(idProof.documentStatus).every(
-      (status) => status === "rejected"
+      status => status === "rejected"
     );
 
     if (allDocumentsApproved) {
       idProof.status = "approved";
       await Consultant.findByIdAndUpdate(consultantId, { status: "active" });
-    } else if (allDocumentsRejected) {
-      idProof.status = "declined";
-      await Consultant.findByIdAndUpdate(consultantId, { status: "declined" });
     } else {
       idProof.status = "pending";
+      await Consultant.findByIdAndUpdate(consultantId, { status: "pending" });
     }
 
     // Save changes
@@ -94,7 +94,7 @@ export const handleDocumentStatus = async (req, res, next) => {
     return res.status(200).json({
       message: responseMessage,
       status: newStatus,
-      documentStatus: idProof.documentStatus,
+      documentStatus: idProof.documentStatus
     });
   } catch (error) {
     console.error("Error in handleDocumentStatus:", error);

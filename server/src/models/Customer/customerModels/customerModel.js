@@ -16,7 +16,6 @@ const customerProfileSchema = new mongoose.Schema({
     type: String,
     unique: true,
     sparse: true,
-    default: null
   },
   customerUniqueId: {
     type: String,
@@ -61,11 +60,11 @@ const customerProfileSchema = new mongoose.Schema({
   },
   resetOtpHash: {
     type: String, // To store the hashed OTP
-    default: null,
+ 
   },
   resetOtpExpiry: {
     type: Date, // To store the OTP expiration timestamp
-    default: null,
+   
   },
   isBlocked: {
     type: Boolean,

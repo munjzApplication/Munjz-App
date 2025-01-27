@@ -50,12 +50,13 @@ const consultantProfileSchema = new mongoose.Schema({
   },
   resetOtpHash: {
     type: String,
-    default: null
+    
   },
   resetOtpExpiry: {
     type: Date,
-    default: null
+    
   },
+  
   isBlocked: {
     type: Boolean,
     default: false
