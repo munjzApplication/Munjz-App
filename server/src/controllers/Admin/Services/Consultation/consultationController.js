@@ -1,4 +1,4 @@
-import consultationDetails from "../../../../models/Admin/consultantModels/consultationModel.js";
+import consultationDetails from "../../../../models/Consultant/consultationModel.js";
 import Consultant from "../../../../models/Consultant/User.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import Wallet from "../../../../models/Customer/customerModels/walletModel.js";
