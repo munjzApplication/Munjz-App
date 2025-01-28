@@ -1,6 +1,7 @@
 import BankDetails from "../../models/Consultant/bankDetails.js";
 import IDProof from "../../models/Consultant/idProof.js";
 import PersonalDetails from "../../models/Consultant/personalDetails.js";
+import consultantUser from "../../models/Consultant/User.js";
 import { formatDate } from "../../helper/dateFormatter.js";
 
 export const getBankDetails = async (req, res) => {
@@ -32,34 +33,47 @@ export const getBankDetails = async (req, res) => {
   }
 };
 
+
 export const getDocuments = async (req, res) => {
   try {
     const { consultantId } = req.params;
 
-    console.log(consultantId);
-
-    const consultantIdProof = await IDProof.findOne({ consultantId });
-
-    if (consultantIdProof) {
-      const IdProofDetailsObject = consultantIdProof.toObject();
-
-      if (IdProofDetailsObject.creationDate) {
-        IdProofDetailsObject.creationDate = formatDate(
-          IdProofDetailsObject.creationDate
-        );
-      }
-
-      res.status(200).json({
-        message: "Consultant Documents  fetched successfully.",
-        consultantIdProof: IdProofDetailsObject
-      });
-    } else {
-      res.status(404).json({ message: "No ID proof details found." });
+    // Fetch consultant and ID proof details
+    const consultant = await consultantUser.findOne({ _id: consultantId }).select("isBlocked");
+    if (!consultant) {
+      return res.status(404).json({ success: false, message: "Consultant not found." });
     }
+
+    const consultantIdProof = await IDProof.findOne({ consultantId }).select("-__v");
+    if (!consultantIdProof) {
+      return res.status(404).json({ success: false, message: "No ID proof details found." });
+    }
+
+    // Determine and update status
+    let status = consultant.isBlocked ? "declined" : consultantIdProof.status;
+    if (status === "pending") status = "pending";
+    if (status === "approved") status = "approved";
+
+    // Format the ID proof details
+    const IdProofDetailsObject = consultantIdProof.toObject();
+    if (IdProofDetailsObject.creationDate) {
+      IdProofDetailsObject.creationDate = formatDate(IdProofDetailsObject.creationDate);
+    }
+
+    // Update the status in the response object
+    IdProofDetailsObject.status = status;
+
+    // Respond with the updated document
+    res.status(200).json({
+      message: "Consultant documents fetched successfully.",
+      data: { consultantIdProof: IdProofDetailsObject },
+    });
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    console.error("Error fetching documents:", error);
+    res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
+
 
 export const getPersonalDetails = async (req, res) => {
   try {
