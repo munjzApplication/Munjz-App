@@ -3,7 +3,7 @@ import { createDividend, editDividend } from "../../../../controllers/Admin/Serv
 const router = express.Router();
 
 
-router.post("/dividend", createDividend);
+router.post("/set-dividend", createDividend);
 router.put("/dividend/:countryCode", editDividend);
 
 export default router;
