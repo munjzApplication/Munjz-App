@@ -1,6 +1,7 @@
 import ConsultantProfile from "../../../models/Consultant/User.js";
 import PersonalDetails from "../../../models/Consultant/personalDetails.js";
 import ConsultationDetails from "../../../models/Consultant/consultationModel.js";
+import { formatDate } from "../../../helper/dateFormatter.js"; // Import the helper function
 
 export const getConsultantLists = async (req, res, next) => {
   try {
@@ -70,9 +71,15 @@ export const getConsultantLists = async (req, res, next) => {
       }
     ]);
 
+    // Format the createdDate field after aggregation
+    const formattedConsultants = consultants.map(consultant => {
+      consultant.creationDate = formatDate(consultant.creationDate); // Apply the formatDate function
+      return consultant;
+    });
+
     res.status(200).json({
       message: "Consultant Lists fetched successfully",
-      data: consultants
+      data: formattedConsultants
     });
   } catch (error) {
     next(error);
