@@ -23,9 +23,8 @@ export const profileSetup = async (req, res, next) => {
       profilePhoto = await uploadFileToS3(file, "profile-pictures");
     } else {
       // Use a dummy profile picture if no file is uploaded
-      profilePhoto =
-        "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.istockphoto.com%2Fphotos%2Fprofile-image&psig=AOvVaw0976QLRIgmgsTEgmK5V0A8&ust=1737094267990000&source=images&cd=vfe&opi=89978449&ved=0CBEQjRxqFwoTCOitzM3K-YoDFQAAAAAdAAAAABA_"; // Replace with your dummy image URL
-    }
+      profilePhoto = "https://static.vecteezy.com/system/resources/thumbnails/020/765/399/small/default-profile-account-unknown-icon-black-silhouette-free-vector.jpg"
+   }
 
     // Fetch the user profile
     const userProfile = await CustomerProfile.findById(userId);

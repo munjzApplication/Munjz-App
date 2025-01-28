@@ -13,6 +13,7 @@ import translationRoute from './services/translation/translationRoute.js';
 import adminreqinvoiceRoute from './invoice/getAllAdminReq.js';
 import customerPendingsRoute from './customerRoutes/customerPendings.js';
 import notificationRoutes from "./notification/notificationRoute.js";
+import getConsultantListRoutes from "./consultantRoutes/getConsultantListRoute.js";
 
 import {authenticateUser} from '../../middlewares/customerMiddleware.js';
 
@@ -32,7 +33,8 @@ router.use('/adminNotary-req-submit',authenticateUser,notaryServiceReqRoute);
 router.use('/translation',authenticateUser,translationRoute);
 router.use('/adminreqinvoice',authenticateUser,adminreqinvoiceRoute);
 router.use('/pendings',authenticateUser,customerPendingsRoute);
-router.use('/customer-notify',authenticateUser,notificationRoutes)
+router.use('/customer-notify',authenticateUser,notificationRoutes);
+router.use('/consultant-list',authenticateUser,getConsultantListRoutes);
 
 
 
