@@ -6,7 +6,7 @@ import { formatDate } from "../../helper/dateFormatter.js";
 
 export const getBankDetails = async (req, res) => {
   try {
-    const { consultantId } = req.params;
+    const  consultantId  = req.user._id;
 
     console.log(consultantId);
 
@@ -36,7 +36,7 @@ export const getBankDetails = async (req, res) => {
 
 export const getDocuments = async (req, res) => {
   try {
-    const { consultantId } = req.params;
+    const  consultantId  = req.user._id;
 
     // Fetch consultant and ID proof details
     const consultant = await consultantUser.findOne({ _id: consultantId }).select("isBlocked");
@@ -77,7 +77,7 @@ export const getDocuments = async (req, res) => {
 
 export const getPersonalDetails = async (req, res) => {
   try {
-    const { consultantId } = req.params;
+    const  consultantId  = req.user._id;
 
     const consultantPersonalDetails = await PersonalDetails.findOne({
       consultantId
@@ -103,3 +103,31 @@ export const getPersonalDetails = async (req, res) => {
     res.status(404).json({ message: error.message });
   }
 };
+
+export const getDocStatus = async (req, res) => {
+  try {
+    const  consultantId  = req.user._id;
+
+    const consultant = await consultantUser.findOne({ _id: consultantId }).select("isBlocked");
+    if (!consultant) {
+      return res.status(404).json({ success: false, message: "Consultant not found." });
+    }
+
+    const consultantIdProof = await IDProof.findOne({ consultantId }).select("-__v");
+    if (!consultantIdProof) {
+      return res.status(404).json({ success: false, message: "No ID proof details found." });
+    }
+
+    let status = consultant.isBlocked ? "blocked" : consultantIdProof.status;
+    if (status === "pending") status = "pending";
+    if (status === "approved") status = "active";
+
+    res.status(200).json({
+      message: "Account status fetched successfully.",
+      status,
+    });
+  } catch (error) {
+    console.error("Error fetching document status:", error);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
+}
