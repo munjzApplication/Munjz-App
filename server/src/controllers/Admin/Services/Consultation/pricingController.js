@@ -21,7 +21,8 @@ export const checkCountry = async (req, res, next) => {
     }
 
     return res.status(200).json({
-      message: "Pricing data for this country already exists."
+      message: "Pricing data for this country already exists.",
+      data:pricingData
     });
   } catch (error) {
     next(error);
