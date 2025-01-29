@@ -1,5 +1,33 @@
 import PricingModel from "../../../../models/Admin/adminModels/pricingModel.js";
 
+export const checkCountry = async (req, res, next) => {
+  try {
+    const { countryCode } = req.body;
+
+    // Validate input
+    if (!countryCode) {
+      return res.status(400).json({
+        message: "Country code is required."
+      });
+    }
+
+    // Check if country exists in PricingModel
+    const pricingData = await PricingModel.findOne({ countryCode });
+
+    if (!pricingData) {
+      return res.status(200).json({
+        message: "Pricing data for this country not found."
+      });
+    }
+
+    return res.status(200).json({
+      message: "Pricing data for this country already exists."
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createPricing = async (req, res, next) => {
   try {
     const { countryCode, parses } = req.body;
@@ -27,7 +55,7 @@ export const createPricing = async (req, res, next) => {
       data: pricingData
     });
   } catch (error) {
-    next(error)
+    next(error);
   }
 };
 
@@ -56,6 +84,6 @@ export const editPricing = async (req, res, next) => {
       data: pricingData
     });
   } catch (error) {
-     next(error)
+    next(error);
   }
 };
