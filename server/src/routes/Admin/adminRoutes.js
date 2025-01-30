@@ -18,6 +18,7 @@ import blockConsultantRoute from "./adminRoutes/blockUnblockConsultantRoute.js";
 import adminNewsRoutes from "./adminRoutes/newsRoutes.js";
 import getAllCustomerDatasRoute from "./adminRoutes/getAllCustomerDatasRoute.js";
 import blockCustomerRoute from "./adminRoutes/blockUnblockCustomerRoute.js";
+import getAdminEarningsRoutes from "./adminRoutes/getAdminEarningsRoute.js"
 
 import { protectAdmin } from "../../middlewares/adminMiddleware.js";
 
@@ -60,6 +61,7 @@ router.use("/getDatas", protectAdmin, getAllConsultantDatasRoute);
 router.use("/invoices", protectAdmin, invoiceRoute);
 
 // Admin-related Routes
+router.use("/get-data",protectAdmin,getAdminEarningsRoutes)
 router.use("/admin/follower-update", protectAdmin, adminFollowerUpdateRoute);
 router.use("/admin", protectAdmin, adminNotificationRoutes);
 router.use("/news", protectAdmin, adminNewsRoutes);

@@ -19,6 +19,10 @@ const TransactionSchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    reason: {
+      type: String,
+      required: true
+    },
     payerId: {
       type: String,
       required: true

@@ -4,7 +4,8 @@ import { getTransactionDetails ,getWalletDetails} from '../../../controllers/Cus
 const router = express.Router();
 
 router.get('/transaction-details',getTransactionDetails);
-router.get('/wallet-details',getWalletDetails)
+router.get('/wallet-details',getWalletDetails);
+
 
 
 export default router;

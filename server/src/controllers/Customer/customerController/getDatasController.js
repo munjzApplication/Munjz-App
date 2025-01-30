@@ -54,21 +54,33 @@ export const getWalletDetails = async (req, res, next) => {
 
     // Find the wallet details for the customer
     const walletData = await Wallet.findOne({ customerId }).select(
-      "customerId balance"
+      "customerId balance walletActivity"
     );
+
     if (!walletData) {
       return res
         .status(404)
         .json({ success: false, message: "No wallet data found." });
     }
 
+    // Format the wallet activity timestamps
+    const formattedWalletActivity = walletData.walletActivity.map(activity => ({
+      ...activity.toObject(),
+      time: formatDate(activity.time), // Format the timestamp
+    }));
+
     // Return the wallet details
     res.status(200).json({
       message: "Wallet details fetched successfully.",
-      data: walletData
+      data: {
+        customerId: walletData.customerId,
+        balance: walletData.balance,
+        walletActivity: formattedWalletActivity,
+      },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching wallet details:", error);
     next(error);
   }
 };
+
