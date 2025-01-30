@@ -4,6 +4,6 @@ const router = express.Router();
 
 router.post("/check-country",checkCountry);
 router.post("/set-manual-price",createPricing);
-router.put("/pricing/:countryCode",editPricing);
+router.put("/edit/:countryCode",editPricing);
 
 export default router;

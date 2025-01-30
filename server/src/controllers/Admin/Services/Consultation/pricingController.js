@@ -65,7 +65,18 @@ export const editPricing = async (req, res, next) => {
     const { countryCode } = req.params;
     const { parses } = req.body;
 
-    const pricingData = await PricingModel.findOne({ countryCode });
+    if (!parses || typeof parses !== "object") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid input. Parses field is required and should be an object."
+      });
+    }
+
+    const pricingData = await PricingModel.findOneAndUpdate(
+      { countryCode },
+      { $set: { parses } },
+      { new: true, runValidators: true }
+    );
 
     if (!pricingData) {
       return res.status(404).json({
@@ -74,13 +85,7 @@ export const editPricing = async (req, res, next) => {
       });
     }
 
-    // Update parses
-    pricingData.parses = parses;
-
-    await pricingData.save();
-
     res.status(200).json({
-      success: true,
       message: "Pricing data successfully updated!",
       data: pricingData
     });
