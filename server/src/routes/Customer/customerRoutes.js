@@ -15,6 +15,7 @@ import customerPendingsRoute from './customerRoutes/customerPendings.js';
 import notificationRoutes from "./notification/notificationRoute.js";
 import getConsultantListRoutes from "./consultantRoutes/getConsultantListRoute.js";
 import getPricingRoutes from "./customerRoutes/getPricingRoute.js";
+import getDataRoutes from "./customerRoutes/getDataRoute.js";
 
 import {authenticateUser} from '../../middlewares/customerMiddleware.js';
 
@@ -37,6 +38,7 @@ router.use('/pendings',authenticateUser,customerPendingsRoute);
 router.use('/customer-notify',authenticateUser,notificationRoutes);
 router.use('/consultant-list',authenticateUser,getConsultantListRoutes);
 router.use('/pricing',authenticateUser,getPricingRoutes); 
+router.use('/get-datas',authenticateUser,getDataRoutes)
 
 
 
