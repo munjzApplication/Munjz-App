@@ -4,6 +4,6 @@ const router = express.Router();
 
 router.post("/check-country",checkCountry);
 router.post("/set-dividend", createDividend);
-router.put("/dividend/:countryCode", editDividend);
+router.put("/edit/:countryCode", editDividend);
 
 export default router;
