@@ -7,44 +7,35 @@ const TransactionSchema = new mongoose.Schema(
       ref: "Customer_Profile", 
       required: true
     },
-    consultantId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Customer_Profile",
-      required: true
-    },
-    paymentCurrency: {
+    currency: {
       type: String,
       required: true
     },
-    paymentTime: {
-      type: Date,
-      required: true,
-      default: Date.now
-    },
-    paidAmount: {
+    amountPaid: {
       type: Number,
       required: true
     },
-    paidForService: {
+    serviceType: {
       type: String,
       required: true
     },
-    payerID: {
+    payerId: {
       type: String,
       required: true
     },
-    paymentNote: {
-      type: String
+    purchasedMinutes: {  // New field for minutes purchased
+      type: Number,
+      required: true
     },
-    paymentStatus: {
+    status: {
       type: String,
       required: true
     }
   },
   {
-    timestamps: true
+    timestamps: true // Automatically adds createdAt & updatedAt fields
   }
 );
 
-const Transaction = mongoose.model("Consultation_Transaction", TransactionSchema);
+const Transaction = mongoose.model("Customer_Transaction", TransactionSchema);
 export default Transaction;
