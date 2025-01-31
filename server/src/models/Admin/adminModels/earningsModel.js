@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const earningsSchema = new mongoose.Schema({
-  consultantId: {
+  customerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Consultant",
     required: true,
@@ -11,7 +11,7 @@ const earningsSchema = new mongoose.Schema({
     type: String,
     required: true, // Fixed typo
   },
-  totalEarnings: {
+  serviceAmount: {
     type: Number,
     default: 0,
   },

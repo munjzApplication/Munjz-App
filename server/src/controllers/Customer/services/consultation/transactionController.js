@@ -2,10 +2,9 @@ import Transaction from "../../../../models/Customer/customerModels/transactionM
 import Wallet from "../../../../models/Customer/customerModels/walletModel.js";
 import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import CustomerProfile from "../../../../models/Customer/customerModels/customerModel.js";
-import ConsultantProfile from "../../../../models/Consultant/User.js";
 import Notification from "../../../../models/Admin/notificationModels/notificationModel.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
-import mongoose from "mongoose";
+
 
 export const createTransaction = async (req, res, next) => {
   try {
@@ -20,7 +19,6 @@ export const createTransaction = async (req, res, next) => {
 
     // Extract transaction details from request body
     const {
-      consultantId,
       paymentCurrency,
       paidAmount,
       paidForService,
@@ -32,7 +30,6 @@ export const createTransaction = async (req, res, next) => {
 
     // Validate required fields
     if (
-      !consultantId ||
       !paymentCurrency ||
       !paidAmount ||
       !paidForService ||
@@ -42,21 +39,6 @@ export const createTransaction = async (req, res, next) => {
       purchasedMinutes === undefined
     ) {
       return res.status(400).json({ message: "Missing required fields." });
-    }
-
-    // Validate MongoDB ObjectId for consultant
-    if (!mongoose.Types.ObjectId.isValid(consultantId)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid consultant ID format." });
-    }
-
-    // Check if consultant exists
-    const consultant = await ConsultantProfile.findById(consultantId);
-    if (!consultant) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Consultant not found." });
     }
 
     // Validate purchased minutes
@@ -114,9 +96,9 @@ export const createTransaction = async (req, res, next) => {
 
     // Create a new earnings record for each transaction
     const earnings = new AdminEarnings({
-      consultantId,
+      customerId,
       currency: paymentCurrency,
-      totalEarnings: paidAmount, // Save the full paid amount for each transaction
+      serviceAmount: paidAmount, // Save the full paid amount for each transaction
       serviceName: paidForService,
       reason: paymentReason
     });
