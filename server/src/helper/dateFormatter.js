@@ -18,4 +18,12 @@ export const formatDate = (isoDate) => {
     
     return `${hours.toString().padStart(2, "0")}:${remainingMinutes.toString().padStart(2, "0")}`; // HH:MM format
   };
+
+  export const formatMinutesToFixed = (minutes) => {
+    const totalMinutes = Number(minutes); // Ensure it's a number
+    if (isNaN(totalMinutes)) return "00:00"; // Handle invalid values
+  
+    return `${totalMinutes}:00`; // Format as MM:00
+  };
+  
   

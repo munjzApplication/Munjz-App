@@ -3,7 +3,8 @@ import CustomerProfile from "../../../models/Customer/customerModels/customerMod
 import Wallet from "../../../models/Customer/customerModels/walletModel.js";
 import {
   formatDate,
-  formatMinutesToHM
+  formatMinutesToHM,
+  formatMinutesToFixed
 } from "../../../helper/dateFormatter.js";
 
 export const getTransactionDetails = async (req, res, next) => {
@@ -66,16 +67,16 @@ export const getWalletDetails = async (req, res, next) => {
         .json({ success: false, message: "No wallet data found." });
     }
 
-    // Ensure `minute` is formatted properly as HH.MM
+    // Ensure `minute` is formatted as MM:00
     const formattedWalletActivity = walletData.walletActivity.map(activity => {
       const formattedActivity = activity.toObject(); // Convert to plain object
-      formattedActivity.minute = formatMinutesToHM(activity.minute); // Convert minutes to HH.MM
+      formattedActivity.minute = formatMinutesToFixed(activity.minute); // Format minutes as MM:00
       formattedActivity.time = formatDate(activity.time); // Format timestamp
       return formattedActivity;
     });
 
-    // Format balance as HH.MM
-    const formattedBalance = formatMinutesToHM(walletData.balance);
+    // Format balance as MM:00
+    const formattedBalance = formatMinutesToFixed(walletData.balance);
 
     // Return the wallet details
     res.status(200).json({
@@ -91,3 +92,4 @@ export const getWalletDetails = async (req, res, next) => {
     next(error);
   }
 };
+
