@@ -48,41 +48,43 @@ export const getWalletDetails = async (req, res, next) => {
   try {
     const customerId = req.user._id;
 
-    // Find the customer details
-    const customer = await CustomerProfile.findById(customerId);
-    if (!customer) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Customer not found." });
-    }
+    // Find the customer and wallet details in one optimized query
+    const walletData = await Wallet.aggregate([
+      { $match: { customerId } }, // Filter by customer ID
+      {
+        $project: {
+          customerId: 1,
+          balance: 1,
+          walletActivity: {
+            $sortArray: { input: "$walletActivity", sortBy: { time: -1 } } // Sort activity by time DESC
+          }
+        }
+      }
+    ]);
 
-    // Find the wallet details for the customer
-    const walletData = await Wallet.findOne({ customerId }).select(
-      "customerId balance walletActivity"
-    );
-
-    if (!walletData) {
+    if (!walletData.length) {
       return res
         .status(404)
         .json({ success: false, message: "No wallet data found." });
     }
 
-    // Ensure `minute` is formatted as MM:00
-    const formattedWalletActivity = walletData.walletActivity.map(activity => {
-      const formattedActivity = activity.toObject(); // Convert to plain object
-      formattedActivity.minute = formatMinutesToFixed(activity.minute); // Format minutes as MM:00
-      formattedActivity.time = formatDate(activity.time); // Format timestamp
-      return formattedActivity;
-    });
+    const wallet = walletData[0];
 
     // Format balance as MM:00
-    const formattedBalance = formatMinutesToFixed(walletData.balance);
+    const formattedBalance = formatMinutesToFixed(wallet.balance);
+
+    // Format walletActivity minutes as MM:00
+    const formattedWalletActivity = wallet.walletActivity.map(activity => ({
+      ...activity,
+      minute: formatMinutesToFixed(activity.minute), // Format minutes
+      time: formatDate(activity.time) // Format time
+    }));
 
     // Return the wallet details
     res.status(200).json({
       message: "Wallet details fetched successfully.",
       data: {
-        customerId: walletData.customerId,
+        customerId: wallet.customerId,
         balance: formattedBalance,
         walletActivity: formattedWalletActivity
       }
