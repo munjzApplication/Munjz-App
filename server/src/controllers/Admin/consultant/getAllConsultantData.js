@@ -39,6 +39,9 @@ export const getAllConsultantData = async (req, res , next) => {
       {
         $match: matchStage
       },
+      { 
+        $sort: { "ConsultantProfile.creationDate": -1 } 
+      },
       {
         $project: {
           _id: "$ConsultantProfile._id",

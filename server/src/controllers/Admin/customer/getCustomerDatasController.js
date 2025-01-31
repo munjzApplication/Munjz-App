@@ -3,10 +3,21 @@ import { formatDate } from "../../../helper/dateFormatter.js";
 
 export const getAllCustomerData = async (req, res) => {
   try {
-    const customerData = await customerProfile.find(
-      {},
-      "-isLoggedIn -favorites -password -resetOtpExpiry -resetOtpHash"
-    );
+    const customerData = await customerProfile.aggregate([
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          email: 1,
+          phoneNumber: 1,
+          creationDate: 1,
+          isBlocked: 1,
+          profilePicture: 1
+          // ✅ Do NOT mix exclusion (0) with inclusion (1)
+        }
+      },
+      { $sort: { creationDate: -1 } } // Sort customers from newest to oldest
+    ]);
 
     const categorizedCustomers = {
       active: [],
@@ -16,7 +27,7 @@ export const getAllCustomerData = async (req, res) => {
     // Categorize customers and format date fields
     customerData.forEach(customer => {
       const formattedCustomer = {
-        ...customer.toObject(),
+        ...customer,
         creationDate: formatDate(customer.creationDate)
       };
 
