@@ -3,7 +3,6 @@ import CustomerProfile from "../../../models/Customer/customerModels/customerMod
 import Wallet from "../../../models/Customer/customerModels/walletModel.js";
 import {
   formatDate,
-  formatMinutesToHM,
   formatMinutesToFixed
 } from "../../../helper/dateFormatter.js";
 
