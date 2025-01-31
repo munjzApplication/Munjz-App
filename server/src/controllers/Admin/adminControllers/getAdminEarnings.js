@@ -1,6 +1,6 @@
 import AdminEarnings from "../../../models/Admin/adminModels/earningsModel.js";
-import ConsultantProfile from "../../../models/Consultant/User.js"; // Make sure this path is correct
-import { formatDate } from "../../../helper/dateFormatter.js"; // Assuming formatDate function is correctly implemented
+import ConsultantProfile from "../../../models/Consultant/User.js";
+import { formatDate } from "../../../helper/dateFormatter.js"; 
 
 // Function to calculate total earnings
 const calculateTotalEarnings = (earnings) => {
@@ -17,24 +17,24 @@ export const getAdminEarnings = async (req, res, next) => {
         select: "Name", // Only select the Name field from customerProfile
       });
 
-    // Calculate total earnings using the function
+  
     const totalEarnings = calculateTotalEarnings(adminEarnings);
 
-    // Format response to include customerName and formatted createdAt date
+  
     const earningsWithCustomerName = adminEarnings.map((earning) => ({
       customerId: earning.customerId?._id,
-      customerName: earning.customerId?.Name || "Unknown", // Use "Unknown" if no name exists
+      customerName: earning.customerId?.Name || "Unknown", 
       currency: earning.currency,
       serviceAmount: earning.serviceAmount,
       serviceName: earning.serviceName,
       reason: earning.reason,
-      createdAt: formatDate(earning.createdAt), // Format the createdAt field
+      createdAt: formatDate(earning.createdAt), 
     }));
 
-    // Send the response with earnings data and total earnings sum
+ 
     res.status(200).json({
       message: "Admin earnings fetched successfully",
-      totalEarnings, // Include total earnings in response
+      totalEarnings,
       data: earningsWithCustomerName,
     });
   } catch (error) {

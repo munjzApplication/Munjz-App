@@ -1,7 +1,10 @@
 import Transaction from "../../../models/Customer/customerModels/transactionModel.js";
 import CustomerProfile from "../../../models/Customer/customerModels/customerModel.js";
 import Wallet from "../../../models/Customer/customerModels/walletModel.js";
-import { formatDate } from "../../../helper/dateFormatter.js";
+import {
+  formatDate,
+  formatMinutesToHM
+} from "../../../helper/dateFormatter.js";
 
 export const getTransactionDetails = async (req, res, next) => {
   try {
@@ -63,24 +66,28 @@ export const getWalletDetails = async (req, res, next) => {
         .json({ success: false, message: "No wallet data found." });
     }
 
-    // Format the wallet activity timestamps
-    const formattedWalletActivity = walletData.walletActivity.map(activity => ({
-      ...activity.toObject(),
-      time: formatDate(activity.time), // Format the timestamp
-    }));
+    // Ensure `minute` is formatted properly as HH.MM
+    const formattedWalletActivity = walletData.walletActivity.map(activity => {
+      const formattedActivity = activity.toObject(); // Convert to plain object
+      formattedActivity.minute = formatMinutesToHM(activity.minute); // Convert minutes to HH.MM
+      formattedActivity.time = formatDate(activity.time); // Format timestamp
+      return formattedActivity;
+    });
+
+    // Format balance as HH.MM
+    const formattedBalance = formatMinutesToHM(walletData.balance);
 
     // Return the wallet details
     res.status(200).json({
       message: "Wallet details fetched successfully.",
       data: {
         customerId: walletData.customerId,
-        balance: walletData.balance,
-        walletActivity: formattedWalletActivity,
-      },
+        balance: formattedBalance,
+        walletActivity: formattedWalletActivity
+      }
     });
   } catch (error) {
     console.error("Error fetching wallet details:", error);
     next(error);
   }
 };
-
