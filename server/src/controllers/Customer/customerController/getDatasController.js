@@ -19,10 +19,20 @@ export const getTransactionDetails = async (req, res, next) => {
         .json({ success: false, message: "Customer not found." });
     }
 
-    // Fetch transaction details
-    const transactionData = await Transaction.find({ customerId }).select(
-      "currency amountPaid status createdAt"
-    );
+    // Fetch transaction details and sort by createdAt in descending order using aggregate
+    const transactionData = await Transaction.aggregate([
+      { $match: { customerId } }, // Match by customerId
+      { $sort: { createdAt: -1 } }, // Sort by createdAt in descending order
+      { 
+        $project: { 
+          currency: 1, 
+          amountPaid: 1, 
+          status: 1, 
+          createdAt: 1 
+        } 
+      }
+    ]);
+
     if (!transactionData.length) {
       return res
         .status(404)
@@ -31,7 +41,7 @@ export const getTransactionDetails = async (req, res, next) => {
 
     // Format the createdAt field for each transaction
     const formattedTransactions = transactionData.map(transaction => ({
-      ...transaction.toObject(),
+      ...transaction,
       createdAt: formatDate(transaction.createdAt)
     }));
 
@@ -43,6 +53,7 @@ export const getTransactionDetails = async (req, res, next) => {
     next(error);
   }
 };
+
 
 export const getWalletDetails = async (req, res, next) => {
   try {

@@ -1,13 +1,16 @@
 // Helper function to format a date
 export const formatDate = (isoDate) => {
-    const date = new Date(isoDate);
-    const day = date.getDate();
-    const month = date.getMonth() + 1; // Months are zero-indexed
-    const year = date.getFullYear();
-    const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    return `${day}.${month}.${year} ${hours}:${minutes}`;
-  };
+  const date = new Date(isoDate);
+  const day = date.getDate();
+  const month = date.getMonth() + 1; // Months are zero-indexed, so add 1
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, "0");   // Always show 2-digit hours (e.g., 08)
+  const minutes = date.getMinutes().toString().padStart(2, "0"); // Always show 2-digit minutes (e.g., 09)
+
+  return `${day}.${month}.${year} ${hours}:${minutes}`;
+};
+
+
   
   export const formatMinutesToHM = (minutes) => {
     const totalMinutes = Number(minutes); // Ensure it's a number
