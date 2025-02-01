@@ -3,18 +3,25 @@ import NotaryService from "../../../../models/Admin/notaryServiceModels/notarySe
 export const addNotaryService = async (req, res, next) => {
   try {
     const { ServiceNameArabic, ServiceNameEnglish } = req.body;
+
+    // Check if the service already exists
     const existingService = await NotaryService.findOne({ ServiceNameEnglish });
     if (existingService) {
       return res.status(400).json({ message: "Notary Service already exists" });
     }
-    console.log("Existing",existingService);
-    
+
+    // Get the count of existing services to determine the next service number
+    const serviceCount = await NotaryService.countDocuments(); 
+    const serviceNo = serviceCount + 1; // Increment the service count to generate the service number
+
     const newService = new NotaryService({
       ServiceNameArabic,
-      ServiceNameEnglish
+      ServiceNameEnglish,
+      serviceNo,  // Assign the unique service number
     });
 
     await newService.save();
+
     res.status(201).json({
       message: "Notary Service added successfully",
       service: newService
@@ -26,7 +33,7 @@ export const addNotaryService = async (req, res, next) => {
 
 export const getAllNotaryServices = async (req, res, next) => {
   try {
-    const services = await NotaryService.find();
+    const services = await NotaryService.find().sort({ serviceNo: 1 }); // Sorting by serviceNo to maintain order
     res.status(200).json(services);
   } catch (error) {
     next(error);
@@ -65,6 +72,13 @@ export const deleteNotaryService = async (req, res, next) => {
 
     if (!deletedService) {
       return res.status(404).json({ message: "Notary Service not found" });
+    }
+
+    // Optionally, reassign service numbers after deletion to maintain order
+    const services = await NotaryService.find().sort({ serviceNo: 1 });
+    for (let i = 0; i < services.length; i++) {
+      services[i].serviceNo = i + 1;
+      await services[i].save(); // Save the updated service number
     }
 
     res.status(200).json({ message: "Notary Service deleted successfully" });

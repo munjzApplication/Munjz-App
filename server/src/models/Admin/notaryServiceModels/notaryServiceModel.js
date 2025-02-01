@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const NotaryServiceSchema = new mongoose.Schema({
+  serviceNo: { 
+    type: Number, 
+    unique: true, 
+    required: true 
+  },
   ServiceNameArabic: { 
     type: String, 
     required: true 

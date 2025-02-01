@@ -10,13 +10,15 @@ import {
   addNotaryServicePricing,
   getNotaryServicePricing,
   updateNotaryServicePricing,
-  deleteNotaryServicePricing
+  deleteNotaryServicePricing,
+  getNotaryServicesByCountry
 } from "../../../../controllers/Admin/Services/NotaryService/notaryServicePricingController.js";
 
 const router = express.Router();
 
 // notary Service Routes
 router.post("/add-service", addNotaryService);
+router.get("/country/:country",getNotaryServicesByCountry)
 router.get("/get-service", getAllNotaryServices);
 router.put("/update-service/:id", updateNotaryService);
 router.delete("/delete-service/:id", deleteNotaryService);
