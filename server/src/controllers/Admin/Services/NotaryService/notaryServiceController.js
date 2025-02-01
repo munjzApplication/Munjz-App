@@ -3,7 +3,12 @@ import NotaryService from "../../../../models/Admin/notaryServiceModels/notarySe
 export const addNotaryService = async (req, res, next) => {
   try {
     const { ServiceNameArabic, ServiceNameEnglish } = req.body;
-
+    const existingService = await NotaryService.findOne({ ServiceNameEnglish });
+    if (existingService) {
+      return res.status(400).json({ message: "Notary Service already exists" });
+    }
+    console.log("Existing",existingService);
+    
     const newService = new NotaryService({
       ServiceNameArabic,
       ServiceNameEnglish

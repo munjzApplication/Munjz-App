@@ -1,17 +1,17 @@
 import mongoose from 'mongoose';
 
 const NotaryServicePricingSchema = new mongoose.Schema({
-  serviceId: { 
+  service: { 
     type: mongoose.Schema.Types.ObjectId, 
     required: true, 
     ref: 'NotaryService' 
   },
-  BigPricingMaps: {
+  pricingTiers: {
     type: Map,
     of: [String] 
   }
 }, { timestamps: true });
 
-const NotaryServicePricing = mongoose.model('NotaryService_Pricing', NotaryServicePricingSchema);
+const NotaryServicePricing = mongoose.model('NotaryServicePricing', NotaryServicePricingSchema);
 
 export default NotaryServicePricing;

@@ -3,36 +3,36 @@ import NotaryServicePricing from "../../../../models/Admin/notaryServiceModels/n
 
 export const addNotaryServicePricing = async (req, res, next) => {
   try {
-    const { serviceId, country, price, currency } = req.body;
+    const { service, country, price, currency } = req.body;
 
-    const service = await NotaryService.findById(serviceId);
+    const existingService = await NotaryService.findById(service);
 
-    if (!service) {
-      return res.status(404).json({ message: "Service not found" });
+    if (!existingService) {
+      return res.status(404).json({ message: "Notary service not found" });
     }
 
-    let pricing = await NotaryServicePricing.findOne({ serviceId });
+    let pricing = await NotaryServicePricing.findOne({ service });
 
     if (!pricing) {
       pricing = new NotaryServicePricing({
-        serviceId,
-        BigPricingMaps: {}
+        service,
+        pricingTiers: {},
       });
     }
 
-    if (pricing.BigPricingMaps.has(country)) {
+    if (pricing.pricingTiers.has(country)) {
       return res
         .status(400)
         .json({ message: "Pricing for this country already exists" });
     }
 
-    pricing.BigPricingMaps.set(country, [price, currency]);
+    pricing.pricingTiers.set(country, [price, currency]);
 
     await pricing.save();
 
     res.status(201).json({
       message: "New country pricing added successfully",
-      pricing
+      pricing,
     });
   } catch (error) {
     next(error);
@@ -41,16 +41,16 @@ export const addNotaryServicePricing = async (req, res, next) => {
 
 export const getNotaryServicePricing = async (req, res, next) => {
   try {
-    const { serviceId } = req.params;
+    const { service } = req.params;
 
-    const pricing = await NotaryServicePricing.findOne({ serviceId }).populate(
-      "serviceId"
+    const pricing = await NotaryServicePricing.findOne({ service }).populate(
+      "service"
     );
 
     if (!pricing) {
       return res
         .status(404)
-        .json({ message: "Pricing not found for this service" });
+        .json({ message: "Pricing not found for this notary service" });
     }
 
     res.status(200).json({ pricing });
@@ -70,13 +70,13 @@ export const updateNotaryServicePricing = async (req, res, next) => {
       return res.status(404).json({ message: "Pricing not found" });
     }
 
-    pricing.BigPricingMaps[country] = [price, currency];
+    pricing.pricingTiers.set(country, [price, currency]);
 
     await pricing.save();
 
     res.status(200).json({
       message: "Pricing updated successfully",
-      pricing
+      pricing,
     });
   } catch (error) {
     next(error);
