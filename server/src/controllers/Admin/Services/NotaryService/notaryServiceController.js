@@ -1,23 +1,23 @@
 import NotaryService from "../../../../models/Admin/notaryServiceModels/notaryServiceModel.js";
-
+import mongoose from "mongoose";
 export const addNotaryService = async (req, res, next) => {
   try {
     const { ServiceNameArabic, ServiceNameEnglish } = req.body;
 
-    // Check if the service already exists
+
     const existingService = await NotaryService.findOne({ ServiceNameEnglish });
     if (existingService) {
       return res.status(400).json({ message: "Notary Service already exists" });
     }
 
-    // Get the count of existing services to determine the next service number
-    const serviceCount = await NotaryService.countDocuments(); 
-    const serviceNo = serviceCount + 1; // Increment the service count to generate the service number
+  
+    const serviceCount = await NotaryService.countDocuments();
+    const serviceNo = serviceCount + 1; 
 
     const newService = new NotaryService({
       ServiceNameArabic,
       ServiceNameEnglish,
-      serviceNo,  // Assign the unique service number
+      serviceNo 
     });
 
     await newService.save();
@@ -34,37 +34,45 @@ export const addNotaryService = async (req, res, next) => {
 export const getAllNotaryServices = async (req, res, next) => {
   try {
     const services = await NotaryService.find()
-      .select('serviceNo ServiceNameArabic ServiceNameEnglish')  // Selecting only the fields you need
-      .sort({ serviceNo: 1 }); // Sorting by serviceNo to maintain order
+      .select("serviceNo ServiceNameArabic ServiceNameEnglish")
+      .sort({ serviceNo: 1 }); 
 
-      res.status(200).json({
-        message: "Notary services fetched successfully",
-        services,  // Sending the fetched services in the response
-      });
+    res.status(200).json({
+      message: "Notary services fetched successfully",
+      services 
+    });
   } catch (error) {
     next(error);
   }
 };
-
 
 export const updateNotaryService = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { ServiceNameArabic, ServiceNameEnglish } = req.body;
 
-    const updatedService = await NotaryService.findByIdAndUpdate(
-      id,
+    // Check if ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID format" });
+    }
+
+    // Find and update the Notary Service
+    const updatedService = await NotaryService.findOneAndUpdate(
+      { _id: id },
       { ServiceNameArabic, ServiceNameEnglish },
-      { new: true }
+      { new: true } 
     );
 
+    // If not found, return error
     if (!updatedService) {
       return res.status(404).json({ message: "Notary Service not found" });
     }
 
     res.status(200).json({
       message: "Notary Service updated successfully",
-      service: updatedService
+      id: updatedService._id,
+      ServiceNameArabic: updatedService.ServiceNameArabic,
+      ServiceNameEnglish: updatedService.ServiceNameEnglish
     });
   } catch (error) {
     next(error);
@@ -85,7 +93,7 @@ export const deleteNotaryService = async (req, res, next) => {
     const services = await NotaryService.find().sort({ serviceNo: 1 });
     for (let i = 0; i < services.length; i++) {
       services[i].serviceNo = i + 1;
-      await services[i].save(); // Save the updated service number
+      await services[i].save(); 
     }
 
     res.status(200).json({ message: "Notary Service deleted successfully" });

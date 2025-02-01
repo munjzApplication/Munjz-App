@@ -1,5 +1,6 @@
 import NotaryService from "../../../../models/Admin/notaryServiceModels/notaryServiceModel.js";
 import NotaryServicePricing from "../../../../models/Admin/notaryServiceModels/notaryServicePricingModel.js";
+import mongoose from "mongoose";
 
 export const addNotaryServicePricing = async (req, res, next) => {
   try {
@@ -61,25 +62,52 @@ export const getNotaryServicePricing = async (req, res, next) => {
 
 export const updateNotaryServicePricing = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { serviceId } = req.params;
     const { country, price, currency } = req.body;
 
-    const pricing = await NotaryServicePricing.findById(id);
+    console.log("Service ID: ", serviceId);
 
-    if (!pricing) {
-      return res.status(404).json({ message: "Pricing not found" });
+  
+    if (!mongoose.Types.ObjectId.isValid(serviceId)) {
+      return res.status(400).json({ message: "Invalid ID format" });
     }
 
+  
+    const pricing = await NotaryServicePricing.findOne({
+      service: serviceId
+    }).select("service pricingTiers");
+
+    console.log("Current Pricing: ", pricing);
+
+    if (!pricing) {
+      return res.status(404).json({ message: "Pricing item not found" });
+    }
+
+  
+    if (!pricing.pricingTiers.has(country)) {
+      return res
+        .status(404)
+        .json({ message: `No pricing found for country: ${country}` });
+    }
+
+    // Update the pricing for the given country
     pricing.pricingTiers.set(country, [price, currency]);
 
+ 
     await pricing.save();
 
+    console.log("Updated Pricing: ", pricing);
+
+ 
     res.status(200).json({
       message: "Pricing updated successfully",
-      pricing
+      service: pricing.service,
+      country,
+      price,
+      currency
     });
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -107,12 +135,13 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
 
     // Find pricing entries that contain the specified country
     const pricingEntries = await NotaryServicePricing.find({
-      [`pricingTiers.${country}`]: { $exists: true },
+      [`pricingTiers.${country}`]: { $exists: true }
     });
 
-
     if (!pricingEntries.length) {
-      return res.status(404).json({ message: "No services found for this country" });
+      return res
+        .status(404)
+        .json({ message: "No services found for this country" });
     }
 
     // Extract service ids from the pricing entries (added list)
@@ -120,45 +149,41 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
 
     // Fetch the NotaryService documents based on the serviceIds
     const services = await NotaryService.find({
-      '_id': { $in: serviceIds }
-    }).sort({ serviceNo: 1 }); 
+      _id: { $in: serviceIds }
+    }).sort({ serviceNo: 1 });
 
-  
     const addedList = services.map(service => {
-    
-      const pricingEntry = pricingEntries.find(entry => entry.service.toString() === service._id.toString());
+      const pricingEntry = pricingEntries.find(
+        entry => entry.service.toString() === service._id.toString()
+      );
 
-    
       const [price, currency] = pricingEntry.pricingTiers.get(country);
 
       return {
         serviceNameEnglish: service.ServiceNameEnglish,
-        serviceNameArabic: service.ServiceNameArabic, 
+        serviceNameArabic: service.ServiceNameArabic,
         price,
         currency,
-        serviceNo: service.serviceNo,  
+        serviceNo: service.serviceNo
       };
     });
 
-
     const notAddedList = await NotaryService.find({
-      '_id': { $nin: serviceIds }
-    }).sort({ serviceNo: 1 }); 
+      _id: { $nin: serviceIds }
+    }).sort({ serviceNo: 1 });
 
     const notAddedListNames = notAddedList.map(service => ({
       serviceNameEnglish: service.ServiceNameEnglish,
-      serviceNameArabic: service.ServiceNameArabic, 
-      serviceNo: service.serviceNo, 
+      serviceNameArabic: service.ServiceNameArabic,
+      serviceNo: service.serviceNo
     }));
 
     res.status(200).json({
       message: "Service names fetched successfully",
       addedList,
-      notAddedList: notAddedListNames,
+      notAddedList: notAddedListNames
     });
   } catch (error) {
     next(error);
   }
 };
-
-

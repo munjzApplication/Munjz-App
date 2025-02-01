@@ -25,9 +25,9 @@ router.delete("/delete-service/:id", deleteNotaryService);
 
 
 // notary Service Pricing Routes
-router.post("/service-pricing", addNotaryServicePricing);
+router.post("/add-pricing", addNotaryServicePricing);
 router.get("/get-pricing/:serviceId", getNotaryServicePricing);
-router.put("/update-pricing/:id", updateNotaryServicePricing);
+router.put("/update-pricing/:serviceId", updateNotaryServicePricing);
 router.delete("/delete-pricing/:id", deleteNotaryServicePricing);
 
 
