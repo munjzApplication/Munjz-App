@@ -16,17 +16,17 @@ import {
 const router = express.Router();
 
 // notary Service Routes
-router.post("/notary-service", addNotaryService);
-router.get("/notary-service", getAllNotaryServices);
-router.put("/notary-service/:id", updateNotaryService);
-router.delete("/notary-service/:id", deleteNotaryService);
+router.post("/add-service", addNotaryService);
+router.get("/get-service", getAllNotaryServices);
+router.put("/update-service/:id", updateNotaryService);
+router.delete("/delete-service/:id", deleteNotaryService);
 
 
 // notary Service Pricing Routes
-router.post("/notary-service-pricing", addNotaryServicePricing);
-router.get("/notary-service-pricing/:serviceId", getNotaryServicePricing);
-router.put("/notary-service-pricing/:id", updateNotaryServicePricing);
-router.delete("/notary-service-pricing/:id", deleteNotaryServicePricing);
+router.post("/service-pricing", addNotaryServicePricing);
+router.get("/get-pricing/:serviceId", getNotaryServicePricing);
+router.put("/update-pricing/:id", updateNotaryServicePricing);
+router.delete("/delete-pricing/:id", deleteNotaryServicePricing);
 
 
 export default router;
