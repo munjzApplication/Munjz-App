@@ -33,12 +33,19 @@ export const addNotaryService = async (req, res, next) => {
 
 export const getAllNotaryServices = async (req, res, next) => {
   try {
-    const services = await NotaryService.find().sort({ serviceNo: 1 }); // Sorting by serviceNo to maintain order
-    res.status(200).json(services);
+    const services = await NotaryService.find()
+      .select('serviceNo ServiceNameArabic ServiceNameEnglish')  // Selecting only the fields you need
+      .sort({ serviceNo: 1 }); // Sorting by serviceNo to maintain order
+
+      res.status(200).json({
+        message: "Notary services fetched successfully",
+        services,  // Sending the fetched services in the response
+      });
   } catch (error) {
     next(error);
   }
 };
+
 
 export const updateNotaryService = async (req, res, next) => {
   try {
