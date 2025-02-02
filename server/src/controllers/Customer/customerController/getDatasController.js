@@ -77,6 +77,7 @@ export const getWalletDetails = async (req, res, next) => {
 
     // Format wallet details
     const formattedBalance = formatMinutesToFixed(wallet.balance);
+    const balanceInSec = wallet.balance * 60;
     const formattedWalletActivity = wallet.walletActivity.map(activity => ({
       ...activity,
       minute: formatMinutesToFixed(activity.minute),
@@ -88,6 +89,7 @@ export const getWalletDetails = async (req, res, next) => {
       data: {
         customerId: wallet.customerId,
         balance: formattedBalance,
+        balanceInSec :balanceInSec,
         walletActivity: formattedWalletActivity
       }
     });

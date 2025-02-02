@@ -2,11 +2,20 @@ import NotaryService from "../../../../models/Admin/notaryServiceModels/notarySe
 import NotaryServicePricing from "../../../../models/Admin/notaryServiceModels/notaryServicePricingModel.js";
 import mongoose from "mongoose";
 
+
+
 export const addNotaryServicePricing = async (req, res, next) => {
   try {
     const { service, country, price, currency } = req.body;
+    console.log("Request Body:", req.body);
 
-    const existingService = await NotaryService.findOne({ _id: service });
+    // Validate that service is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(service)) {
+      return res.status(400).json({ message: "Invalid service ID" });
+    }
+
+    const existingService = await NotaryService.findById({_id :service});
+    console.log("Existing Service:", existingService);
 
     if (!existingService) {
       return res.status(404).json({ message: "Notary service not found" });
@@ -17,7 +26,7 @@ export const addNotaryServicePricing = async (req, res, next) => {
     if (!pricing) {
       pricing = new NotaryServicePricing({
         service,
-        pricingTiers: {}
+        pricingTiers: {},
       });
     }
 
@@ -33,12 +42,14 @@ export const addNotaryServicePricing = async (req, res, next) => {
 
     res.status(201).json({
       message: "New country pricing added successfully",
-      pricing
+      pricing,
     });
   } catch (error) {
+    console.error("Error:", error);
     next(error);
   }
 };
+
 
 export const getNotaryServicePricing = async (req, res, next) => {
   try {
