@@ -2,20 +2,11 @@ import NotaryService from "../../../../models/Admin/notaryServiceModels/notarySe
 import NotaryServicePricing from "../../../../models/Admin/notaryServiceModels/notaryServicePricingModel.js";
 import mongoose from "mongoose";
 
-
-
 export const addNotaryServicePricing = async (req, res, next) => {
   try {
     const { service, country, price, currency } = req.body;
-    console.log("Request Body:", req.body);
 
-    // Validate that service is a valid ObjectId
-    if (!mongoose.Types.ObjectId.isValid(service)) {
-      return res.status(400).json({ message: "Invalid service ID" });
-    }
-
-    const existingService = await NotaryService.findById({_id :service});
-    console.log("Existing Service:", existingService);
+    const existingService = await NotaryService.findOne({ _id: service });
 
     if (!existingService) {
       return res.status(404).json({ message: "Notary service not found" });
@@ -26,7 +17,7 @@ export const addNotaryServicePricing = async (req, res, next) => {
     if (!pricing) {
       pricing = new NotaryServicePricing({
         service,
-        pricingTiers: {},
+        pricingTiers: {}
       });
     }
 
@@ -42,14 +33,12 @@ export const addNotaryServicePricing = async (req, res, next) => {
 
     res.status(201).json({
       message: "New country pricing added successfully",
-      pricing,
+      pricing
     });
   } catch (error) {
-    console.error("Error:", error);
     next(error);
   }
 };
-
 
 export const getNotaryServicePricing = async (req, res, next) => {
   try {
@@ -78,12 +67,10 @@ export const updateNotaryServicePricing = async (req, res, next) => {
 
     console.log("Service ID: ", serviceId);
 
-  
     if (!mongoose.Types.ObjectId.isValid(serviceId)) {
       return res.status(400).json({ message: "Invalid ID format" });
     }
 
-  
     const pricing = await NotaryServicePricing.findOne({
       service: serviceId
     }).select("service pricingTiers");
@@ -94,7 +81,6 @@ export const updateNotaryServicePricing = async (req, res, next) => {
       return res.status(404).json({ message: "Pricing item not found" });
     }
 
-  
     if (!pricing.pricingTiers.has(country)) {
       return res
         .status(404)
@@ -104,12 +90,10 @@ export const updateNotaryServicePricing = async (req, res, next) => {
     // Update the pricing for the given country
     pricing.pricingTiers.set(country, [price, currency]);
 
- 
     await pricing.save();
 
     console.log("Updated Pricing: ", pricing);
 
- 
     res.status(200).json({
       message: "Pricing updated successfully",
       service: pricing.service,

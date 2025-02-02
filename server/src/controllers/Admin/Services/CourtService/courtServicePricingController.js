@@ -15,7 +15,7 @@ export const addCourtServicePricing = async (req, res, next) => {
     let pricing = await CourtServicePricing.findOne({ service });
 
     if (!pricing) {
-      pricing = new CourtServicePricing({
+      pricing = new NotaryServicePricing({
         service,
         pricingTiers: {}
       });
@@ -39,7 +39,6 @@ export const addCourtServicePricing = async (req, res, next) => {
     next(error);
   }
 };
-
 export const getCourtServicePricing = async (req, res, next) => {
   try {
     const { serviceId } = req.params;
@@ -67,12 +66,10 @@ export const updateCourtServicePricing = async (req, res, next) => {
 
     console.log("Service ID: ", serviceId);
 
-  
     if (!mongoose.Types.ObjectId.isValid(serviceId)) {
       return res.status(400).json({ message: "Invalid ID format" });
     }
 
-  
     const pricing = await CourtServicePricing.findOne({
       service: serviceId
     }).select("service pricingTiers");
@@ -83,7 +80,6 @@ export const updateCourtServicePricing = async (req, res, next) => {
       return res.status(404).json({ message: "Pricing item not found" });
     }
 
-  
     if (!pricing.pricingTiers.has(country)) {
       return res
         .status(404)
@@ -93,12 +89,10 @@ export const updateCourtServicePricing = async (req, res, next) => {
     // Update the pricing for the given country
     pricing.pricingTiers.set(country, [price, currency]);
 
- 
     await pricing.save();
 
     console.log("Updated Pricing: ", pricing);
 
- 
     res.status(200).json({
       message: "Pricing updated successfully",
       service: pricing.service,
@@ -126,9 +120,6 @@ export const deleteCourtServicePricing = async (req, res, next) => {
     next(error);
   }
 };
-
-
-
 
 export const getServicesByCountry = async (req, res, next) => {
   try {
