@@ -6,6 +6,9 @@ export const addNotaryServicePricing = async (req, res, next) => {
   try {
     const { service, country, price, currency } = req.body;
 
+    if (!service || !country || !price || !currency) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
     const existingService = await NotaryService.findOne({ _id: service });
 
     if (!existingService) {
