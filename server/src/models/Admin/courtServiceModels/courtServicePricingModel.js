@@ -1,14 +1,14 @@
 import mongoose from 'mongoose';
 
 const CourtServicePricingSchema = new mongoose.Schema({
-  serviceId: { 
+  service: { 
     type: mongoose.Schema.Types.ObjectId, 
     required: true, 
-    ref: 'CourtService'
+    ref: 'NotaryService' 
   },
-  BigPricingMaps: {
+  pricingTiers: {
     type: Map,
-    of: [String]
+    of: [String] 
   }
 }, { timestamps: true });
 

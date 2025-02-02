@@ -1,19 +1,35 @@
 import CourtService from "../../../../models/Admin/courtServiceModels/courtServiceModel.js";
 import CourtServicePricing from "../../../../models/Admin/courtServiceModels/courtServicePricingModel.js";
-
+import mongoose from "mongoose";
 export const addCourtService = async (req, res, next) => {
   try {
     const { ServiceNameArabic, ServiceNameEnglish } = req.body;
 
+    const existingService = await CourtService.findOne({ ServiceNameEnglish });
+    if (existingService) {
+      return res.status(400).json({ message: "Notary Service already exists" });
+    }
+
+
+    const serviceCount = await CourtService.countDocuments();
+    const serviceNo = serviceCount + 1; 
+
     const newService = new CourtService({
       ServiceNameArabic,
-      ServiceNameEnglish
+      ServiceNameEnglish,
+      serviceNo 
     });
 
     await newService.save();
     res.status(201).json({
       message: "Court Service added successfully",
-      service: newService
+      service : {
+        _id:newService._id,
+        serviceNo : newService.serviceNo,
+        ServiceNameArabic : newService.ServiceNameArabic,
+        ServiceNameEnglish: newService.ServiceNameEnglish
+
+      }
     });
   } catch (error) {
     next(error);
@@ -22,8 +38,14 @@ export const addCourtService = async (req, res, next) => {
 
 export const getAllCourtServices = async (req, res, next) => {
   try {
-    const services = await CourtService.find();
-    res.status(200).json(services);
+    const services = await CourtService.find()
+      .select("serviceNo ServiceNameArabic ServiceNameEnglish")
+      .sort({ serviceNo: 1 }); 
+
+    res.status(200).json({
+      message: "Court services fetched successfully",
+      services 
+    });
   } catch (error) {
     next(error);
   }
@@ -34,6 +56,10 @@ export const updateCourtService = async (req, res, next) => {
     const { id } = req.params;
     const { ServiceNameArabic, ServiceNameEnglish } = req.body;
 
+        // Check if ID is a valid MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+          return res.status(400).json({ message: "Invalid ID format" });
+        }
     const updatedService = await CourtService.findByIdAndUpdate(
       id,
       { ServiceNameArabic, ServiceNameEnglish },
@@ -46,7 +72,12 @@ export const updateCourtService = async (req, res, next) => {
 
     res.status(200).json({
       message: "Court Service updated successfully",
-      service: updatedService
+      service:{
+        _id : updatedService._id,
+        serviceNo:updatedService.serviceNo,
+        ServiceNameArabic:updatedService.ServiceNameArabic,
+        ServiceNameEnglish:updatedService.ServiceNameEnglish
+      } 
     });
   } catch (error) {
     next(error);
@@ -68,50 +99,4 @@ export const deleteCourtService = async (req, res, next) => {
     next(error);
   }
 };
-export const getServicesByCountry = async (req, res, next) => {
-  try {
-    const { country } = req.params;
 
-    const services = await CourtServicePricing.find({
-      [`BigPricingMaps.${country}`]: { $exists: true }
-    })
-      .select("serviceId BigPricingMaps")
-      .populate("serviceId", "ServiceNameEnglish");
-
-    console.log("Fetched Services:", services);
-
-    if (!services || services.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No services found for this country" });
-    }
-
-    const formattedServices = services
-      .map(service => {
-        const BigPricingMapsObj = Object.fromEntries(service.BigPricingMaps);
-
-        console.log("BigPricingMaps Data:", BigPricingMapsObj);
-
-        const countryData = BigPricingMapsObj[country];
-
-        if (!countryData || countryData.length < 2) {
-          console.log(
-            `Invalid countryData for serviceId ${service._id}:`,
-            countryData
-          );
-          return null;
-        }
-
-        return {
-          serviceName: service.serviceId.ServiceNameEnglish,
-          price: countryData[0],
-          currency: countryData[1]
-        };
-      })
-      .filter(service => service !== null);
-
-    res.status(200).json(formattedServices);
-  } catch (error) {
-    next(error);
-  }
-};

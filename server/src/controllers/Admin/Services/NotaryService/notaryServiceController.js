@@ -67,10 +67,12 @@ export const updateNotaryService = async (req, res, next) => {
     if (!updatedService) {
       return res.status(404).json({ message: "Notary Service not found" });
     }
+console.log(updatedService);
 
     res.status(200).json({
       message: "Notary Service updated successfully",
       id: updatedService._id,
+      serviceNo:updatedService.serviceNo,
       ServiceNameArabic: updatedService.ServiceNameArabic,
       ServiceNameEnglish: updatedService.ServiceNameEnglish
     });
