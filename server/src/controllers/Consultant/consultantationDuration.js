@@ -56,3 +56,5 @@ export const getDuration = async (req, res, next) => {
       next(error);
     }
   };
+
+  
