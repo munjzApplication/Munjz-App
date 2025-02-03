@@ -2,7 +2,6 @@ import express from "express";
 import authRoute from "./adminRoutes/authRoute.js";
 import pricingRoute from "../Admin/services/consultation/pricingRoute.js";
 import dividendRoute from "../Admin/services/consultation/dividendRoute.js";
-import consultationRoute from "../Admin/services/consultation/consultationRoute.js";
 import documentCheckRoute from "../Admin/adminRoutes/documentCheckRoute.js";
 import withdrawRequestRoute from "../../routes/Admin/adminRoutes/withdrawRoute.js";
 import courtServiceRoute from "./services/courtServices/courtServiceRoutes.js";
@@ -31,8 +30,6 @@ router.use("/auth", authRoute);
 router.use("/pricing", protectAdmin, pricingRoute);
 router.use("/dividend", protectAdmin, dividendRoute);
 
-// Consultation Routes
-router.use("/consultation", protectAdmin, consultationRoute);
 
 // consultant Routes
 router.use("/document-check", protectAdmin, documentCheckRoute);

@@ -1,6 +1,6 @@
 import ConsultantProfile from "../../../models/Consultant/User.js";
 import PersonalDetails from "../../../models/Consultant/personalDetails.js";
-import ConsultationDetails from "../../../models/Consultant/consultationModel.js";
+import ConsultationDetails from "../../../models/Customer/consultationModel/consultationModel.js";
 import { formatDate } from "../../../helper/dateFormatter.js"; // Import the helper function
 
 export const getConsultantLists = async (req, res, next) => {

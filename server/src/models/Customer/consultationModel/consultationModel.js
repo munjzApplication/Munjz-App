@@ -6,15 +6,6 @@ const ConsultationDetailsSchema = new mongoose.Schema(
       type: Number,
       required: true
     },
-    consultantEmail: {
-      type: String,
-      required: true
-    },
-
-    customerEmail: {
-      type: String,
-      required: true
-    },
     consultationRating: {
       type: Number,
       min: 1,
@@ -32,7 +23,7 @@ const ConsultationDetailsSchema = new mongoose.Schema(
   
     stringFeedback:{
         type:String
-    }
+    },
   },
   {
     timestamps: true
