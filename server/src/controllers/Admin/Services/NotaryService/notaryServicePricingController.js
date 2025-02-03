@@ -157,6 +157,7 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
         message: "Service names fetched successfully",
         addedList: [],
         notAddedList: allServices.map(service => ({
+          serviceId:service._id,
           serviceNameEnglish: service.ServiceNameEnglish,
           serviceNameArabic: service.ServiceNameArabic,
           serviceNo: service.serviceNo
@@ -171,6 +172,7 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
       );
       const [price, currency] = pricingEntry.pricingTiers.get(country);
       return {
+        serviceId:service._id,
         serviceNameEnglish: service.ServiceNameEnglish,
         serviceNameArabic: service.ServiceNameArabic,
         price,
@@ -187,6 +189,7 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
       .lean();
 
     const notAddedListNames = notAddedList.map(service => ({
+      serviceId:service._id,
       serviceNameEnglish: service.ServiceNameEnglish,
       serviceNameArabic: service.ServiceNameArabic,
       serviceNo: service.serviceNo

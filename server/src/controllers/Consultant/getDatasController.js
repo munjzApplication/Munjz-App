@@ -179,7 +179,7 @@ export const getCustomerWalletDatas = async (req, res, next) => {
 
     res.status(200).json({
       message: "Wallet data fetched successfully",
-      balanceInSec: 30 // Use the derived value here
+      balanceInSec: balanceInSec // Use the derived value here
     });
   } catch (error) {
     next(error);

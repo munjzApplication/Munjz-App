@@ -89,7 +89,7 @@ export const getWalletDetails = async (req, res, next) => {
       data: {
         customerId: wallet.customerId,
         balance: formattedBalance,
-        balanceInSec :30,
+        balanceInSec :balanceInSec,
         walletActivity: formattedWalletActivity
       }
     });
