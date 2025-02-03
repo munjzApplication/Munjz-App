@@ -169,7 +169,6 @@ export const getCustomerWalletDatas = async (req, res, next) => {
 
     // Fetch wallet details by customerId
     const walletData = await CustomerWallet.findOne({ customerId });
-    console.log(walletData);
     const balanceInSec = walletData.balance * 60;
     if (!walletData) {
       return res.status(200).json({
@@ -180,7 +179,7 @@ export const getCustomerWalletDatas = async (req, res, next) => {
 
     res.status(200).json({
       message: "Wallet data fetched successfully",
-      balanceInSec: balanceInSec // Use the derived value here
+      balanceInSec: 30 // Use the derived value here
     });
   } catch (error) {
     next(error);
