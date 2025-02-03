@@ -15,26 +15,26 @@ export const handleConsultationDetails = async (req, res, next) => {
       reviewRating,
       dateTime,
       callDurationInSecond,
-      reviewText,
+      reviewText
     } = req.body;
 
     // Validate required fields
     if (!consultantID || !customerID) {
       return res.status(400).json({
-        message: "Consultant ID and Customer ID are required.",
+        message: "Consultant ID and Customer ID are required."
       });
     }
 
     if (!callDurationInSecond || typeof callDurationInSecond !== "number") {
       return res.status(400).json({
-        message: "Call duration must be a valid number in seconds.",
+        message: "Call duration must be a valid number in seconds."
       });
     }
 
     // Fetch consultant and customer details in parallel for better performance
     const [consultant, customer] = await Promise.all([
       Consultant.findById(consultantID).select("email"), // Fetch only the email if needed
-      Customer.findById(customerID).select("countryCode email"), // Fetch only required fields
+      Customer.findById(customerID).select("countryCode email") // Fetch only required fields
     ]);
 
     if (!consultant) {
@@ -44,13 +44,14 @@ export const handleConsultationDetails = async (req, res, next) => {
     if (!customer) {
       return res.status(404).json({ message: "Customer not found." });
     }
-console.log(customer);
 
     // Fetch dividend details based on the customer's country code
-    const dividend = await Dividend.findOne({ countryCode: customer.countryCode });
+    const dividend = await Dividend.findOne({
+      countryCode: customer.countryCode
+    });
     if (!dividend) {
       return res.status(404).json({
-        message: "Dividend details not found for the customer's country.",
+        message: "Dividend details not found for the customer's country."
       });
     }
 
@@ -60,7 +61,7 @@ console.log(customer);
 
     if (!ratingDividend) {
       return res.status(404).json({
-        message: `No dividend found for the rating: ${ratingKey}`,
+        message: `No dividend found for the rating: ${ratingKey}`
       });
     }
 
@@ -68,7 +69,7 @@ console.log(customer);
     const consultationAmountPerSecond = consultationAmountPerMinute / 60;
     const consultantShare = callDurationInSecond * consultationAmountPerSecond;
 
-    // Save consultation details (without redundant email fields)
+    // Save consultation details
     const newConsultationDetails = new consultationDetails({
       consultantId: consultantID,
       customerId: customerID,
@@ -76,30 +77,44 @@ console.log(customer);
       consultationDate: dateTime,
       consultationDuration: callDurationInSecond,
       stringFeedback: reviewText,
-      consultantShare,
+      consultantShare
     });
 
     await newConsultationDetails.save();
 
-    // Deduct consultant share from the customer's wallet
+    // Deduct consultation duration (in seconds) from the customer's wallet (in minutes)
     const wallet = await Wallet.findOne({ customerId: customerID });
     if (!wallet) {
-      return res.status(404).json({ message: "Wallet not found for the customer." });
+      return res
+        .status(404)
+        .json({ message: "Sorry, we couldn't find your wallet information." });
     }
 
-    // if (wallet.balance < consultantShare) {
-    //   return res.status(400).json({
-    //     message: "Insufficient wallet balance to deduct the consultant share.",
-    //   });
-    // }
+    const consultationDurationInMinutes = callDurationInSecond / 60;
 
-    wallet.balance -= consultantShare;
+    if (wallet.balance < consultationDurationInMinutes) {
+      return res.status(400).json({
+        message: `Insufficient balance: You need at least ${consultationDurationInMinutes.toFixed(
+          2
+        )} minutes for this consultation, but your current balance is ${wallet.balance.toFixed(
+          2
+        )} minutes.`,
+        balance: wallet.balance,
+        requiredMinutes: consultationDurationInMinutes.toFixed(2)
+      });
+    }
+
+    wallet.balance -= consultationDurationInMinutes;
     await wallet.save();
 
     // Update consultant's earnings
     let earnings = await Earnings.findOne({ consultantId: consultantID });
+
     if (!earnings) {
-      earnings = new Earnings({ consultantId: consultantID, totalEarnings: consultantShare });
+      earnings = new Earnings({
+        consultantId: consultantID,
+        totalEarnings: consultantShare
+      });
     } else {
       earnings.totalEarnings += consultantShare;
     }
@@ -119,15 +134,15 @@ console.log(customer);
         customerID,
         customerNotificationMessage,
         "Consultation Completed"
-      ),
+      )
     ]);
 
     return res.status(201).json({
-      message:
-        "Consultation details saved successfully.",
-      data: newConsultationDetails,
+      message: "Consultation details saved successfully.",
+      data: newConsultationDetails
     });
   } catch (error) {
+    console.error("Error in handleConsultationDetails:", error);
     next(error);
   }
 };

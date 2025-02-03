@@ -2,6 +2,16 @@ import mongoose from "mongoose";
 
 const ConsultationDetailsSchema = new mongoose.Schema(
   {
+    consultantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Consultant",
+      required: true
+    },
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: true
+    },
     consultantShare: {
       type: Number,
       required: true
