@@ -13,7 +13,6 @@ export const handleConsultationDetails = async (req, res, next) => {
       consultantID,
       customerID,
       reviewRating,
-      dateTime,
       callDurationInSecond,
       reviewText
     } = req.body;
@@ -74,10 +73,10 @@ export const handleConsultationDetails = async (req, res, next) => {
       consultantId: consultantID,
       customerId: customerID,
       consultationRating: reviewRating,
-      consultationDate: dateTime,
       consultationDuration: callDurationInSecond,
       stringFeedback: reviewText,
-      consultantShare
+      consultantShare,
+      
     });
 
     await newConsultationDetails.save();

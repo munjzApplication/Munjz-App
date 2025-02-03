@@ -21,23 +21,17 @@ const ConsultationDetailsSchema = new mongoose.Schema(
       min: 1,
       max: 5
     },
-  
-    consultationDate: {
-      type: Date,
-      required: true
-    },
+
     consultationDuration: {
       type: Number,
       required: true
     },
-  
-    stringFeedback:{
-        type:String
-    },
+
+    stringFeedback: {
+      type: String
+    }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: { createdAt: "consultationDate" } }
 );
 
 const consultationDetails = mongoose.model(
