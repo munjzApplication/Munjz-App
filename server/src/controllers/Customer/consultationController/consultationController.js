@@ -58,17 +58,20 @@ export const handleConsultationDetails = async (req, res, next) => {
     console.log("consultantPersonalDetails", consultantPersonalDetails.country);
 
     // Fetch dividend details based on the consultant's country code
-    const dividend = await Dividend.findOne({
+    let dividend = await Dividend.findOne({
       countryCode: consultantPersonalDetails.country
     });
-    console.log("dividend", dividend);
 
+    // If dividend details are not found for the consultant's country, default to AE (United Arab Emirates)
     if (!dividend) {
-      return res.status(404).json({
-        message: "Dividend details not found for the consultant's country."
-      });
-    }
+      dividend = await Dividend.findOne({ countryCode: "AE" });
 
+      if (!dividend) {
+        return res.status(404).json({
+          message: "Default dividend details (AE) not found."
+        });
+      }
+    }
     // Calculate consultant share based on rating and duration
     const ratingKey = `star${reviewRating}`;
     const ratingDividend = dividend.rates.get(ratingKey);
