@@ -12,18 +12,16 @@ export const getConsultationDatas = async (req, res, next) => {
     const customerId = req.user._id;
     console.log("Customer ID:", customerId);
 
-    // Check if the customer exists
     const customer = await customerProfile.findById(customerId);
     if (!customer) {
       return res.status(404).json({ message: "Customer not found" });
     }
 
-    // Use aggregation to join consultation details, consultant profiles, and personal details
     const consultationDatas = await consultationDetails.aggregate([
       { $match: { customerId: customerId } },
       {
         $lookup: {
-          from: "consultant_profiles", // Use the correct collection name
+          from: "consultant_profiles",
           localField: "consultantId",
           foreignField: "_id",
           as: "consultant"
@@ -32,7 +30,7 @@ export const getConsultationDatas = async (req, res, next) => {
       { $unwind: { path: "$consultant", preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
-          from: "consultant_personaldetails", // Use the correct collection name
+          from: "consultant_personaldetails",
           localField: "consultantId",
           foreignField: "consultantId",
           as: "personalDetails"
@@ -57,16 +55,15 @@ export const getConsultationDatas = async (req, res, next) => {
 
     const formattedConsultationDatas = consultationDatas.map(item => ({
       ...item,
-      consultationDuration: formatMinutesToMMSS(item.consultationDuration / 60) // Convert seconds to minutes before formatting
+      consultationDuration: formatMinutesToMMSS(item.consultationDuration / 60)
     }));
 
-    console.log(formattedConsultationDatas); // Check the formatted output
+    console.log(formattedConsultationDatas);
 
     if (formattedConsultationDatas.length === 0) {
       return res.status(404).json({ message: "No Consultation done" });
     }
 
-    // Send response with success message
     res.status(200).json({
       message: "Consultation data retrieved successfully",
       data: formattedConsultationDatas
