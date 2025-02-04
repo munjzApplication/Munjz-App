@@ -28,8 +28,9 @@ export const getAllConsultationDatas = async (req, res, next) => {
           _id: 1,
           consultationDate: 1,
           consultationDuration: 1,
-          totalAmount: 1, // Assuming this field exists in consultationDetails
+          CustomerId:"$customer._id",
           CustomerName: "$customer.Name",
+          ConsultantId:  "$consultant._id",
           ConsultantName: "$consultant.Name"
         }
       }

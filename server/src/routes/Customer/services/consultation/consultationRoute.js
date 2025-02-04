@@ -1,5 +1,5 @@
 import express from 'express';
-import {handleConsultationDetails} from '../../../../controllers/Customer/consultationController/consultationController.js';
+import {handleConsultationDetails} from '../../../../controllers/Customer/services/consultation/consultationController.js';
 import { getConsultationDatas } from '../../../../controllers/Customer/services/consultation/getConsultationDatas.js'
 
 

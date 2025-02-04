@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const earningsSchema = new mongoose.Schema({
   consultantId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Consultant",
+    ref: "Consultant_Profile",
     required: true,
     unique: true, // Ensure one record per consultant
   },
