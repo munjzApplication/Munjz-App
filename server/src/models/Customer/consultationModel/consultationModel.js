@@ -4,12 +4,12 @@ const ConsultationDetailsSchema = new mongoose.Schema(
   {
     consultantId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Consultant",
+      ref: "Consultant_Profile",
       required: true
     },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Customer",
+      ref: "Customer_Profile",
       required: true
     },
     consultantShare: {
