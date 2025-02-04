@@ -88,7 +88,7 @@ export const handleConsultationDetails = async (req, res, next) => {
         .json({ message: "Sorry, we couldn't find your wallet information." });
     }
 
-    const consultationDurationInMinutes = callDurationInSecond / 60;
+    const consultationDurationInMinutes = Math.ceil(callDurationInSecond / 60)
 
     if (wallet.balance < consultationDurationInMinutes) {
       return res.status(400).json({

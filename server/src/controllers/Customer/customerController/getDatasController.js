@@ -3,7 +3,7 @@ import CustomerProfile from "../../../models/Customer/customerModels/customerMod
 import Wallet from "../../../models/Customer/customerModels/walletModel.js";
 import {
   formatDate,
-  formatMinutesToFixed
+  formatMinutesToMMSS
 } from "../../../helper/dateFormatter.js";
 
 export const getTransactionDetails = async (req, res, next) => {
@@ -76,11 +76,11 @@ export const getWalletDetails = async (req, res, next) => {
     const wallet = walletData[0];
 
     // Format wallet details
-    const formattedBalance = formatMinutesToFixed(wallet.balance);
+    const formattedBalance = formatMinutesToMMSS(wallet.balance); // Use the new helper function
     const balanceInSec = wallet.balance * 60;
     const formattedWalletActivity = wallet.walletActivity.map(activity => ({
       ...activity,
-      minute: formatMinutesToFixed(activity.minute),
+      minute: formatMinutesToMMSS(activity.minute), // Use the new helper function
       time: formatDate(activity.time)
     }));
 
@@ -88,8 +88,8 @@ export const getWalletDetails = async (req, res, next) => {
       message: "Wallet details fetched successfully.",
       data: {
         customerId: wallet.customerId,
-        balance: formattedBalance,
-        balanceInSec :balanceInSec,
+        balance: formattedBalance, // Now in MM:SS format
+        balanceInSec: balanceInSec,
         walletActivity: formattedWalletActivity
       }
     });
