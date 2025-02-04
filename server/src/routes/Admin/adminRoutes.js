@@ -17,7 +17,8 @@ import blockConsultantRoute from "./adminRoutes/blockUnblockConsultantRoute.js";
 import adminNewsRoutes from "./adminRoutes/newsRoutes.js";
 import getAllCustomerDatasRoute from "./adminRoutes/getAllCustomerDatasRoute.js";
 import blockCustomerRoute from "./adminRoutes/blockUnblockCustomerRoute.js";
-import getAdminEarningsRoutes from "./adminRoutes/getAdminEarningsRoute.js"
+import getAdminEarningsRoutes from "./adminRoutes/getAdminEarningsRoute.js";
+import getConsultationRoute from "./services/consultation/consultationRoute.js"
 
 import { protectAdmin } from "../../middlewares/adminMiddleware.js";
 
@@ -62,5 +63,6 @@ router.use("/get-data",protectAdmin,getAdminEarningsRoutes)
 router.use("/admin/follower-update", protectAdmin, adminFollowerUpdateRoute);
 router.use("/admin", protectAdmin, adminNotificationRoutes);
 router.use("/news", protectAdmin, adminNewsRoutes);
+router.use("/get-datas",protectAdmin,getConsultationRoute)
 
 export default router;
