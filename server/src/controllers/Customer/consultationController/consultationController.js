@@ -4,6 +4,7 @@ import Customer from "../../../models/Customer/customerModels/customerModel.js";
 import Wallet from "../../../models/Customer/customerModels/walletModel.js";
 import Dividend from "../../../models/Admin/adminModels/dividendModel.js";
 import Earnings from "../../../models/Consultant/consultantEarnings.js";
+import PersonalDetails from "../../../models/Consultant/personalDetails.js";
 import { sendNotificationToConsultant } from "../../../helper/consultant/notificationHelper.js";
 import { sendNotificationToCustomer } from "../../../helper/customer/notificationHelper.js";
 
@@ -30,10 +31,15 @@ export const handleConsultationDetails = async (req, res, next) => {
       });
     }
 
-    // Fetch consultant and customer details in parallel for better performance
-    const [consultant, customer] = await Promise.all([
+    // Fetch consultant, customer, and consultant's personal details in parallel for better performance
+    const [
+      consultant,
+      customer,
+      consultantPersonalDetails
+    ] = await Promise.all([
       Consultant.findById(consultantID).select("email"), // Fetch only the email if needed
-      Customer.findById(customerID).select("countryCode email") // Fetch only required fields
+      Customer.findById(customerID).select("email"), // Fetch only required fields
+      PersonalDetails.findOne({ consultantId: consultantID }).select("country") // Fetch consultant's country code
     ]);
 
     if (!consultant) {
@@ -44,13 +50,22 @@ export const handleConsultationDetails = async (req, res, next) => {
       return res.status(404).json({ message: "Customer not found." });
     }
 
-    // Fetch dividend details based on the customer's country code
+    if (!consultantPersonalDetails) {
+      return res
+        .status(404)
+        .json({ message: "Consultant's personal details not found." });
+    }
+    console.log("consultantPersonalDetails", consultantPersonalDetails.country);
+
+    // Fetch dividend details based on the consultant's country code
     const dividend = await Dividend.findOne({
-      countryCode: customer.countryCode
+      countryCode: consultantPersonalDetails.country
     });
+    console.log("dividend", dividend);
+
     if (!dividend) {
       return res.status(404).json({
-        message: "Dividend details not found for the customer's country."
+        message: "Dividend details not found for the consultant's country."
       });
     }
 
@@ -87,9 +102,13 @@ export const handleConsultationDetails = async (req, res, next) => {
         .status(404)
         .json({ message: "Sorry, we couldn't find your wallet information." });
     }
+    console.log("callDurationInSecond", callDurationInSecond);
 
     const consultationDurationInMinutes = callDurationInSecond / 60;
-    console.log(consultationDurationInMinutes);
+    console.log(
+      "consultationDurationInMinutes",
+      consultationDurationInMinutes.toFixed(2)
+    );
 
     if (wallet.balance < consultationDurationInMinutes) {
       return res.status(400).json({
