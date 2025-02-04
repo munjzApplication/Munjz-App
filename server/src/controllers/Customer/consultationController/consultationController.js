@@ -75,8 +75,7 @@ export const handleConsultationDetails = async (req, res, next) => {
       consultationRating: reviewRating,
       consultationDuration: callDurationInSecond,
       stringFeedback: reviewText,
-      consultantShare,
-      
+      consultantShare
     });
 
     await newConsultationDetails.save();
@@ -103,7 +102,14 @@ export const handleConsultationDetails = async (req, res, next) => {
       });
     }
 
+    // Deduct balance and log activity
     wallet.balance -= consultationDurationInMinutes;
+    wallet.walletActivity.push({
+      status: "-",
+      minute: consultationDurationInMinutes,
+      time: new Date()
+    });
+
     await wallet.save();
 
     // Update consultant's earnings
