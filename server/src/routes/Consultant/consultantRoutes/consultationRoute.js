@@ -6,7 +6,7 @@ const router = express.Router();
 
 
 router.get("/getDatas",getConsultationDetails);
-router.get('/by-date',getConsultationDataByDate);
+router.post('/by-date',getConsultationDataByDate);
 
 
 export default router;

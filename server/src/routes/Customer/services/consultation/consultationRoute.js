@@ -7,7 +7,7 @@ const router = express.Router()
 
 router.post('/details'  ,handleConsultationDetails);
 router.get('/getDatas',getConsultationDatas);
-router.get('/by-date',getConsultationDataByDate);
+router.post('/by-date',getConsultationDataByDate);
 
 
 
