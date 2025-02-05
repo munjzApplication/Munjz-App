@@ -18,6 +18,9 @@ const consultantProfileSchema = new mongoose.Schema({
     sparse: true,
     default: null
   },
+  countryCode: {
+    type: String
+  },
   consultantUniqueId: {
     type: String,
     unique: true,

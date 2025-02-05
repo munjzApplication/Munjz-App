@@ -95,7 +95,7 @@ export const isEmailVerified = async (req, res, next) => {
 
 export const Register = async (req, res, next) => {
   try {
-    const { Name, email, phoneNumber, password } = req.body;
+    const { Name, email, phoneNumber, password ,countryCode } = req.body;
 
     if (!phoneNumber) {
       return res.status(400).json({ message: "Phone number is required." });
@@ -122,6 +122,7 @@ export const Register = async (req, res, next) => {
       email,
       phoneNumber,
       password: hashedPassword,
+      countryCode,
       emailVerified: true,
       consultantUniqueId
     });
@@ -159,6 +160,7 @@ export const Register = async (req, res, next) => {
         Name: newUser.Name,
         email: newUser.email,
         phoneNumber: newUser.phoneNumber,
+        countryCode:newUser.countryCode,
         consultantUniqueId: newUser.consultantUniqueId,
         creationDate: newUser.creationDate
       }

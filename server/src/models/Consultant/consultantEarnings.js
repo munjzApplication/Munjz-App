@@ -11,6 +11,28 @@ const earningsSchema = new mongoose.Schema({
     type: Number,
     default: 0, // Start from zero earnings
   },
+  activity: [
+    {
+      customerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Customer_Profile", // Reference to the customer model
+        required: true,
+      },
+      amount: {
+        type: Number,
+        required: true, // Amount earned in this activity
+      },
+      status: {
+        type: String,
+        enum: ["pending", "completed", "cancelled"], // Define allowed statuses
+        default: "pending",
+      },
+      date: {
+        type: Date,
+        default: Date.now, // Timestamp for the activity
+      },
+    },
+  ],
 });
 
 const Earnings = mongoose.model("Consultant_Earnings", earningsSchema);
