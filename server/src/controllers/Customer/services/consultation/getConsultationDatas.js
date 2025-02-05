@@ -134,6 +134,7 @@ export const getConsultationDataByDate = async (req, res, next) => {
         $project: {
           consultationDuration: 1,
           consultationDate: 1,
+          ConsultantId: "$consultant._id",
           ConsultantName: "$consultant.Name",
           ConsultantEmail: "$consultant.email",
           ConsultantProfilePic: {
@@ -149,17 +150,13 @@ export const getConsultationDataByDate = async (req, res, next) => {
       consultationDuration: formatMinutesToMMSS(item.consultationDuration / 60)
     }));
 
-    if (formattedConsultationDatas.length === 0) {
-      return res.status(404).json({ message: "No Consultation found for the given date" });
-    }
-
     res.status(200).json({
       message: "Consultation data retrieved successfully",
       data: formattedConsultationDatas
     });
   } catch (error) {
     console.error("Error fetching consultation data:", error);
-    res.status(500).json({ message: "Internal server error" });
+    next(error);
   }
 };
 
