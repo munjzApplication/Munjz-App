@@ -57,3 +57,73 @@ export const getConsultationDetails = async (req, res, next) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getConsultationDataByDate = async (req, res, next) => {
+  try {
+    const { DateTime } = req.body; // Full DateTime string from frontend
+    const consultantId = req.user._id;
+
+    if (!DateTime) {
+      return res.status(400).json({ message: "DateTime is required" });
+    }
+
+    const consultant = await ConsultantProfile.findById(consultantId);
+    if (!consultant) {
+      return res.status(404).json({ message: "consultant not found" });
+    }
+
+    // Convert DateTime string to a Date object
+    const providedDate = new Date(DateTime);
+
+    // Extract only the date (ignore time)
+    const startOfDay = new Date(providedDate.setUTCHours(0, 0, 0, 0));
+    const endOfDay = new Date(providedDate.setUTCHours(23, 59, 59, 999));
+
+    const consultationDatas = await consultationDetails.aggregate([
+      {
+        $match: {
+          consultantId: consultantId,
+          consultationDate: {
+            $gte: startOfDay, // Start of the given date
+            $lte: endOfDay,   // End of the given date
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: "customer_profiles",
+          localField: "customerId",
+          foreignField: "_id",
+          as: "customer"
+        }
+      },
+      { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          consultationDuration: 1,
+          consultationDate: 1,
+          CustomerName: "$customer.Name",
+          CustomerEmail: "$customer.email",
+          CustomerProfilePic: "$customer.profilePhoto"
+        }
+      }
+    ]);
+
+    const formattedConsultationDatas = consultationDatas.map(item => ({
+      ...item,
+      consultationDuration: formatMinutesToMMSS(item.consultationDuration / 60)
+    }));
+
+    if (formattedConsultationDatas.length === 0) {
+      return res.status(404).json({ message: "No Consultation found for the given date" });
+    }
+
+    res.status(200).json({
+      message: "Consultation data retrieved successfully",
+      data: formattedConsultationDatas
+    });
+  } catch (error) {
+    console.error("Error fetching consultation data:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
