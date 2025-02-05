@@ -28,7 +28,7 @@ router.use("/profile",authenticateUser, profileRoute);
 router.use("/forgot-password", customerForgotRoute);
 router.use("/activity",authenticateUser, callActivity);
 router.use('/transaction',authenticateUser,transactionRoute);
-router.use('/fav',authenticateUser,favRoute);
+router.use('/favorite',authenticateUser,favRoute);
 router.use('/court',authenticateUser,courtServiceRoute);
 router.use('/adminCourt-req-submit',authenticateUser,courtServiceReqRoute);
 router.use('/notary',authenticateUser,notaryServiceRoute);

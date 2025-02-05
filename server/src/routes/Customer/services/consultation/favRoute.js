@@ -4,7 +4,7 @@ import { addFavoriteConsultant, getFavoriteConsultants } from "../../../../contr
 
 const router = express.Router();
 
-router.post("/favorites", addFavoriteConsultant); 
-router.get("/favorites/:customerId", getFavoriteConsultants); 
+router.post("/add-favorite", addFavoriteConsultant); 
+router.get("/get-favorites/:customerId", getFavoriteConsultants); 
 
 export default router;
