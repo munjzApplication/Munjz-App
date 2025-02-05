@@ -47,12 +47,10 @@ export const handleConsultationDetails = async (req, res, next) => {
     ]);
 
     if (!consultant || !customer || !consultantPersonalDetails) {
-      return res
-        .status(404)
-        .json({
-          message:
-            "Consultant, Customer, or Consultant's personal details not found."
-        });
+      return res.status(404).json({
+        message:
+          "Consultant, Customer, or Consultant's personal details not found."
+      });
     }
 
     // Fetch dividend details
@@ -163,12 +161,10 @@ export const handleConsultationDetails = async (req, res, next) => {
       )
     ]);
 
-    return res
-      .status(201)
-      .json({
-        message: "Consultation details saved successfully.",
-        data: newConsultationDetails
-      });
+    return res.status(201).json({
+      message: "Consultation details saved successfully.",
+      data: newConsultationDetails
+    });
   } catch (error) {
     console.error("Error in handleConsultationDetails:", error);
     await session.abortTransaction(); // Rollback transaction in case of error

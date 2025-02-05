@@ -1,10 +1,11 @@
 import ConsultantProfile from "../../../models/Consultant/User.js";
 import PersonalDetails from "../../../models/Consultant/personalDetails.js";
 import ConsultationDetails from "../../../models/Customer/consultationModel/consultationModel.js";
-import { formatDate } from "../../../helper/dateFormatter.js"; // Import the helper function
+import { formatDate } from "../../../helper/dateFormatter.js";
 
 export const getConsultantLists = async (req, res, next) => {
   try {
+    // Step 1: Aggregate consultant data with average ratings in a single query
     const consultants = await ConsultantProfile.aggregate([
       // Lookup for PersonalDetails
       {
@@ -12,16 +13,15 @@ export const getConsultantLists = async (req, res, next) => {
           from: "consultant_personaldetails",
           localField: "_id",
           foreignField: "consultantId",
-          as: "personalDetails"
-        }
+          as: "personalDetails",
+        },
       },
       {
         $unwind: {
           path: "$personalDetails",
-          preserveNullAndEmptyArrays: true
-        }
+          preserveNullAndEmptyArrays: true,
+        },
       },
-
       {
         $addFields: {
           profilePicture: "$personalDetails.profilePicture",
@@ -29,8 +29,8 @@ export const getConsultantLists = async (req, res, next) => {
           languages: "$personalDetails.languages",
           areaOfPractices: "$personalDetails.areaOfPractices",
           experience: "$personalDetails.experience",
-          biography: "$personalDetails.biography"
-        }
+          biography: "$personalDetails.biography",
+        },
       },
       // Remove the personalDetails field
       {
@@ -41,72 +41,73 @@ export const getConsultantLists = async (req, res, next) => {
           phoneNumber: 0,
           emailVerified: 0,
           isBlocked: 0,
-          __v: 0
-        }
+          __v: 0,
+        },
       },
       // Lookup for IDProof to ensure status is 'approved'
       {
         $lookup: {
-          from: "consultant_idproofs", // Assuming your IDProof collection is named consultant_idproofs
+          from: "consultant_idproofs",
           localField: "_id",
           foreignField: "consultantId",
-          as: "idProof"
-        }
+          as: "idProof",
+        },
       },
       {
         $unwind: {
           path: "$idProof",
-          preserveNullAndEmptyArrays: false // Do not return consultants without IDProof
-        }
+          preserveNullAndEmptyArrays: false,
+        },
       },
       {
         $match: {
-          "idProof.status": "approved" // Only include consultants whose IDProof status is 'approved'
-        }
+          "idProof.status": "approved",
+        },
       },
       // Project to exclude the idProof data
       {
         $project: {
-          idProof: 0 // Exclude the idProof field from the result
-        }
+          idProof: 0,
+        },
       },
-      // Lookup for ConsultationDetails and calculate rating
+      // Lookup for ConsultationDetails to calculate average rating
       {
         $lookup: {
-          from: "consultationdetails",
-          localField: "email",
-          foreignField: "consultantEmail",
-          as: "consultationDetails"
-        }
+          from: "consultationdetails", // Ensure this matches your collection name
+          localField: "_id",
+          foreignField: "consultantId",
+          as: "consultations",
+        },
       },
       {
         $addFields: {
-          consultationRating: {
+          averageRating: {
             $cond: {
-              if: { $gt: [{ $size: "$consultationDetails" }, 0] },
-              then: { $round: [{ $avg: "$consultationDetails.consultationRating" }, 2] },
-              else: 0.0
-            }
-          }
-        }
+              if: { $gt: [{ $size: "$consultations" }, 0] }, 
+              then: {  $round: [{ $avg: "$consultations.consultationRating" }, 2] }, 
+              else: 0, 
+            },
+          },
+        },
       },
+      // Remove the consultations field
       {
         $project: {
-          consultationDetails: 0 // Exclude full consultation details if not needed
-        }
+          consultations: 0,
+        },
       },
-      { $sort: { creationDate: -1 } }
+      { $sort: { creationDate: -1 } },
     ]);
 
-    // Format the createdDate field after aggregation
+    // Format the creationDate for each consultant
     const formattedConsultants = consultants.map((consultant) => {
-      consultant.creationDate = formatDate(consultant.creationDate); 
+      consultant.creationDate = formatDate(consultant.creationDate);
       return consultant;
     });
 
     res.status(200).json({
       message: "Consultant Lists fetched successfully",
-      data: formattedConsultants
+      data: formattedConsultants,
     });
   } catch (error) {
     next(error);
