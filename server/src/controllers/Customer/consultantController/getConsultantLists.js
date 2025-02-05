@@ -21,7 +21,6 @@ export const getConsultantLists = async (req, res, next) => {
           preserveNullAndEmptyArrays: true
         }
       },
-
       {
         $addFields: {
           profilePicture: "$personalDetails.profilePicture",
@@ -48,8 +47,8 @@ export const getConsultantLists = async (req, res, next) => {
       {
         $lookup: {
           from: "consultationdetails",
-          localField: "email",
-          foreignField: "consultantEmail",
+          localField: "_id", // Match by consultant's _id
+          foreignField: "consultantId", // consultantId in ConsultationDetails
           as: "consultationDetails"
         }
       },
@@ -57,9 +56,9 @@ export const getConsultantLists = async (req, res, next) => {
         $addFields: {
           consultationRating: {
             $cond: {
-              if: { $gt: [{ $size: "$consultationDetails" }, 0] },
-              then: { $avg: "$consultationDetails.consultationRating" },
-              else: 0.0
+              if: { $gt: [{ $size: "$consultationDetails" }, 0] }, // If there are consultation details
+              then: { $round: [{ $avg: "$consultationDetails.consultationRating" }, 2] }, // Calculate average rating and round to 2 decimals
+              else: 0.0 // Default rating if no consultations exist
             }
           }
         }
@@ -69,11 +68,11 @@ export const getConsultantLists = async (req, res, next) => {
           consultationDetails: 0 // Exclude full consultation details if not needed
         }
       },
-      { $sort: { creationDate: -1 } }
+      { $sort: { creationDate: -1 } } // Sort by creation date
     ]);
 
     // Format the createdDate field after aggregation
-    const formattedConsultants = consultants.map(consultant => {
+    const formattedConsultants = consultants.map((consultant) => {
       consultant.creationDate = formatDate(consultant.creationDate); // Apply the formatDate function
       return consultant;
     });

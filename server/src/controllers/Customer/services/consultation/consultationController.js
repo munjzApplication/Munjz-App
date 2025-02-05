@@ -57,7 +57,7 @@ export const handleConsultationDetails = async (req, res, next) => {
 
     // Fetch dividend details
     let dividend = await Dividend.findOne({
-      countryCode: consultantPersonalDetails.country
+      countryCode: Consultant.countryCode
     });
     if (!dividend) {
       dividend = await Dividend.findOne({ countryCode: "AE" });

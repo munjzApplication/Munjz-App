@@ -93,8 +93,13 @@ export const getFavoriteConsultants = async (req, res, next) => {
           isBlocked:'$consultantDetails.isBlocked',
           profilePicture: '$consultantPersonalDetails.profilePicture', // Include profile picture
           country: '$consultantPersonalDetails.country', 
+          languages: "$consultantPersonalDetails.languages",
+          areaOfPractices: "$consultantPersonalDetails.areaOfPractices",
+          experience: "$consultantPersonalDetails.experience",
+          biography: "$consultantPersonalDetails.biography"
         },
       },
+      
     ]);
 
     res.status(200).json({
