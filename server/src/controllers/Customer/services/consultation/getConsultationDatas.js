@@ -140,7 +140,13 @@ export const getConsultationDataByDate = async (req, res, next) => {
           ConsultantProfilePic: {
             $ifNull: ["$personalDetails.profilePicture", null]
           },
-          ConsultantIsBlocked: "$consultant.isBlocked"
+          ConsultantIsBlocked: "$consultant.isBlocked",
+          consultationHours: {
+            $dateToString: {
+              format: "%H:%M",
+              date: "$consultationDate"
+            }
+          }
         }
       }
     ]);

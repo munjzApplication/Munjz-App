@@ -127,7 +127,13 @@ export const getConsultationDataByDate = async (req, res, next) => {
           CustomerId: "$customer._id",
           CustomerName: "$customer.Name",
           CustomerEmail: "$customer.email",
-          CustomerProfilePic: "$customer.profilePhoto"
+          CustomerProfilePic: "$customer.profilePhoto",
+          consultationHours: {
+            $dateToString: {
+              format: "%H:%M",
+              date: "$consultationDate"
+            }
+          }
         }
       }
     ]);
