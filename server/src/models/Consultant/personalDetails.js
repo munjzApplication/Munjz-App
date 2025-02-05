@@ -30,7 +30,7 @@ const personalDetailsSchema = new mongoose.Schema(
     biography: {
       type: String,
       required: true
-    }
+    },
   },
   {
     timestamps: true

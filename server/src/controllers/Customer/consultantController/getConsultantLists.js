@@ -21,6 +21,7 @@ export const getConsultantLists = async (req, res, next) => {
           preserveNullAndEmptyArrays: true
         }
       },
+
       {
         $addFields: {
           profilePicture: "$personalDetails.profilePicture",
@@ -43,12 +44,38 @@ export const getConsultantLists = async (req, res, next) => {
           __v: 0
         }
       },
+      // Lookup for IDProof to ensure status is 'approved'
+      {
+        $lookup: {
+          from: "consultant_idproofs", // Assuming your IDProof collection is named consultant_idproofs
+          localField: "_id",
+          foreignField: "consultantId",
+          as: "idProof"
+        }
+      },
+      {
+        $unwind: {
+          path: "$idProof",
+          preserveNullAndEmptyArrays: false // Do not return consultants without IDProof
+        }
+      },
+      {
+        $match: {
+          "idProof.status": "approved" // Only include consultants whose IDProof status is 'approved'
+        }
+      },
+      // Project to exclude the idProof data
+      {
+        $project: {
+          idProof: 0 // Exclude the idProof field from the result
+        }
+      },
       // Lookup for ConsultationDetails and calculate rating
       {
         $lookup: {
           from: "consultationdetails",
-          localField: "_id", // Match by consultant's _id
-          foreignField: "consultantId", // consultantId in ConsultationDetails
+          localField: "email",
+          foreignField: "consultantEmail",
           as: "consultationDetails"
         }
       },
@@ -56,9 +83,9 @@ export const getConsultantLists = async (req, res, next) => {
         $addFields: {
           consultationRating: {
             $cond: {
-              if: { $gt: [{ $size: "$consultationDetails" }, 0] }, // If there are consultation details
-              then: { $round: [{ $avg: "$consultationDetails.consultationRating" }, 2] }, // Calculate average rating and round to 2 decimals
-              else: 0.0 // Default rating if no consultations exist
+              if: { $gt: [{ $size: "$consultationDetails" }, 0] },
+              then: { $round: [{ $avg: "$consultationDetails.consultationRating" }, 2] },
+              else: 0.0
             }
           }
         }
@@ -68,12 +95,12 @@ export const getConsultantLists = async (req, res, next) => {
           consultationDetails: 0 // Exclude full consultation details if not needed
         }
       },
-      { $sort: { creationDate: -1 } } // Sort by creation date
+      { $sort: { creationDate: -1 } }
     ]);
 
     // Format the createdDate field after aggregation
     const formattedConsultants = consultants.map((consultant) => {
-      consultant.creationDate = formatDate(consultant.creationDate); // Apply the formatDate function
+      consultant.creationDate = formatDate(consultant.creationDate); 
       return consultant;
     });
 
