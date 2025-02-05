@@ -102,6 +102,7 @@ export const getConsultationDataByDate = async (req, res, next) => {
         $project: {
           consultationDuration: 1,
           consultationDate: 1,
+          consultantShare: 1,
           CustomerName: "$customer.Name",
           CustomerEmail: "$customer.email",
           CustomerProfilePic: "$customer.profilePhoto"
