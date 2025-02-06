@@ -81,7 +81,7 @@ export const getConsultantLists = async (req, res, next) => {
       },
       {
         $addFields: {
-          averageRating: {
+          consultationRating: {
             $cond: {
               if: { $gt: [{ $size: "$consultations" }, 0] }, 
               then: {  $round: [{ $avg: "$consultations.consultationRating" }, 2] }, 

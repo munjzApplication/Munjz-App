@@ -94,7 +94,7 @@ export const getFavoriteConsultants = async (req, res, next) => {
       },
       {
         $addFields: {
-          averageRating: {
+          consultationRating: {
             $cond: {
               if: { $gt: [{ $size: "$consultations" }, 0] },
               then: {
