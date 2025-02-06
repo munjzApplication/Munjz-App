@@ -2,6 +2,7 @@ import CustomerProfile from "../../../../models/Customer/customerModels/customer
 import CustomerFavorites from "../../../../models/Customer/customerModels/customerFavorites.js";
 import ConsultantProfile from "../../../../models/Consultant/User.js";
 import PersonalDetails from "../../../../models/Consultant/personalDetails.js";
+import { formatDate } from "../../../../helper/dateFormatter.js";
 export const addFavoriteConsultant = async (req, res, next) => {
   try {
     const { consultantId } = req.body;
@@ -10,7 +11,9 @@ export const addFavoriteConsultant = async (req, res, next) => {
     const customer = await CustomerProfile.findOne({ _id: customerId }); // Mongoose query to fetch the customer
 
     if (!customer) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
     }
 
     // Ensure favorites is an array
@@ -38,79 +41,106 @@ export const addFavoriteConsultant = async (req, res, next) => {
     await newFavorite.save();
 
     res.status(200).json({
-      message: "Consultant added to favorites successfully",
+      message: "Consultant added to favorites successfully"
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Get Favorite Consultants
 export const getFavoriteConsultants = async (req, res, next) => {
   try {
     const customerId = req.user._id; // Retrieve customerId from the token
 
     const favorites = await CustomerFavorites.aggregate([
       {
-        $match: { customerId: customerId }, // Match documents where customerId matches
+        $match: { customerId: customerId }
       },
       {
         $lookup: {
-          from: 'consultant_profiles', // The collection to join
-          localField: 'consultantId', // Field from CustomerFavorites
-          foreignField: '_id', // Field from ConsultantProfile
-          as: 'consultantDetails', // Alias for the joined data
-        },
+          from: "consultant_profiles",
+          localField: "consultantId",
+          foreignField: "_id",
+          as: "consultantDetails"
+        }
       },
       {
         $unwind: {
-          path: '$consultantDetails',
-          preserveNullAndEmptyArrays: true, // Include documents even if consultantDetails is empty or null
-        },
+          path: "$consultantDetails",
+          preserveNullAndEmptyArrays: false // Removes documents with no match
+        }
       },
       {
         $lookup: {
-          from: 'consultant_personaldetails', // The collection to join
-          localField: 'consultantId', // Field from CustomerFavorites
-          foreignField: 'consultantId', // Field from Consultant_PersonalDetails
-          as: 'consultantPersonalDetails', // Alias for the joined data
-        },
+          from: "consultant_personaldetails",
+          localField: "consultantId",
+          foreignField: "consultantId",
+          as: "consultantPersonalDetails"
+        }
       },
       {
         $unwind: {
-          path: '$consultantPersonalDetails',
-          preserveNullAndEmptyArrays: true, // Include documents even if consultantPersonalDetails is empty or null
-        },
+          path: "$consultantPersonalDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "consultationdetails",
+          localField: "consultantId",
+          foreignField: "consultantId",
+          as: "consultations"
+        }
+      },
+      {
+        $addFields: {
+          averageRating: {
+            $cond: {
+              if: { $gt: [{ $size: "$consultations" }, 0] },
+              then: {
+                $round: [{ $avg: "$consultations.consultationRating" }, 2]
+              },
+              else: 0
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          "consultantDetails._id": { $exists: true } // Ensure consultant exists
+        }
       },
       {
         $project: {
-          _id: 0, // Exclude _id from the output
-          consultantId: '$consultantDetails._id',
-          Name: '$consultantDetails.Name',
-          email: '$consultantDetails.email',
-          consultantUniqueId: '$consultantDetails.consultantUniqueId',
-          creationDate: '$consultantDetails.creationDate',
-          isBlocked:'$consultantDetails.isBlocked',
-          profilePicture: '$consultantPersonalDetails.profilePicture', // Include profile picture
-          country: '$consultantPersonalDetails.country', 
+          _id: 0,
+          consultantId: "$consultantDetails._id",
+          Name: "$consultantDetails.Name",
+          email: "$consultantDetails.email",
+          consultantUniqueId: "$consultantDetails.consultantUniqueId",
+          creationDate: "$consultantDetails.creationDate",
+          isBlocked: "$consultantDetails.isBlocked",
+          profilePicture: "$consultantPersonalDetails.profilePicture",
+          country: "$consultantPersonalDetails.country",
           languages: "$consultantPersonalDetails.languages",
           areaOfPractices: "$consultantPersonalDetails.areaOfPractices",
           experience: "$consultantPersonalDetails.experience",
-          biography: "$consultantPersonalDetails.biography"
-        },
-      },
-      
-      
+          biography: "$consultantPersonalDetails.biography",
+          averageRating: 1
+        }
+      }
     ]);
 
+    // Format the creationDate for each consultant
+    const formattedFavorites = favorites.map(favorite => {
+      favorite.creationDate = formatDate(favorite.creationDate);
+      return favorite;
+    });
+
     res.status(200).json({
-      favorites: favorites || [],
+      message: "Favorite Consultants fetched successfully",
+      favorites: formattedFavorites || []
     });
   } catch (error) {
     next(error);
   }
 };
-
-
-
-
