@@ -125,7 +125,7 @@ export const getFavoriteConsultants = async (req, res, next) => {
           areaOfPractices: "$consultantPersonalDetails.areaOfPractices",
           experience: "$consultantPersonalDetails.experience",
           biography: "$consultantPersonalDetails.biography",
-          averageRating: 1
+          consultationRating: 1
         }
       }
     ]);

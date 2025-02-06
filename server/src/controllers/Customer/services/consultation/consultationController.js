@@ -8,9 +8,10 @@ import PersonalDetails from "../../../../models/Consultant/personalDetails.js";
 import { sendNotificationToConsultant } from "../../../../helper/consultant/notificationHelper.js";
 import { sendNotificationToCustomer } from "../../../../helper/customer/notificationHelper.js";
 import mongoose from "mongoose";
+import { getCurrencyFromCountryCode } from "../../../../helper/customer/currencyHelper.js";
 
 export const handleConsultationDetails = async (req, res, next) => {
-  const session = await mongoose.startSession(); // Start a session for transaction
+  const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
@@ -41,11 +42,12 @@ export const handleConsultationDetails = async (req, res, next) => {
       customer,
       consultantPersonalDetails
     ] = await Promise.all([
-      Consultant.findById(consultantID).select("email"),
+      Consultant.findById(consultantID).select("email countryCode"),
       Customer.findById(customerID).select("email"),
       PersonalDetails.findOne({ consultantId: consultantID }).select("country")
     ]);
-
+    const countryCode =
+      consultant.countryCode || consultantPersonalDetails.country;
     if (!consultant || !customer || !consultantPersonalDetails) {
       return res.status(404).json({
         message:
@@ -53,10 +55,9 @@ export const handleConsultationDetails = async (req, res, next) => {
       });
     }
 
-    // Fetch dividend details
-    let dividend = await Dividend.findOne({
-      countryCode: Consultant.countryCode
-    });
+    let dividend = await Dividend.findOne({ countryCode });
+    console.log("divi", dividend);
+
     if (!dividend) {
       dividend = await Dividend.findOne({ countryCode: "AE" });
       if (!dividend) {
@@ -68,6 +69,8 @@ export const handleConsultationDetails = async (req, res, next) => {
 
     const ratingKey = `star${reviewRating}`;
     const ratingDividend = dividend.rates.get(ratingKey);
+    console.log("ratingDividend", ratingDividend);
+
     if (!ratingDividend) {
       return res
         .status(404)
@@ -77,10 +80,8 @@ export const handleConsultationDetails = async (req, res, next) => {
     const consultationAmountPerSecond = ratingDividend.dividend / 60;
     let consultantShare = callDurationInSecond * consultationAmountPerSecond;
 
-    // Round to 2 decimal places
     consultantShare = parseFloat(consultantShare.toFixed(2));
 
-    // Save consultation details
     const newConsultationDetails = new consultationDetails({
       consultantId: consultantID,
       customerId: customerID,
@@ -90,6 +91,14 @@ export const handleConsultationDetails = async (req, res, next) => {
       consultantShare
     });
     await newConsultationDetails.save({ session });
+
+    // If no local dividend, use AED as the default currency
+    const consultantCurrency =
+      dividend.countryCode === "AE"
+        ? "AED"
+        : await getCurrencyFromCountryCode(countryCode);
+
+    console.log("consultantCurrency", consultantCurrency);
 
     // Handle wallet deduction
     const wallet = await Wallet.findOne({ customerId: customerID });
@@ -118,6 +127,7 @@ export const handleConsultationDetails = async (req, res, next) => {
           {
             customerId: customerID,
             amount: consultantShare,
+            currency: consultantCurrency,
             status: "completed",
             date: new Date()
           }
@@ -130,6 +140,7 @@ export const handleConsultationDetails = async (req, res, next) => {
       earnings.activity.push({
         customerId: customerID,
         amount: consultantShare,
+        currency: consultantCurrency,
         status: "completed",
         date: new Date()
       });
@@ -167,7 +178,7 @@ export const handleConsultationDetails = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Error in handleConsultationDetails:", error);
-    await session.abortTransaction(); // Rollback transaction in case of error
+    await session.abortTransaction();
     session.endSession();
     next(error);
   }

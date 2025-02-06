@@ -1,13 +1,22 @@
 import ConsultantProfile from "../../../models/Consultant/User.js";
 import PersonalDetails from "../../../models/Consultant/personalDetails.js";
 import ConsultationDetails from "../../../models/Customer/consultationModel/consultationModel.js";
+import Favorite from "../../../models/Customer/customerModels/customerFavorites.js";
 import { formatDate } from "../../../helper/dateFormatter.js";
 
 export const getConsultantLists = async (req, res, next) => {
   try {
-    // Step 1: Aggregate consultant data with average ratings in a single query
+    // Step 1: Get customer ID from request (assuming customer ID is available in req.user)
+    const customerId = req.user._id;
+
+    // Step 2: Fetch customer's favorite consultants
+    const favorites = await Favorite.find({ customerId }).select("consultantId");
+
+    // Extract the list of favorite consultant IDs
+    const favoriteConsultantIds = favorites.map(fav => fav.consultantId.toString());
+
+    // Step 3: Aggregate consultant data with average ratings in a single query
     const consultants = await ConsultantProfile.aggregate([
-      // Lookup for PersonalDetails
       {
         $lookup: {
           from: "consultant_personaldetails",
@@ -32,7 +41,6 @@ export const getConsultantLists = async (req, res, next) => {
           biography: "$personalDetails.biography",
         },
       },
-      // Remove the personalDetails field
       {
         $project: {
           personalDetails: 0,
@@ -44,7 +52,6 @@ export const getConsultantLists = async (req, res, next) => {
           __v: 0,
         },
       },
-      // Lookup for IDProof to ensure status is 'approved'
       {
         $lookup: {
           from: "consultant_idproofs",
@@ -64,16 +71,14 @@ export const getConsultantLists = async (req, res, next) => {
           "idProof.status": "approved",
         },
       },
-      // Project to exclude the idProof data
       {
         $project: {
           idProof: 0,
         },
       },
-      // Lookup for ConsultationDetails to calculate average rating
       {
         $lookup: {
-          from: "consultationdetails", // Ensure this matches your collection name
+          from: "consultationdetails",
           localField: "_id",
           foreignField: "consultantId",
           as: "consultations",
@@ -84,13 +89,12 @@ export const getConsultantLists = async (req, res, next) => {
           consultationRating: {
             $cond: {
               if: { $gt: [{ $size: "$consultations" }, 0] }, 
-              then: {  $round: [{ $avg: "$consultations.consultationRating" }, 2] }, 
+              then: { $round: [{ $avg: "$consultations.consultationRating" }, 2] }, 
               else: 0, 
             },
           },
         },
       },
-      // Remove the consultations field
       {
         $project: {
           consultations: 0,
@@ -99,9 +103,12 @@ export const getConsultantLists = async (req, res, next) => {
       { $sort: { creationDate: -1 } },
     ]);
 
-    // Format the creationDate for each consultant
+    // Step 4: Mark consultants as favorites
     const formattedConsultants = consultants.map((consultant) => {
+      // Check if the consultant is in the customer's favorites
+      const isFav = favoriteConsultantIds.includes(consultant._id.toString());
       consultant.creationDate = formatDate(consultant.creationDate);
+      consultant.isFav = isFav; // Add isFav field
       return consultant;
     });
 

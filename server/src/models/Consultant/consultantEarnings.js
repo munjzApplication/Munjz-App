@@ -22,6 +22,10 @@ const earningsSchema = new mongoose.Schema({
         type: Number,
         required: true, // Amount earned in this activity
       },
+      currency: {
+        type:String,
+        require: true,
+      },
       status: {
         type: String,
         enum: ["pending", "completed", "cancelled"], // Define allowed statuses

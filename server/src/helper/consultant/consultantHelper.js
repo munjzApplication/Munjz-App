@@ -11,3 +11,7 @@ export const generateConsultantUniqueId = async () => {
 
   return `MCnslt${String(newId).padStart(2, '0')}`;
 };
+
+
+
+
