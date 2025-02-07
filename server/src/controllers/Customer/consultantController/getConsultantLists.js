@@ -45,11 +45,10 @@ export const getConsultantLists = async (req, res, next) => {
         $project: {
           personalDetails: 0,
           password: 0,
-          email: 0,
           phoneNumber: 0,
           emailVerified: 0,
-          isBlocked: 0,
           __v: 0,
+          
         },
       },
       {

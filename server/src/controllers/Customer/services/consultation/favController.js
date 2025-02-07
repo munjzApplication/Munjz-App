@@ -113,7 +113,7 @@ export const getFavoriteConsultants = async (req, res, next) => {
       {
         $project: {
           _id: 0,
-          consultantId: "$consultantDetails._id",
+          _id: "$consultantDetails._id",
           Name: "$consultantDetails.Name",
           email: "$consultantDetails.email",
           consultantUniqueId: "$consultantDetails.consultantUniqueId",
@@ -125,7 +125,8 @@ export const getFavoriteConsultants = async (req, res, next) => {
           areaOfPractices: "$consultantPersonalDetails.areaOfPractices",
           experience: "$consultantPersonalDetails.experience",
           biography: "$consultantPersonalDetails.biography",
-          consultationRating: 1
+          consultationRating: 1,
+          isFav: { $literal: true } // Set isFav to true
         }
       }
     ]);
@@ -138,9 +139,10 @@ export const getFavoriteConsultants = async (req, res, next) => {
 
     res.status(200).json({
       message: "Favorite Consultants fetched successfully",
-      favorites: formattedFavorites || []
+      data: formattedFavorites || []
     });
   } catch (error) {
     next(error);
   }
 };
+
