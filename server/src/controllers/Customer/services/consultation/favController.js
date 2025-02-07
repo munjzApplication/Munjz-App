@@ -3,17 +3,27 @@ import CustomerFavorites from "../../../../models/Customer/customerModels/custom
 import ConsultantProfile from "../../../../models/Consultant/User.js";
 import PersonalDetails from "../../../../models/Consultant/personalDetails.js";
 import { formatDate } from "../../../../helper/dateFormatter.js";
-export const addFavoriteConsultant = async (req, res, next) => {
+export const updateFavoriteConsultant = async (req, res, next) => {
   try {
-    const { consultantId } = req.body;
-    const customerId = req.user._id; // Retrieve customerId from the token
+    const { consultantId, action } = req.body;
+    const customerId = req.user._id;
 
-    const customer = await CustomerProfile.findOne({ _id: customerId }); // Mongoose query to fetch the customer
+    // Validate the action
+    const validActions = ["addfav", "removefav"];
+    if (!validActions.includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid action. Use 'addfav' or 'removefav'."
+      });
+    }
 
+    // Check if the customer exists
+    const customer = await CustomerProfile.findOne({ _id: customerId });
     if (!customer) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Customer not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found"
+      });
     }
 
     // Ensure favorites is an array
@@ -27,30 +37,56 @@ export const addFavoriteConsultant = async (req, res, next) => {
       consultantId: consultantId
     });
 
-    if (isFavorite) {
-      return res.status(409).json({
-        message: "Consultant is already in favorites"
+    // Action: Add to favorites
+    if (action === "addfav") {
+      if (isFavorite) {
+        return res.status(409).json({
+          message: "Consultant is already in favorites",
+          isFav: true
+        });
+      }
+
+      const newFavorite = new CustomerFavorites({
+        customerId: customerId,
+        consultantId: consultantId
+      });
+      await newFavorite.save();
+
+      return res.status(200).json({
+        message: "Consultant added to favorites successfully",
+        isFav: true
       });
     }
 
-    // Add consultant to favorites in the CustomerFavorites model
-    const newFavorite = new CustomerFavorites({
-      customerId: customerId,
-      consultantId: consultantId
-    });
-    await newFavorite.save();
+    // Action: Remove from favorites
+    if (action === "removefav") {
+      if (!isFavorite) {
+        return res.status(404).json({
+          message: "Consultant is not in favorites",
+          isFav: false
+        });
+      }
 
-    res.status(200).json({
-      message: "Consultant added to favorites successfully"
-    });
+      await CustomerFavorites.deleteOne({
+        customerId: customerId,
+        consultantId: consultantId
+      });
+
+      return res.status(200).json({
+        message: "Consultant removed from favorites successfully",
+        isFav: false
+      });
+    }
+
   } catch (error) {
     next(error);
   }
 };
 
+
 export const getFavoriteConsultants = async (req, res, next) => {
   try {
-    const customerId = req.user._id; // Retrieve customerId from the token
+    const customerId = req.user._id;
 
     const favorites = await CustomerFavorites.aggregate([
       {
@@ -67,7 +103,7 @@ export const getFavoriteConsultants = async (req, res, next) => {
       {
         $unwind: {
           path: "$consultantDetails",
-          preserveNullAndEmptyArrays: false // Removes documents with no match
+          preserveNullAndEmptyArrays: false
         }
       },
       {
@@ -107,7 +143,7 @@ export const getFavoriteConsultants = async (req, res, next) => {
       },
       {
         $match: {
-          "consultantDetails._id": { $exists: true } // Ensure consultant exists
+          "consultantDetails._id": { $exists: true }
         }
       },
       {
@@ -126,7 +162,7 @@ export const getFavoriteConsultants = async (req, res, next) => {
           experience: "$consultantPersonalDetails.experience",
           biography: "$consultantPersonalDetails.biography",
           consultationRating: 1,
-          isFav: { $literal: true } // Set isFav to true
+          isFav: { $literal: true }
         }
       }
     ]);
@@ -145,4 +181,3 @@ export const getFavoriteConsultants = async (req, res, next) => {
     next(error);
   }
 };
-
