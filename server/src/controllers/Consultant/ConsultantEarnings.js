@@ -106,7 +106,7 @@ export const convertEarningsToAED = async (req, res, next) => {
     const consultantId = req.user._id;
     const { totalEarnings, currency } = req.body;
 
-    // Find the consultant profile const consultant = await ConsultantProfile.findById(consultantId);
+    const consultant = await ConsultantProfile.findById(consultantId);
     if (!consultant) {
       return res.status(404).json({ message: "Consultant not found" });
     }
@@ -124,6 +124,7 @@ export const convertEarningsToAED = async (req, res, next) => {
       `Converted ${totalEarnings} ${currency} to ${convertedAmount} AED`
     );
 
+    // Respond with the converted earnings
     return res.status(200).json({
       message: "Earnings successfully converted to AED",
       convertedEarnings: {
