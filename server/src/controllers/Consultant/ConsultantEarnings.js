@@ -1,7 +1,10 @@
 import Earnings from "../../models/Consultant/consultantEarnings.js";
 import ConsultantProfile from "../../models/Consultant/User.js";
-import CustomerProfile from "../../models/Customer/customerModels/customerModel.js"
-import { getCurrencyFromCountryCode, getExchangeRate } from "../../helper/customer/currencyHelper.js";
+import CustomerProfile from "../../models/Customer/customerModels/customerModel.js";
+import {
+  getCurrencyFromCountryCode,
+  getExchangeRate
+} from "../../helper/customer/currencyHelper.js";
 import { formatDate } from "../../helper/dateFormatter.js";
 
 export const getConsultantEarnings = async (req, res, next) => {
@@ -21,45 +24,56 @@ export const getConsultantEarnings = async (req, res, next) => {
     }
 
     // Get consultant's preferred currency
-    const consultantCurrency = await getCurrencyFromCountryCode(consultant.countryCode);
+    const consultantCurrency = await getCurrencyFromCountryCode(
+      consultant.countryCode
+    );
     console.log("Consultant Currency:", consultantCurrency);
 
     // Validate earnings activity
     if (!Array.isArray(consultantEarnings.activity)) {
-      return res.status(400).json({ message: "No activities found in consultant earnings" });
+      return res
+        .status(400)
+        .json({ message: "No activities found in consultant earnings" });
     }
 
     let totalConvertedEarnings = 0; // Store the total earnings after conversion
 
     // Process activities with currency conversion, date formatting, and customer name retrieval
     const updatedActivities = await Promise.all(
-      consultantEarnings.activity.map(async (activity) => {
+      consultantEarnings.activity.map(async activity => {
         const { amount, currency, date, customerId } = activity;
         let convertedAmount = amount;
         let convertedCurrency = currency;
 
         // Convert only if the currency is different from consultant's currency
         if (currency !== consultantCurrency) {
-          const exchangeRate = await getExchangeRate(currency, consultantCurrency);
+          const exchangeRate = await getExchangeRate(
+            currency,
+            consultantCurrency
+          );
           convertedAmount = parseFloat((amount * exchangeRate).toFixed(2));
           convertedCurrency = consultantCurrency;
-          console.log(`Converted ${amount} ${currency} to ${convertedAmount} ${consultantCurrency}`);
+          console.log(
+            `Converted ${amount} ${currency} to ${convertedAmount} ${consultantCurrency}`
+          );
         }
 
         // Add converted amount to total earnings
         totalConvertedEarnings += convertedAmount;
 
         // Fetch customer name
-        const customer = await CustomerProfile.findById(customerId).select("Name");
+        const customer = await CustomerProfile.findById(customerId).select(
+          "Name"
+        );
         const customerName = customer ? customer.Name : "Unknown";
 
         return {
           customerId,
-          customerName, // Added customer name
+          customerName,
           amount: convertedAmount,
           currency: convertedCurrency,
           status: activity.status,
-          date: formatDate(date), // Properly formatted date
+          date: formatDate(date),
           _id: activity._id
         };
       })
@@ -74,16 +88,51 @@ export const getConsultantEarnings = async (req, res, next) => {
       consultantEarnings: {
         _id: consultantEarnings._id,
         consultantId: consultantEarnings.consultantId,
-        consultantName: consultant.name, // Ensure this is the correct field
-        totalEarnings: totalConvertedEarnings, // Updated total earnings
-        currency: consultantCurrency, // Show the consultant's currency
+        consultantName: consultant.Name,
+        totalEarnings: totalConvertedEarnings,
+        currency: consultantCurrency,
         __v: consultantEarnings.__v,
         activity: updatedActivities
       }
     });
-
   } catch (error) {
     console.error("Error fetching consultant earnings:", error);
+    return next(error);
+  }
+};
+
+export const convertEarningsToAED = async (req, res, next) => {
+  try {
+    const consultantId = req.user._id;
+    const { totalEarnings, currency } = req.body;
+
+    // Find the consultant profile const consultant = await ConsultantProfile.findById(consultantId);
+    if (!consultant) {
+      return res.status(404).json({ message: "Consultant not found" });
+    }
+
+    // Fetch the exchange rate to convert the given currency to AED
+    const exchangeRate = await getExchangeRate(currency, "AED");
+
+    // Calculate the converted total earnings to AED
+    const convertedAmount = parseFloat(
+      (totalEarnings * exchangeRate).toFixed(2)
+    );
+    const convertedCurrency = "AED";
+
+    console.log(
+      `Converted ${totalEarnings} ${currency} to ${convertedAmount} AED`
+    );
+
+    return res.status(200).json({
+      message: "Earnings successfully converted to AED",
+      convertedEarnings: {
+        amount: convertedAmount,
+        currency: convertedCurrency
+      }
+    });
+  } catch (error) {
+    console.error("Error converting earnings: ", error.message);
     return next(error);
   }
 };

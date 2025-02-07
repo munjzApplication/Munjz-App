@@ -1,7 +1,7 @@
 import express from "express";
 import { getBankDetails , getDocuments, getPersonalDetails , getDocStatus } from "../../../controllers/Consultant/getDatasController.js";
 import { getConsultationDetails } from "../../../controllers/Consultant/getConsultationDatas.js"
-import { getConsultantEarnings } from "../../../controllers/Consultant/getConsultantEarnings.js"
+import { getConsultantEarnings } from "../../../controllers/Consultant/ConsultantEarnings.js"
 const router = express.Router();
 
 
