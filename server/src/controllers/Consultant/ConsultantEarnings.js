@@ -106,27 +106,54 @@ export const convertEarningsToAED = async (req, res, next) => {
     const consultantId = req.user._id;
     const { totalEarnings, currency } = req.body;
 
+    // Find consultant profile
     const consultant = await ConsultantProfile.findById(consultantId);
     if (!consultant) {
       return res.status(404).json({ message: "Consultant not found" });
     }
 
-    // Fetch the exchange rate to convert the given currency to AED
-    const exchangeRate = await getExchangeRate(currency, "AED");
-
-    // Calculate the converted total earnings to AED
-    const convertedAmount = parseFloat(
-      (totalEarnings * exchangeRate).toFixed(2)
+    // Get consultant's preferred currency
+    const consultantCurrency = await getCurrencyFromCountryCode(
+      consultant.countryCode
     );
-    const convertedCurrency = "AED";
+    console.log("Consultant Currency:", consultantCurrency);
 
-    console.log(
-      `Converted ${totalEarnings} ${currency} to ${convertedAmount} AED`
-    );
+    let convertedAmount;
+    let convertedCurrency = "AED";
+
+    if (currency !== "AED") {
+      // Case 1: Convert to AED (consultant's earnings in another currency)
+      const exchangeRateToAED = await getExchangeRate(currency, "AED");
+      convertedAmount = parseFloat(
+        (totalEarnings * exchangeRateToAED).toFixed(2)
+      );
+      console.log(
+        `Converted ${totalEarnings} ${currency} to ${convertedAmount} AED`
+      );
+    } else if (consultantCurrency !== "AED") {
+      // Case 2: Convert from AED to consultant's original currency
+      const exchangeRateToOriginal = await getExchangeRate(
+        "AED",
+        consultantCurrency
+      );
+      convertedAmount = parseFloat(
+        (totalEarnings * exchangeRateToOriginal).toFixed(2)
+      );
+      convertedCurrency = consultantCurrency;
+      console.log(
+        `Converted ${totalEarnings} AED to ${convertedAmount} ${consultantCurrency}`
+      );
+    } else {
+      // Case 3: Already in AED, no conversion needed
+      convertedAmount = totalEarnings;
+      console.log(
+        `No conversion needed, total earnings: ${convertedAmount} AED`
+      );
+    }
 
     // Respond with the converted earnings
     return res.status(200).json({
-      message: "Earnings successfully converted to AED",
+      message: "Earnings conversion successful",
       convertedEarnings: {
         amount: convertedAmount,
         currency: convertedCurrency
