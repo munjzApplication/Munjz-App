@@ -1,7 +1,14 @@
 import consultationDetails from "../../../../models/Customer/consultationModel/consultationModel.js";
-import { formatMinutesToMMSS } from "../../../../helper/dateFormatter.js";
+import { formatDate, formatMinutesToMMSS } from "../../../../helper/dateFormatter.js";
+
 export const getAllConsultationDatas = async (req, res, next) => {
   try {
+    const page = parseInt(req.query.page) || 1; 
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const totalConsultations = await consultationDetails.countDocuments(); 
+
     const consultationDatas = await consultationDetails.aggregate([
       {
         $lookup: {
@@ -28,27 +35,29 @@ export const getAllConsultationDatas = async (req, res, next) => {
           _id: 1,
           consultationDate: 1,
           consultationDuration: 1,
-          CustomerId:"$customer._id",
+          CustomerId: "$customer._id",
           CustomerName: "$customer.Name",
-          ConsultantId:  "$consultant._id",
+          ConsultantId: "$consultant._id",
           ConsultantName: "$consultant.Name"
         }
-      }
+      },
+
+      { $sort: { consultationDate: -1 } },
+      { $skip: skip }, // Skip records for pagination
+      { $limit: limit } // Limit results per page
     ]);
 
     const formattedConsultationDatas = consultationDatas.map(item => ({
       ...item,
+      consultationDate: formatDate(item.consultationDate), 
       consultationDuration: formatMinutesToMMSS(item.consultationDuration / 60)
     }));
-    const totalConsultations = formattedConsultationDatas.length; 
-
-    if (totalConsultations === 0) {
-      return res.status(404).json({ message: "No consultation records found" });
-    }
 
     res.status(200).json({
-      message: "All consultation data retrieved successfully",
-      totalConsultations, 
+      message: "Consultation data retrieved successfully",
+      totalConsultations,
+      totalPages: Math.ceil(totalConsultations / limit),
+      currentPage: page,
       data: formattedConsultationDatas
     });
   } catch (error) {
