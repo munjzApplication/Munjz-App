@@ -37,6 +37,8 @@ export const getAllConsultationDatas = async (req, res, next) => {
           consultationDate: 1,
           consultationDuration: 1,
           consultantShare: 1,
+          consultationRating: 1,
+          stringFeedback:1,
           consultantCountryCode: "$consultant.countryCode", // Store temporarily for currency lookup
           CustomerId: "$customer._id",
           CustomerName: "$customer.Name",
