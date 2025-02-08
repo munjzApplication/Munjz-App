@@ -1,13 +1,14 @@
 import consultationDetails from "../../../../models/Customer/consultationModel/consultationModel.js";
 import { formatDate, formatMinutesToMMSS } from "../../../../helper/dateFormatter.js";
+import { getCurrencyFromCountryCode } from "../../../../helper/customer/currencyHelper.js";
 
 export const getAllConsultationDatas = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1; 
+    const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
     const skip = (page - 1) * limit;
 
-    const totalConsultations = await consultationDetails.countDocuments(); 
+    const totalConsultations = await consultationDetails.countDocuments();
 
     const consultationDatas = await consultationDetails.aggregate([
       {
@@ -35,6 +36,8 @@ export const getAllConsultationDatas = async (req, res, next) => {
           _id: 1,
           consultationDate: 1,
           consultationDuration: 1,
+          consultantShare: 1,
+          consultantCountryCode: "$consultant.countryCode", // Store temporarily for currency lookup
           CustomerId: "$customer._id",
           CustomerName: "$customer.Name",
           ConsultantId: "$consultant._id",
@@ -43,15 +46,24 @@ export const getAllConsultationDatas = async (req, res, next) => {
       },
 
       { $sort: { consultationDate: -1 } },
-      { $skip: skip }, // Skip records for pagination
-      { $limit: limit } // Limit results per page
+      { $skip: skip },
+      { $limit: limit }
     ]);
 
-    const formattedConsultationDatas = consultationDatas.map(item => ({
-      ...item,
-      consultationDate: formatDate(item.consultationDate), 
-      consultationDuration: formatMinutesToMMSS(item.consultationDuration / 60)
-    }));
+    // Format data and fetch consultant currency
+    const formattedConsultationDatas = await Promise.all(
+      consultationDatas.map(async ({ consultantCountryCode, ...item }) => {
+        const consultantCurrency = await getCurrencyFromCountryCode(consultantCountryCode || "");
+        console.log("Consultant Currency:", consultantCurrency);
+
+        return {
+          ...item,
+          consultationDate: formatDate(item.consultationDate),
+          consultationDuration: formatMinutesToMMSS(item.consultationDuration / 60),
+          consultantCurrency
+        };
+      })
+    );
 
     res.status(200).json({
       message: "Consultation data retrieved successfully",

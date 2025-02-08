@@ -6,7 +6,7 @@ export const getCurrencyFromCountryCode = async (countryCode) => {
   try {
     const response = await axios.get(`https://restcountries.com/v3.1/alpha/${countryCode}`);
     return response.data[0]?.currencies
-      ? Object.keys(response.data[0].currencies)[0]  // Get the currency code
+      ? Object.keys(response.data[0].currencies)[0] 
       : null;
   } catch (error) {
     console.error("Error fetching currency:", error);
