@@ -7,11 +7,19 @@ import Notification from "../../models/Admin/notificationModels/notificationMode
 
 export const getWithdrawalDatas = async (req, res, next) => {
   try {
-    const withdrawals = await WithdrawalRequest.find();
+    const consultantId = req.user._id; 
+
+    const consultant = await ConsultantProfile.findById(consultantId);
+    if (!consultant) {
+      return res.status(404).json({ message: "Consultant not found" });
+    }
+
+    const withdrawals = await WithdrawalRequest.find({ consultantId });
 
     if (!withdrawals || withdrawals.length === 0) {
       return res.status(404).json({ message: "No withdrawal requests found" });
     }
+
 
     res.status(200).json({
       message: "Withdrawal requests retrieved successfully",
@@ -22,6 +30,7 @@ export const getWithdrawalDatas = async (req, res, next) => {
     next(error);
   }
 };
+
 export const requestWithdrawal = async (req, res, next) => {
   try {
     const consultantId = req.user._id;
