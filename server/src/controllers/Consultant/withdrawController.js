@@ -1,7 +1,8 @@
 import WithdrawalRequest from "../../models/Consultant/WithdrawRequest.js";
 import ConsultantProfile from "../../models/Consultant/User.js";
+import PersonalDetails from "../../models/Consultant/personalDetails.js";
 import Earnings from "../../models/Consultant/consultantEarnings.js";
-import Notification from "../../models/Admin/notificationModels/notificationModel.js"; // Assuming this is the correct path
+import Notification from "../../models/Admin/notificationModels/notificationModel.js"; 
 
 
 

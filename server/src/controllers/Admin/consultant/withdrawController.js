@@ -1,15 +1,48 @@
 import WithdrawalRequest from "../../../models/Consultant/WithdrawRequest.js";
 import Earnings from "../../../models/Consultant/consultantEarnings.js";
 import Notification from "../../../models/Admin/notificationModels/notificationModel.js";
-
-
-
+import PersonalDetails from "../../../models/Consultant/personalDetails.js";
 
 export const getWithdrawalDatas = async (req, res, next) => {
   try {
-    const withdrawals = await WithdrawalRequest.find();
+    const withdrawals = await WithdrawalRequest.aggregate([
+      {
+        $lookup: {
+          from: "consultant_profiles",
+          localField: "consultantId",
+          foreignField: "_id",
+          as: "consultant"
+        }
+      },
+      { $unwind: { path: "$consultant", preserveNullAndEmptyArrays: true } },
 
-    if (!withdrawals || withdrawals.length === 0) {
+      {
+        $lookup: {
+          from: "consultant_personaldetails",
+          localField: "consultantId",
+          foreignField: "consultantId",
+          as: "personalDetails"
+        }
+      },
+      { $unwind: { path: "$personalDetails", preserveNullAndEmptyArrays: true } },
+
+      {
+        $project: {
+          _id: 1,
+          amount: 1,
+          currentStatus: 1,
+          consultantId: 1,
+          currentStatus: 1,
+          transferId: 1,
+          paymentMethod: 1,
+          Name: "$consultant.Name",
+          email: "$consultant.email",
+          profilePicture: "$personalDetails.profilePicture"
+        }
+      }
+    ]);
+
+    if (!withdrawals.length) {
       return res.status(404).json({ message: "No withdrawal requests found" });
     }
 
@@ -23,12 +56,10 @@ export const getWithdrawalDatas = async (req, res, next) => {
   }
 };
 
-
-
 export const updateWithdrawalStatus = async (req, res, next) => {
   try {
-    const { requestId } = req.params; 
-    const { status, paymentMethod, transferId } = req.body; 
+    const { requestId } = req.params;
+    const { status, paymentMethod, transferId } = req.body;
 
     // Find withdrawal request
     const withdrawal = await WithdrawalRequest.findById(requestId);
@@ -36,8 +67,13 @@ export const updateWithdrawalStatus = async (req, res, next) => {
       return res.status(404).json({ message: "Withdrawal request not found" });
     }
 
-    if (withdrawal.currentStatus !== "pending" && withdrawal.currentStatus !== "processing") {
-      return res.status(400).json({ message: "Withdrawal request is already processed" });
+    if (
+      withdrawal.currentStatus !== "pending" &&
+      withdrawal.currentStatus !== "processing"
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Withdrawal request is already processed" });
     }
 
     // Handle status updates
@@ -47,13 +83,22 @@ export const updateWithdrawalStatus = async (req, res, next) => {
       withdrawal.currentStatus = "declined";
     } else if (status === "completed") {
       if (!paymentMethod || !transferId) {
-        return res.status(400).json({ message: "Payment method and transfer ID are required for completed status" });
+        return res
+          .status(400)
+          .json({
+            message:
+              "Payment method and transfer ID are required for completed status"
+          });
       }
 
       // Get consultant earnings
-      const earnings = await Earnings.findOne({ consultantId: withdrawal.consultantId });
+      const earnings = await Earnings.findOne({
+        consultantId: withdrawal.consultantId
+      });
       if (!earnings || earnings.totalEarnings < withdrawal.amount) {
-        return res.status(400).json({ message: "Insufficient balance in consultant's earnings" });
+        return res
+          .status(400)
+          .json({ message: "Insufficient balance in consultant's earnings" });
       }
 
       // Deduct the amount from earnings
@@ -90,7 +135,9 @@ export const updateWithdrawalStatus = async (req, res, next) => {
 
     await notification.save();
 
-    res.status(200).json({ message: `Withdrawal request updated to ${status}`, withdrawal });
+    res
+      .status(200)
+      .json({ message: `Withdrawal request updated to ${status}`, withdrawal });
   } catch (error) {
     next(error);
   }
