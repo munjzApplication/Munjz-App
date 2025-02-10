@@ -3,6 +3,25 @@ import ConsultantProfile from "../../models/Consultant/User.js";
 import Earnings from "../../models/Consultant/consultantEarnings.js";
 import Notification from "../../models/Admin/notificationModels/notificationModel.js"; // Assuming this is the correct path
 
+
+
+export const getWithdrawalDatas = async (req, res, next) => {
+  try {
+    const withdrawals = await WithdrawalRequest.find();
+
+    if (!withdrawals || withdrawals.length === 0) {
+      return res.status(404).json({ message: "No withdrawal requests found" });
+    }
+
+    res.status(200).json({
+      message: "Withdrawal requests retrieved successfully",
+      withdrawals
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
 export const requestWithdrawal = async (req, res, next) => {
   try {
     const consultantId = req.user._id;
