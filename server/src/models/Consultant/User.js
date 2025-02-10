@@ -63,6 +63,10 @@ const consultantProfileSchema = new mongoose.Schema({
   isBlocked: {
     type: Boolean,
     default: false
+  },
+  deleted: {
+    type: Boolean,
+    default: false  
   }
 });
 

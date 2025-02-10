@@ -41,7 +41,7 @@ router.use("/manageCustomer", protectAdmin, blockCustomerRoute);
 router.use("/manageCustomer",protectAdmin, getAllCustomerDatasRoute)
 
 // Withdraw Request Route
-router.use("/withdraw-request", protectAdmin, withdrawRequestRoute);
+router.use("/withdrawals", protectAdmin, withdrawRequestRoute);
 
 // Court Services Routes
 router.use("/court-services", protectAdmin, courtServiceRoute);

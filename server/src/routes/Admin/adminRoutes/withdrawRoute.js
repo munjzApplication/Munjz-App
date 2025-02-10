@@ -4,6 +4,6 @@ import { updateWithdrawalStatus } from "../../../controllers/Admin/Services/Cons
 const router = express.Router();
 
 
-router.patch('/withdrawals/:id/status', updateWithdrawalStatus);
+router.put('/update-status/:requestId', updateWithdrawalStatus);
 
 export default router;

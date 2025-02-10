@@ -1,12 +1,18 @@
-import WithdrawalRequest from "../../models/Admin/consultantModels/WithdrawRequest.js";
+import WithdrawalRequest from "../../models/Consultant/WithdrawRequest.js";
 import ConsultantProfile from "../../models/Consultant/User.js";
-import Notification from "../../models/Admin/notificationModels/notificationModel.js";  // Assuming this is where the Notification model is
+import Earnings from "../../models/Consultant/consultantEarnings.js";
+import Notification from "../../models/Admin/notificationModels/notificationModel.js"; // Assuming this is the correct path
 
 export const requestWithdrawal = async (req, res, next) => {
   try {
-    const { consultantId, amount, countryCode, currency = "AED" } = req.body;
+    const consultantId = req.user._id;
+    const { amount } = req.body;
 
-  
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Invalid withdrawal amount" });
+    }
+
+    // Fetch consultant details
     const consultant = await ConsultantProfile.findById(consultantId);
     if (!consultant) {
       return res.status(404).json({ message: "Consultant not found" });
@@ -16,42 +22,48 @@ export const requestWithdrawal = async (req, res, next) => {
       return res.status(400).json({ message: "Consultant name is missing" });
     }
 
+    // Fetch consultant's earnings
+    const earnings = await Earnings.findOne({ consultantId });
+    if (!earnings || earnings.totalEarnings < amount) {
+      return res.status(400).json({ message: "Insufficient balance" });
+    }
+
+    // Optional: Prevent multiple pending withdrawal requests
+    const existingRequest = await WithdrawalRequest.findOne({
+      consultantId,
+      currentStatus: "pending"
+    });
+
+    if (existingRequest) {
+      return res.status(400).json({ message: "You already have a pending withdrawal request" });
+    }
+
     // Create withdrawal request entry
     const withdrawal = new WithdrawalRequest({
       consultantId,
-      consultantName: consultant.Name,
       amount,
-      countryCode,
-      currency,
-      email: consultant.email,
-      imageUrl: consultant.imageUrl,
-      currentStatus: "unread"
+      currentStatus: "pending"
     });
 
     await withdrawal.save();
 
-  
-
+    // Notify admin
     const notification = new Notification({
       notificationDetails: {
         type: "Withdrawal Request",
         title: "New Withdrawal Request",
-        message: `${consultant.Name} has requested a withdrawal of ${amount} ${currency}.`,
+        message: `${consultant.Name} has requested a withdrawal of ${amount} AED.`,
         additionalDetails: {
           consultantId: consultant._id,
           amount,
-          currency,
-          countryCode,
-          email: consultant.email,
-          status: "unread",
-          requestDate: new Date(),
-        },
-      },
+          status: "pending",
+          requestDate: new Date()
+        }
+      }
     });
 
-
     await notification.save();
-  
+
     res.status(201).json({ message: "Withdrawal request submitted", withdrawal });
   } catch (error) {
     next(error);

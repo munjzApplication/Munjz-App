@@ -173,24 +173,24 @@ export const deleteProfile = async (req, res, next) => {
   try {
     const consultantId = req.user._id;
 
-    // Delete Consultant Profile
-    const deletedProfile = await ConsultantProfile.findByIdAndDelete(consultantId, { session });
+    // Soft delete Consultant Profile by setting a `deleted` flag
+    const deletedProfile = await ConsultantProfile.findByIdAndUpdate(
+      consultantId,
+      { deleted: true }, // Add a `deleted` flag to mark the profile as deleted
+      { new: true, session }
+    );
+
     if (!deletedProfile) {
       await session.abortTransaction();
       session.endSession();
       return res.status(404).json({ message: "Profile not found." });
     }
 
-    // Delete associated data
-    await PersonalDetails.deleteMany({ consultantId }, { session });
-    await IDProof.deleteMany({ consultantId }, { session });
-    await BankDetails.deleteMany({ consultantId }, { session });
-
     // Commit transaction
     await session.commitTransaction();
     session.endSession();
 
-    res.status(200).json({ message: "Profile and all associated data deleted successfully." });
+    res.status(200).json({ message: "Profile marked as deleted successfully." });
   } catch (error) {
     // Rollback transaction
     await session.abortTransaction();

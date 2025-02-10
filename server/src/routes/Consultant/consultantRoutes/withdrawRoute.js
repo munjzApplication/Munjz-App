@@ -4,6 +4,6 @@ import { requestWithdrawal } from '../../../controllers/Consultant/withdrawContr
 
 const router = express.Router();
 
-router.post('/withdraw', requestWithdrawal);
+router.post('/request', requestWithdrawal);
 
 export default router;

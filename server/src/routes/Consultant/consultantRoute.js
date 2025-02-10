@@ -23,7 +23,7 @@ router.use("/consultantProfile", protect,consultantProfileRoute);
 router.use("/consulatntForgot", consultantForgotRoute);
 router.use("/reupload", protect, consultantreuploadRoute);
 
-router.use("/withdraw", protect, withdraw);
+router.use("/withdrawal", protect, withdraw);
 router.use("/notification",protect,notificationRoute)
 router.use("/get-Datas",protect,consultantGetRoute)
 router.use("/call-manage",consultationDurationRoute)
