@@ -3,7 +3,7 @@ import { requestWithdrawal,getWithdrawalDatas } from '../../../controllers/Consu
 
 
 const router = express.Router();
-router.get('/get-withdrawls',getWithdrawalDatas)
+router.get('/get-withdrawals',getWithdrawalDatas)
 router.post('/request', requestWithdrawal);
 
 export default router;
