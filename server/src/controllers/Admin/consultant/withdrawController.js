@@ -1,11 +1,34 @@
-import WithdrawalRequest from "../../../../models/Consultant/WithdrawRequest.js";
-import Earnings from "../../../../models/Consultant/consultantEarnings.js";
-import Notification from "../../../../models/Admin/notificationModels/notificationModel.js";
+import WithdrawalRequest from "../../../models/Consultant/WithdrawRequest.js";
+import Earnings from "../../../models/Consultant/consultantEarnings.js";
+import Notification from "../../../models/Admin/notificationModels/notificationModel.js";
+
+
+
+
+export const getWithdrawalDatas = async (req, res, next) => {
+  try {
+    const withdrawals = await WithdrawalRequest.find();
+
+    if (!withdrawals || withdrawals.length === 0) {
+      return res.status(404).json({ message: "No withdrawal requests found" });
+    }
+
+    res.status(200).json({
+      message: "Withdrawal requests retrieved successfully",
+      withdrawals
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
+
 
 export const updateWithdrawalStatus = async (req, res, next) => {
   try {
-    const { requestId } = req.params; // Withdrawal request ID from URL params
-    const { status, paymentMethod, transferId } = req.body; // New status and optional payment details
+    const { requestId } = req.params; 
+    const { status, paymentMethod, transferId } = req.body; 
 
     // Find withdrawal request
     const withdrawal = await WithdrawalRequest.findById(requestId);
