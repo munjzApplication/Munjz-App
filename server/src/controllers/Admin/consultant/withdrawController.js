@@ -2,7 +2,8 @@ import WithdrawalRequest from "../../../models/Consultant/WithdrawRequest.js";
 import Earnings from "../../../models/Consultant/consultantEarnings.js";
 import Notification from "../../../models/Admin/notificationModels/notificationModel.js";
 import PersonalDetails from "../../../models/Consultant/personalDetails.js";
-
+import breakDetails from "../../../models/Consultant/bankDetails.js";
+import {formatDate} from "../../../helper/dateFormatter.js";
 export const getWithdrawalDatas = async (req, res, next) => {
   try {
     const withdrawals = await WithdrawalRequest.aggregate([
@@ -25,6 +26,16 @@ export const getWithdrawalDatas = async (req, res, next) => {
         }
       },
       { $unwind: { path: "$personalDetails", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "consultant_bankdetails",  // Correct collection name
+          localField: "consultantId",
+          foreignField: "consultantId",
+          as: "bankDetails"
+        }
+      },
+      
+      { $unwind: { path: "$bankDetails", preserveNullAndEmptyArrays: true } },
 
       {
         $project: {
@@ -35,12 +46,19 @@ export const getWithdrawalDatas = async (req, res, next) => {
           currentStatus: 1,
           transferId: 1,
           paymentMethod: 1,
+          time:1,
           Name: "$consultant.Name",
           email: "$consultant.email",
-          profilePicture: "$personalDetails.profilePicture"
+          profilePicture: "$personalDetails.profilePicture",
+          bankDetails: "$bankDetails",
+          
         }
       }
     ]);
+
+    withdrawals.forEach((withdrawal) => {
+      withdrawal.time = formatDate(withdrawal.time);
+    });
 
     if (!withdrawals.length) {
       return res.status(404).json({ message: "No withdrawal requests found" });
