@@ -88,16 +88,12 @@ export const updateWithdrawalStatus = async (req, res, next) => {
       return res.status(404).json({ message: "Withdrawal request not found" });
     }
 
-    if (
-      withdrawal.currentStatus !== "pending" &&
-      withdrawal.currentStatus !== "processing"
-    ) {
-      return res
-        .status(400)
-        .json({ message: "Withdrawal request is already processed" });
+    // Block updates if the current status is "completed"
+    if (withdrawal.currentStatus === "completed") {
+      return res.status(400).json({ message: "Completed withdrawals cannot be changed" });
     }
 
-    // Handle status updates
+    // Handle status updates for "pending", "processing", and "declined"
     if (status === "processing") {
       withdrawal.currentStatus = "processing";
     } else if (status === "declined") {
@@ -105,19 +101,14 @@ export const updateWithdrawalStatus = async (req, res, next) => {
     } else if (status === "completed") {
       if (!paymentMethod || !transferId) {
         return res.status(400).json({
-          message:
-            "Payment method and transfer ID are required for completed status"
+          message: "Payment method and transfer ID are required for completed status"
         });
       }
 
       // Get consultant earnings
-      const earnings = await Earnings.findOne({
-        consultantId: withdrawal.consultantId
-      });
+      const earnings = await Earnings.findOne({ consultantId: withdrawal.consultantId });
       if (!earnings || earnings.totalEarnings < withdrawal.amount) {
-        return res
-          .status(400)
-          .json({ message: "Insufficient balance in consultant's earnings" });
+        return res.status(400).json({ message: "Insufficient balance in consultant's earnings" });
       }
 
       // Deduct the amount from earnings
@@ -154,10 +145,9 @@ export const updateWithdrawalStatus = async (req, res, next) => {
 
     await notification.save();
 
-    res
-      .status(200)
-      .json({ message: `Withdrawal request updated to ${status}`, withdrawal });
+    res.status(200).json({ message: `Withdrawal request updated to ${status}`, withdrawal });
   } catch (error) {
     next(error);
   }
 };
+
