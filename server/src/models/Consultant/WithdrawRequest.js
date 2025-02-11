@@ -9,7 +9,7 @@ const withdrawalRequestSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   currentStatus: {
     type: String,
-    enum: ["pending", "processing","completed", "declined"], 
+    enum: ["pending", "processing", "completed", "declined"]
   },
   time: { type: Date, default: Date.now },
   transferId: { type: String },

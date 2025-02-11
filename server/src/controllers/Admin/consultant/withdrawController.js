@@ -3,7 +3,7 @@ import Earnings from "../../../models/Consultant/consultantEarnings.js";
 import Notification from "../../../models/Admin/notificationModels/notificationModel.js";
 import PersonalDetails from "../../../models/Consultant/personalDetails.js";
 import breakDetails from "../../../models/Consultant/bankDetails.js";
-import {formatDate} from "../../../helper/dateFormatter.js";
+import { formatDate } from "../../../helper/dateFormatter.js";
 export const getWithdrawalDatas = async (req, res, next) => {
   try {
     const withdrawals = await WithdrawalRequest.aggregate([
@@ -25,17 +25,21 @@ export const getWithdrawalDatas = async (req, res, next) => {
           as: "personalDetails"
         }
       },
-      { $unwind: { path: "$personalDetails", preserveNullAndEmptyArrays: true } },
+      {
+        $unwind: { path: "$personalDetails", preserveNullAndEmptyArrays: true }
+      },
       {
         $lookup: {
-          from: "consultant_bankdetails",  // Correct collection name
+          from: "consultant_bankdetails", 
           localField: "consultantId",
           foreignField: "consultantId",
           as: "bankDetails"
         }
       },
-      
+
       { $unwind: { path: "$bankDetails", preserveNullAndEmptyArrays: true } },
+
+      { $sort: { time: -1 } },
 
       {
         $project: {
@@ -46,17 +50,16 @@ export const getWithdrawalDatas = async (req, res, next) => {
           currentStatus: 1,
           transferId: 1,
           paymentMethod: 1,
-          time:1,
+          time: 1,
           Name: "$consultant.Name",
           email: "$consultant.email",
           profilePicture: "$personalDetails.profilePicture",
-          bankDetails: "$bankDetails",
-          
+          bankDetails: "$bankDetails"
         }
       }
     ]);
 
-    withdrawals.forEach((withdrawal) => {
+    withdrawals.forEach(withdrawal => {
       withdrawal.time = formatDate(withdrawal.time);
     });
 
@@ -101,12 +104,10 @@ export const updateWithdrawalStatus = async (req, res, next) => {
       withdrawal.currentStatus = "declined";
     } else if (status === "completed") {
       if (!paymentMethod || !transferId) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "Payment method and transfer ID are required for completed status"
-          });
+        return res.status(400).json({
+          message:
+            "Payment method and transfer ID are required for completed status"
+        });
       }
 
       // Get consultant earnings
