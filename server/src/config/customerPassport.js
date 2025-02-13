@@ -21,7 +21,7 @@ passport.use(
       try {
         const email = profile.emails[0].value;
 
-        // 1️⃣ Check if a user exists with this email (either from email/password registration or Google)
+        // 1️⃣ Check if a user already exists with this email
         let user = await CustomerProfile.findOne({ email });
 
         if (!user) {
@@ -32,13 +32,15 @@ passport.use(
             email,
             googleId: profile.id,
             profilePhoto: profile.photos[0].value,
-            customerUniqueId
+            customerUniqueId,
+            emailVerified: true // ✅ Mark email as verified
           });
           await user.save();
         } else {
           // 3️⃣ If user exists but does not have a googleId, update it
           if (!user.googleId) {
             user.googleId = profile.id;
+            user.emailVerified = true; // ✅ Mark email as verified
             await user.save();
           }
         }
@@ -51,6 +53,7 @@ passport.use(
     }
   )
 );
+
 
 
 // Facebook Authentication for Consultants
