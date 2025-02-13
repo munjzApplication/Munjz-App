@@ -9,27 +9,24 @@ import {
 } from "../../helper/customer/currencyHelper.js";
 import { formatDate } from "../../helper/dateFormatter.js";
 
-export const getConsultantEarnings = async (req, res, next) => {
-  try {
-    const consultantID = req.user._id;
+export const getConsultantEarnings = async (req, res, next) => {   
+  try {     
+    const consultantID = req.user._id;  
 
-    if (!consultantID) {
-      return res.status(400).json({ message: "Consultant ID is required." });
-    }
+    if (!consultantID) {       
+      return res.status(400).json({ message: "Consultant ID is required." });     
+    }  
 
-    // Fetch consultant earnings & profile in parallel (Better Performance)
+    // Fetch consultant earnings & profile in parallel
     const [earnings, consultant] = await Promise.all([
       Earnings.findOne({ consultantId: consultantID }).select("totalEarnings currency").lean(),
       ConsultantProfile.findById(consultantID).select("Name").lean()
-    ]);
+    ]);  
 
-    if (!earnings) {
-      return res.status(404).json({ message: "Earnings not found for the specified consultant." });
-    }
-
-    if (!consultant) {
-      return res.status(404).json({ message: "Consultant not found." });
-    }
+    // Default values if earnings or consultant profile is missing
+    const totalEarnings = earnings?.totalEarnings || 0;
+    const currency = earnings?.currency || "AED";
+    const consultantName = consultant?.Name || "Unknown Consultant";
 
     // Fetch consultation activities with customer info
     const consultationActivities = await ConsultationActivity.aggregate([
@@ -55,48 +52,48 @@ export const getConsultantEarnings = async (req, res, next) => {
           customerName: { $ifNull: ["$customerDetails.Name", "Unknown Customer"] }
         }
       }
-    ]);
+    ]);  
 
-    // Fetch withdrawal activities (directly from Mongoose with lean())
+    // Fetch withdrawal activities
     const withdrawalActivities = await WithdrawalActivity.find({ consultantId: consultantID })
       .sort({ date: -1 })
       .select("amount currency status date")
-      .lean();
+      .lean();  
 
-    // Format withdrawals to match consultation structure
+    // Format withdrawals
     const formattedWithdrawals = withdrawalActivities.map((withdrawal) => ({
       type: "Withdrawal",
       amount: withdrawal.amount,
       date: withdrawal.date,
       currency: withdrawal.currency,
       status: withdrawal.status,
-      
-    }));
+    }));  
 
-    // Merge and sort activities by date
+    // Merge and sort activities
     const combinedActivities = [...consultationActivities, ...formattedWithdrawals].sort(
       (a, b) => new Date(b.date) - new Date(a.date)
-    );
+    );  
 
     // Format dates
     const formattedActivities = combinedActivities.map(activity => ({
       ...activity,
-      date: formatDate(activity.date) 
-    }));
+      date: formatDate(activity.date)
+    }));  
 
     return res.status(200).json({
       consultantId: consultantID,
-      consultantName: consultant.Name,
-      totalEarnings: earnings.totalEarnings,
-      currency: earnings.currency,
+      consultantName,
+      totalEarnings,
+      currency,
       activities: formattedActivities
-    });
+    });  
 
-  } catch (error) {
-    console.error("Error in getConsultantEarnings:", error);
-    next(error);
-  }
+  } catch (error) {     
+    console.error("Error in getConsultantEarnings:", error);     
+    next(error);   
+  } 
 };
+
 
 
 
