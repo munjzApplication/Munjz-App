@@ -242,24 +242,53 @@ export const googleCallback = (req, res, next) => {
       });
     }
 
-    const token = generateToken(user._id, user.emailVerified);
+    try {
+      // Check if the user already exists in the database by email
+      const existingUser = await CustomerProfile.findOne({ email: CustomerProfile.email });
+console.log('existingUser',existingUser);
 
-    await notificationService.sendToCustomer(
-      user._id,
-      "Google Authentication Successful",
-      "You have successfully signed in using Google."
-    );
+      let finalUser = existingUser;
 
-    res.status(200).json({
-      success: true,
-      message: "Google authentication successful.",
-      token,
-      user: {
-        id: user._id,
-        Name: user.Name,
-        email: user.email
+      // If the user does not exist, create a new user
+      if (!existingUser) {
+        finalUser = new CustomerProfile({
+          googleId: user.googleId, // Save Google ID
+          email: user.email,
+          Name: user.Name,
+          emailVerified: user.emailVerified,
+        });
+        await finalUser.save();
       }
-    });
+
+      // Generate a token for the user
+      const token = generateToken(finalUser._id, finalUser.emailVerified);
+
+      // Send a notification to the customer
+      await notificationService.sendToCustomer(
+        finalUser._id,
+        "Google Authentication Successful",
+        "You have successfully signed in using Google."
+      );
+
+      // Return the response with the token and user data
+      res.status(200).json({
+        success: true,
+        message: "Google authentication successful.",
+        token,
+        user: {
+          id: finalUser._id,
+          Name: finalUser.Name,
+          email: finalUser.email
+        }
+      });
+    } catch (error) {
+      console.error("Error during Google authentication:", error);
+      res.status(500).json({
+        success: false,
+        message: "An error occurred during Google authentication.",
+        error: error.message
+      });
+    }
   })(req, res, next);
 };
 
