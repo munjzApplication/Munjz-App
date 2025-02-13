@@ -1,6 +1,8 @@
 import Earnings from "../../models/Consultant/consultantEarnings.js";
+import ConsultationActivity from "../../models/Consultant/consultationActivity.js";
 import ConsultantProfile from "../../models/Consultant/User.js";
 import CustomerProfile from "../../models/Customer/customerModels/customerModel.js";
+import WithdrawalActivity from "../../models/Consultant/withdrawalActivity .js";
 import {
   getCurrencyFromCountryCode,
   getExchangeRate
@@ -9,129 +11,115 @@ import { formatDate } from "../../helper/dateFormatter.js";
 
 export const getConsultantEarnings = async (req, res, next) => {
   try {
-    const consultantId = req.user._id;
+    const consultantID = req.user._id;
 
-    // Fetch consultant details
-    const consultant = await ConsultantProfile.findById(consultantId);
+    if (!consultantID) {
+      return res.status(400).json({ message: "Consultant ID is required." });
+    }
+
+    // Fetch consultant earnings & profile in parallel (Better Performance)
+    const [earnings, consultant] = await Promise.all([
+      Earnings.findOne({ consultantId: consultantID }).select("totalEarnings currency").lean(),
+      ConsultantProfile.findById(consultantID).select("Name").lean()
+    ]);
+
+    if (!earnings) {
+      return res.status(404).json({ message: "Earnings not found for the specified consultant." });
+    }
+
     if (!consultant) {
-      return res.status(404).json({ message: "Consultant not found" });
+      return res.status(404).json({ message: "Consultant not found." });
     }
 
-    // Fetch consultant earnings
-    const consultantEarnings = await Earnings.findOne({ consultantId });
-    if (!consultantEarnings) {
-      return res.status(404).json({ message: "Consultant earnings not found" });
-    }
-
-    // Get consultant's preferred currency
-    const consultantCurrency = await getCurrencyFromCountryCode(
-      consultant.countryCode
-    );
-    console.log("Consultant Currency:", consultantCurrency);
-
-    // Validate earnings activity
-    if (!Array.isArray(consultantEarnings.activity)) {
-      return res
-        .status(400)
-        .json({ message: "No activities found in consultant earnings" });
-    }
-
-    let totalConvertedEarnings = 0; // Store the total earnings after conversion
-
-    // Process activities with currency conversion, date formatting, and customer name retrieval
-    const updatedActivities = await Promise.all(
-      consultantEarnings.activity.map(async activity => {
-        const { amount, currency, date, customerId } = activity;
-        let convertedAmount = amount;
-        let convertedCurrency = currency;
-
-        // Convert only if the currency is different from consultant's currency
-        if (currency !== consultantCurrency) {
-          const exchangeRate = await getExchangeRate(
-            currency,
-            consultantCurrency
-          );
-          convertedAmount = parseFloat((amount * exchangeRate).toFixed(2));
-          convertedCurrency = consultantCurrency;
-          console.log(
-            `Converted ${amount} ${currency} to ${convertedAmount} ${consultantCurrency}`
-          );
+    // Fetch consultation activities with customer info
+    const consultationActivities = await ConsultationActivity.aggregate([
+      { $match: { consultantId: consultantID } },
+      { $sort: { date: -1 } },
+      {
+        $lookup: {
+          from: "customer_profiles",
+          localField: "customerId",
+          foreignField: "_id",
+          as: "customerDetails"
         }
+      },
+      { $unwind: { path: "$customerDetails", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          type: { $literal: "Consultation" }, // Label activity type
+          customerId: "$customerId", // Include customerId
+          amount: 1,
+          date: 1,
+          currency: 1,
+          status: 1,
+          customerName: { $ifNull: ["$customerDetails.Name", "Unknown Customer"] }
+        }
+      }
+    ]);
 
-        // Add converted amount to total earnings
-        totalConvertedEarnings += convertedAmount;
+    // Fetch withdrawal activities (directly from Mongoose with lean())
+    const withdrawalActivities = await WithdrawalActivity.find({ consultantId: consultantID })
+      .sort({ date: -1 })
+      .select("amount currency status date")
+      .lean();
 
-        // Fetch customer name
-        const customer = await CustomerProfile.findById(customerId).select(
-          "Name"
-        );
-        const customerName = customer ? customer.Name : "Unknown";
+    // Format withdrawals to match consultation structure
+    const formattedWithdrawals = withdrawalActivities.map((withdrawal) => ({
+      type: "Withdrawal",
+      amount: withdrawal.amount,
+      date: withdrawal.date,
+      currency: withdrawal.currency,
+      status: withdrawal.status,
+      
+    }));
 
-        return {
-          customerId,
-          customerName,
-          amount: convertedAmount,
-          currency: convertedCurrency,
-          status: activity.status,
-          date: formatDate(date),
-          _id: activity._id
-        };
-      })
+    // Merge and sort activities by date
+    const combinedActivities = [...consultationActivities, ...formattedWithdrawals].sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
     );
 
-    // Update total earnings in the database
-    consultantEarnings.totalEarnings = totalConvertedEarnings;
-    await consultantEarnings.save();
+    // Format dates
+    const formattedActivities = combinedActivities.map(activity => ({
+      ...activity,
+      date: formatDate(activity.date) 
+    }));
 
     return res.status(200).json({
-      message: "Consultant earnings successfully fetched",
-      consultantEarnings: {
-        _id: consultantEarnings._id,
-        consultantId: consultantEarnings.consultantId,
-        consultantName: consultant.Name,
-        totalEarnings: totalConvertedEarnings,
-        currency: consultantCurrency,
-        __v: consultantEarnings.__v,
-        activity: updatedActivities
-      }
+      consultantId: consultantID,
+      consultantName: consultant.Name,
+      totalEarnings: earnings.totalEarnings,
+      currency: earnings.currency,
+      activities: formattedActivities
     });
+
   } catch (error) {
-    console.error("Error fetching consultant earnings:", error);
-    return next(error);
+    console.error("Error in getConsultantEarnings:", error);
+    next(error);
   }
 };
 
-export const convertEarningsToAED = async (req, res, next) => {
+
+
+export const convertEarningsToLocalCurrency = async (req, res, next) => {
   try {
     const consultantId = req.user._id;
     const { totalEarnings, currency } = req.body;
 
-    // Find consultant profile
     const consultant = await ConsultantProfile.findById(consultantId);
     if (!consultant) {
       return res.status(404).json({ message: "Consultant not found" });
     }
 
-    // Get consultant's preferred currency
     const consultantCurrency = await getCurrencyFromCountryCode(
       consultant.countryCode
     );
     console.log("Consultant Currency:", consultantCurrency);
 
-    let convertedAmount;
+    let convertedAmount = totalEarnings;
     let convertedCurrency = "AED";
 
-    if (currency !== "AED") {
-      // Case 1: Convert to AED (consultant's earnings in another currency)
-      const exchangeRateToAED = await getExchangeRate(currency, "AED");
-      convertedAmount = parseFloat(
-        (totalEarnings * exchangeRateToAED).toFixed(2)
-      );
-      console.log(
-        `Converted ${totalEarnings} ${currency} to ${convertedAmount} AED`
-      );
-    } else if (consultantCurrency !== "AED") {
-      // Case 2: Convert from AED to consultant's original currency
+    if (currency === "AED" && consultantCurrency !== "AED") {
+      // Convert AED to consultant's own currency
       const exchangeRateToOriginal = await getExchangeRate(
         "AED",
         consultantCurrency
@@ -140,18 +128,16 @@ export const convertEarningsToAED = async (req, res, next) => {
         (totalEarnings * exchangeRateToOriginal).toFixed(2)
       );
       convertedCurrency = consultantCurrency;
+
       console.log(
         `Converted ${totalEarnings} AED to ${convertedAmount} ${consultantCurrency}`
       );
     } else {
-      // Case 3: Already in AED, no conversion needed
-      convertedAmount = totalEarnings;
       console.log(
-        `No conversion needed, total earnings: ${convertedAmount} AED`
+        `No conversion needed, total earnings: ${convertedAmount} ${currency}`
       );
     }
 
-    // Respond with the converted earnings
     return res.status(200).json({
       message: "Earnings conversion successful",
       convertedEarnings: {

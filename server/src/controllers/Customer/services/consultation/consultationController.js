@@ -4,11 +4,16 @@ import Customer from "../../../../models/Customer/customerModels/customerModel.j
 import Wallet from "../../../../models/Customer/customerModels/walletModel.js";
 import Dividend from "../../../../models/Admin/adminModels/dividendModel.js";
 import Earnings from "../../../../models/Consultant/consultantEarnings.js";
+import ConsultationActivity from "../../../../models/Consultant/consultationActivity.js";
 import PersonalDetails from "../../../../models/Consultant/personalDetails.js";
 import { sendNotificationToConsultant } from "../../../../helper/consultant/notificationHelper.js";
 import { sendNotificationToCustomer } from "../../../../helper/customer/notificationHelper.js";
 import mongoose from "mongoose";
-import { getCurrencyFromCountryCode } from "../../../../helper/customer/currencyHelper.js";
+import {
+  getCurrencyFromCountryCode,
+  getExchangeRate
+} from "../../../../helper/customer/currencyHelper.js";
+
 
 export const handleConsultationDetails = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -46,19 +51,24 @@ export const handleConsultationDetails = async (req, res, next) => {
       Customer.findById(customerID).select("email"),
       PersonalDetails.findOne({ consultantId: consultantID }).select("country")
     ]);
+
     const countryCode =
       consultant.countryCode || consultantPersonalDetails.country;
+
     if (!consultant || !customer || !consultantPersonalDetails) {
-      return res.status(404).json({
-        message:
-          "Consultant, Customer, or Consultant's personal details not found."
-      });
+      return res
+        .status(404)
+        .json({
+          message:
+            "Consultant, Customer, or Consultant's personal details not found."
+        });
     }
 
+    // Fetch dividend for the consultant's country
     let dividend = await Dividend.findOne({ countryCode });
-    console.log("divi", dividend);
 
     if (!dividend) {
+      // If no dividend for the consultant's country, use AED as default
       dividend = await Dividend.findOne({ countryCode: "AE" });
       if (!dividend) {
         return res
@@ -69,7 +79,6 @@ export const handleConsultationDetails = async (req, res, next) => {
 
     const ratingKey = `star${reviewRating}`;
     const ratingDividend = dividend.rates.get(ratingKey);
-    console.log("ratingDividend", ratingDividend);
 
     if (!ratingDividend) {
       return res
@@ -79,9 +88,22 @@ export const handleConsultationDetails = async (req, res, next) => {
 
     const consultationAmountPerSecond = ratingDividend.dividend / 60;
     let consultantShare = callDurationInSecond * consultationAmountPerSecond;
+    consultantShare = parseFloat(consultantShare.toFixed(2)); // Round consultant's share
 
-    consultantShare = parseFloat(consultantShare.toFixed(2));
+    console.log("consultantShare", consultantShare);
 
+    // If the dividend is not in AED, convert the consultant's share to AED
+    if (dividend.countryCode !== "AE") {
+      const localCurrency = await getCurrencyFromCountryCode(countryCode);
+      console.log("localCurrency", localCurrency);
+      const conversionRate = await getExchangeRate(localCurrency, "AED");
+      consultantShare *= conversionRate;
+      consultantShare = parseFloat(consultantShare.toFixed(2)); // Round the converted share
+    }
+
+    console.log("consultantShare (converted)", consultantShare);
+
+    // Save consultation details
     const newConsultationDetails = new consultationDetails({
       consultantId: consultantID,
       customerId: customerID,
@@ -90,20 +112,13 @@ export const handleConsultationDetails = async (req, res, next) => {
       stringFeedback: reviewText,
       consultantShare
     });
+
     await newConsultationDetails.save({ session });
-
-    // If no local dividend, use AED as the default currency
-    const consultantCurrency =
-      dividend.countryCode === "AE"
-        ? "AED"
-        : await getCurrencyFromCountryCode(countryCode);
-
-    console.log("consultantCurrency", consultantCurrency);
 
     // Handle wallet deduction
     const wallet = await Wallet.findOne({ customerId: customerID });
     if (!wallet || wallet.balance < callDurationInSecond / 60) {
-      await session.abortTransaction(); // Rollback transaction if balance is insufficient
+      await session.abortTransaction();
       return res
         .status(400)
         .json({ message: "Insufficient balance in wallet." });
@@ -117,43 +132,42 @@ export const handleConsultationDetails = async (req, res, next) => {
     });
     await wallet.save({ session });
 
-    // Update consultant earnings
-    let earnings = await Earnings.findOne({ consultantId: consultantID });
+    // Ensure the consultant's earnings record exists
+    let earnings = await Earnings.findOne({
+      consultantId: consultantID
+    }).session(session);
     if (!earnings) {
       earnings = new Earnings({
         consultantId: consultantID,
         totalEarnings: consultantShare,
-        activity: [
-          {
-            customerId: customerID,
-            amount: consultantShare,
-            currency: consultantCurrency,
-            status: "completed",
-            date: new Date()
-          }
-        ]
+        currency: "AED" // Always AED
       });
     } else {
       earnings.totalEarnings += consultantShare;
-
-      // Add a new activity to the earnings
-      earnings.activity.push({
-        customerId: customerID,
-        amount: consultantShare,
-        currency: consultantCurrency,
-        status: "completed",
-        date: new Date()
-      });
     }
 
     // Round total earnings to 2 decimal places before saving
     earnings.totalEarnings = parseFloat(earnings.totalEarnings.toFixed(2));
-
     await earnings.save({ session });
+
+    // Create a new consultation activity entry
+    const consultationActivity = new ConsultationActivity({
+      consultantId: consultantID,
+      customerId: customerID,
+      amount: consultantShare,
+      currency: "AED",
+      status: "completed",
+      date: new Date()
+    });
+
+    // Round activity amount to 2 decimal places
+    consultationActivity.amount = parseFloat(
+      consultationActivity.amount.toFixed(2)
+    );
+    await consultationActivity.save({ session });
 
     // Commit the transaction
     await session.commitTransaction();
-    session.endSession();
 
     // Send notifications
     const consultantNotificationMessage = `Your consultation with ${customer.email} has been completed. You have earned ${consultantShare} AED.`;
@@ -181,5 +195,7 @@ export const handleConsultationDetails = async (req, res, next) => {
     await session.abortTransaction();
     session.endSession();
     next(error);
+  } finally {
+    session.endSession();
   }
 };

@@ -11,7 +11,6 @@ export const checkCountry = async (req, res, next) => {
       });
     }
 
-
     const dividendData = await DividendModel.findOne({ countryCode });
 
     if (!dividendData) {

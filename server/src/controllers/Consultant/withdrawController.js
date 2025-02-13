@@ -15,12 +15,12 @@ export const getWithdrawalDatas = async (req, res, next) => {
       return res.status(404).json({ message: "Consultant not found" });
     }
 
-    const withdrawals = await WithdrawalRequest.find({ consultantId });
+    // Get withdrawal requests and sort them in descending order by createdAt (or any other date field)
+    const withdrawals = await WithdrawalRequest.find({ consultantId }).sort({ time: -1 });
 
     if (!withdrawals || withdrawals.length === 0) {
       return res.status(404).json({ message: "No withdrawal requests found" });
     }
-
 
     res.status(200).json({
       message: "Withdrawal requests retrieved successfully",
@@ -31,6 +31,7 @@ export const getWithdrawalDatas = async (req, res, next) => {
     next(error);
   }
 };
+
 
 export const requestWithdrawal = async (req, res, next) => {
   try {

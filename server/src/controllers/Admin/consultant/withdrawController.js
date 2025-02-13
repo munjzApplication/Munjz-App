@@ -3,6 +3,7 @@ import Earnings from "../../../models/Consultant/consultantEarnings.js";
 import Notification from "../../../models/Admin/notificationModels/notificationModel.js";
 import PersonalDetails from "../../../models/Consultant/personalDetails.js";
 import breakDetails from "../../../models/Consultant/bankDetails.js";
+import WithhdrawalActivity from "../../../models/Consultant/withdrawalActivity .js";
 import { formatDate } from "../../../helper/dateFormatter.js";
 export const getWithdrawalDatas = async (req, res, next) => {
   try {
@@ -77,6 +78,7 @@ export const getWithdrawalDatas = async (req, res, next) => {
   }
 };
 
+
 export const updateWithdrawalStatus = async (req, res, next) => {
   try {
     const { requestId } = req.params;
@@ -93,7 +95,13 @@ export const updateWithdrawalStatus = async (req, res, next) => {
       return res.status(400).json({ message: "Completed withdrawals cannot be changed" });
     }
 
-    // Handle status updates for "pending", "processing", and "declined"
+    // Fetch consultant earnings
+    const earnings = await Earnings.findOne({ consultantId: withdrawal.consultantId });
+    if (!earnings) {
+      return res.status(400).json({ message: "Consultant earnings not found" });
+    }
+
+    // Handle status updates
     if (status === "processing") {
       withdrawal.currentStatus = "processing";
     } else if (status === "declined") {
@@ -101,21 +109,20 @@ export const updateWithdrawalStatus = async (req, res, next) => {
     } else if (status === "completed") {
       if (!paymentMethod || !transferId) {
         return res.status(400).json({
-          message: "Payment method and transfer ID are required for completed status"
+          message: "Payment method and transfer ID are required for completed status",
         });
       }
 
-      // Get consultant earnings
-      const earnings = await Earnings.findOne({ consultantId: withdrawal.consultantId });
-      if (!earnings || earnings.totalEarnings < withdrawal.amount) {
+      // Check if the consultant has enough earnings
+      if (earnings.totalEarnings < withdrawal.amount) {
         return res.status(400).json({ message: "Insufficient balance in consultant's earnings" });
       }
 
-      // Deduct the amount from earnings
+      // Deduct the amount from total earnings
       earnings.totalEarnings -= withdrawal.amount;
       await earnings.save();
 
-      // Update withdrawal request
+      // Update withdrawal request details
       withdrawal.currentStatus = "completed";
       withdrawal.paymentMethod = paymentMethod;
       withdrawal.transferId = transferId;
@@ -125,6 +132,17 @@ export const updateWithdrawalStatus = async (req, res, next) => {
     }
 
     await withdrawal.save();
+
+    // Save withdrawal activity log
+    const withdrawalActivity = new WithhdrawalActivity({
+      consultantId: withdrawal.consultantId,
+      amount: withdrawal.amount,
+      currency: "AED",
+      status: withdrawal.currentStatus,
+      date: new Date(),
+    });
+
+    await withdrawalActivity.save();
 
     // Send notification to consultant
     const notification = new Notification({
@@ -138,14 +156,17 @@ export const updateWithdrawalStatus = async (req, res, next) => {
           status,
           approvalDate: withdrawal.approvalDate || null,
           paymentMethod: paymentMethod || null,
-          transferId: transferId || null
-        }
-      }
+          transferId: transferId || null,
+        },
+      },
     });
 
     await notification.save();
 
-    res.status(200).json({ message: `Withdrawal request updated to ${status}`, withdrawal });
+    res.status(200).json({
+      message: `Withdrawal request updated to ${status}`,
+      withdrawal,
+    });
   } catch (error) {
     next(error);
   }

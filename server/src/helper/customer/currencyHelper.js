@@ -22,7 +22,7 @@ export const getExchangeRate = async (fromCurrency, toCurrency) => {
     console.log("toCurrency", toCurrency);
     
     try {
-      const apiKey = "9063cdbf5e26edef4abc3d85"; // Replace with your actual API key
+      const apiKey = "9063cdbf5e26edef4abc3d85"; 
       
       // Fetch exchange rates for the 'fromCurrency'
       const response = await axios.get(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/${fromCurrency}`);
