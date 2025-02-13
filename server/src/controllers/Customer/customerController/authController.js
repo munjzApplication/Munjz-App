@@ -233,60 +233,54 @@ export const googleAuth = (req, res, next) => {
 
 export const googleCallback = (req, res, next) => {
   passport.authenticate("customer-google", { failureRedirect: "/" }, async (err, user, info) => {
-    if (err || !user) {
-      console.error("Google Authentication error:", err || info);
+    if (err) {
+      console.error("Google Authentication error:", err);
       return res.status(500).json({
         success: false,
         message: "Google authentication failed. Please try again.",
-        error: err || info
+        error: err
       });
     }
 
     try {
-      // Check if the user already exists in the database by email
-      const existingUser = await CustomerProfile.findOne({ email: CustomerProfile.email });
-console.log('existingUser',existingUser);
+      let existingUser = await CustomerProfile.findOne({ email: user.email });
 
-      let finalUser = existingUser;
-
-      // If the user does not exist, create a new user
       if (!existingUser) {
-        finalUser = new CustomerProfile({
-          googleId: user.googleId, // Save Google ID
+        // If user does not exist, save it to DB
+        existingUser = await CustomerProfile.create({
+          Name: user.displayName,
           email: user.email,
-          Name: user.Name,
-          emailVerified: user.emailVerified,
+          googleId: user.id, // Store Google ID if needed
+          emailVerified: true // Since it's Google auth, it's verified
         });
-        await finalUser.save();
       }
 
-      // Generate a token for the user
-      const token = generateToken(finalUser._id, finalUser.emailVerified);
+      // Generate token
+      const token = generateToken(existingUser._id, existingUser.emailVerified);
 
-      // Send a notification to the customer
+      // Send notification
       await notificationService.sendToCustomer(
-        finalUser._id,
+        existingUser._id,
         "Google Authentication Successful",
         "You have successfully signed in using Google."
       );
 
-      // Return the response with the token and user data
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: "Google authentication successful.",
         token,
         user: {
-          id: finalUser._id,
-          Name: finalUser.Name,
-          email: finalUser.email
+          id: existingUser._id,
+          Name: existingUser.Name,
+          email: existingUser.email
         }
       });
     } catch (error) {
       console.error("Error during Google authentication:", error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: "An error occurred during Google authentication.",
-        error: error.message
+        message: "Google authentication failed. Please try again.",
+        error
       });
     }
   })(req, res, next);

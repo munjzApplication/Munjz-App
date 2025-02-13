@@ -19,18 +19,28 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        let user = await CustomerProfile.findOne({ googleId: profile.id });
+        const email = profile.emails[0].value;
+
+        // 1️⃣ Check if a user exists with this email (either from email/password registration or Google)
+        let user = await CustomerProfile.findOne({ email });
 
         if (!user) {
+          // 2️⃣ User does not exist → Create a new one
           const customerUniqueId = await generateCustomerUniqueId();
           user = new CustomerProfile({
             Name: profile.displayName || "N/A",
-            email: profile.emails[0].value,
+            email,
             googleId: profile.id,
             profilePhoto: profile.photos[0].value,
             customerUniqueId
           });
           await user.save();
+        } else {
+          // 3️⃣ If user exists but does not have a googleId, update it
+          if (!user.googleId) {
+            user.googleId = profile.id;
+            await user.save();
+          }
         }
 
         return done(null, user);
@@ -41,6 +51,7 @@ passport.use(
     }
   )
 );
+
 
 // Facebook Authentication for Consultants
 passport.use(
