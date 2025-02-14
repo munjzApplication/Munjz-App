@@ -2,8 +2,7 @@ import express from "express";
 import {
   Register,
   Login,
-  googleAuth,
-  googleCallback,
+  googleAuthWithToken,
   verifyEmail,
   facebookAuth,
   facebookCallback,
@@ -22,8 +21,8 @@ router.post("/register", Register);
 router.post("/login", Login);
 
 
-router.get("/google", googleAuth);
-router.get("/google/callback", googleCallback);
+// router.get("/google", googleAuth);
+router.post("/google/callback", googleAuthWithToken);
 
 router.get("/facebook", facebookAuth);
 router.get("/facebook/callback", facebookCallback);
