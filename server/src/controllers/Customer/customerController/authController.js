@@ -327,11 +327,7 @@ export const googleAuthWithToken = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Google authentication error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Google authentication failed. Please try again.",
-      error: error.message 
-    });
+   next(error);
   }
 };
 
