@@ -2,13 +2,11 @@ import WithdrawalRequest from "../../models/Consultant/WithdrawRequest.js";
 import ConsultantProfile from "../../models/Consultant/User.js";
 import PersonalDetails from "../../models/Consultant/personalDetails.js";
 import Earnings from "../../models/Consultant/consultantEarnings.js";
-import Notification from "../../models/Admin/notificationModels/notificationModel.js"; 
-
-
+import Notification from "../../models/Admin/notificationModels/notificationModel.js";
 
 export const getWithdrawalDatas = async (req, res, next) => {
   try {
-    const consultantId = req.user._id; 
+    const consultantId = req.user._id;
 
     const consultant = await ConsultantProfile.findById(consultantId);
     if (!consultant) {
@@ -16,7 +14,9 @@ export const getWithdrawalDatas = async (req, res, next) => {
     }
 
     // Get withdrawal requests and sort them in descending order by createdAt (or any other date field)
-    const withdrawals = await WithdrawalRequest.find({ consultantId }).sort({ time: -1 });
+    const withdrawals = await WithdrawalRequest.find({ consultantId }).sort({
+      time: -1
+    });
 
     if (!withdrawals || withdrawals.length === 0) {
       return res.status(404).json({ message: "No withdrawal requests found" });
@@ -31,7 +31,6 @@ export const getWithdrawalDatas = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const requestWithdrawal = async (req, res, next) => {
   try {
@@ -65,7 +64,9 @@ export const requestWithdrawal = async (req, res, next) => {
     });
 
     if (existingRequest) {
-      return res.status(400).json({ message: "You already have a pending withdrawal request" });
+      return res
+        .status(400)
+        .json({ message: "You already have a pending withdrawal request" });
     }
 
     // Create withdrawal request entry
@@ -94,7 +95,9 @@ export const requestWithdrawal = async (req, res, next) => {
 
     await notification.save();
 
-    res.status(201).json({ message: "Withdrawal request submitted", withdrawal });
+    res
+      .status(201)
+      .json({ message: "Withdrawal request submitted", withdrawal });
   } catch (error) {
     next(error);
   }

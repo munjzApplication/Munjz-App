@@ -327,50 +327,99 @@ export const googleAuthWithToken = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Google authentication error:", error);
-   next(error);
+    return res.status(500).json({
+      message: error.message,
+    });
+    
   }
 };
 
-export const facebookAuth = (req, res, next) => {
-  passport.authenticate("customer-facebook", { scope: ["email"] })(
-    req,
-    res,
-    next
-  );
-};
+export const facebookAuthWithToken = async (req, res, next) => {
+  const { access_token } = req.body;
 
-export const facebookCallback = (req, res, next) => {
-  passport.authenticate(
-    "customer-facebook",
-    { failureRedirect: "/" },
-    async (err, user, info) => {
-      if (err || !user) {
-        console.error("Facebook Authentication error:", err || info);
-        return res.status(500).json({
-          success: false,
-          message: "Facebook authentication failed. Please try again.",
-          error: err || info
-        });
+  if (!access_token) {
+    return res.status(400).json({ message: "Access token is required." });
+  }
+
+  try {
+    // Fetch user profile from Facebook using the access token
+    const facebookUserInfoResponse = await axios.get(
+      `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${access_token}`
+    );
+
+    const { name: Name, email, id: facebookId, picture: profilePhoto } = facebookUserInfoResponse.data;
+
+    // Check if the user already exists by Facebook ID or email
+    let existingUser = await CustomerProfile.findOne({
+      $or: [{ facebookId }, { email }],
+    });
+
+    let message;
+
+    if (!existingUser) {
+      // Generate the customerUniqueId for new user
+      const customerUniqueId = await generateCustomerUniqueId();
+
+      // Create a new user if they don't exist
+      existingUser = await CustomerProfile.create({
+        Name: Name || "Facebook User", 
+        email,
+        facebookId,
+        customerUniqueId,
+        profilePhoto: profilePhoto.data.url,
+        emailVerified: true,
+        isBlocked: false,
+        isLoggedIn: true,
+        creationDate: new Date(),
+      });
+
+      message = "Registration successful.";
+    } else {
+      // If the user exists, update their profile
+      existingUser.facebookId = facebookId;
+      existingUser.emailVerified = true;
+      existingUser.isLoggedIn = true;
+
+      // Update profile photo if it's missing
+      if (!existingUser.profilePhoto) {
+        existingUser.profilePhoto = profilePhoto.data.url;
       }
 
-      const token = generateToken(user._id, user.emailVerified);
+      await existingUser.save();
 
-      await notificationService.sendToCustomer(
-        user._id,
-        "Facebook Authentication Successful",
-        "You have successfully signed in using Facebook."
-      );
-
-      res.status(200).json({
-        success: true,
-        message: "Facebook authentication successful.",
-        token,
-        user: {
-          id: user._id,
-          Name: user.Name,
-          email: user.email
-        }
-      });
+      message = "Login successful.";
     }
-  )(req, res, next);
+
+    // Generate JWT
+    const token = generateToken(existingUser._id, existingUser.emailVerified);
+
+    // Send notification
+    await notificationService.sendToCustomer(
+      existingUser._id,
+      "Facebook Authentication Successful",
+      "You have successfully signed in using Facebook."
+    );
+
+    return res.status(200).json({
+      message,
+      token,
+      user: {
+        id: existingUser._id,
+        Name: existingUser.Name,
+        email: existingUser.email,
+        facebookId: existingUser.facebookId,
+        customerUniqueId: existingUser.customerUniqueId,
+        profilePhoto: existingUser.profilePhoto,
+        emailVerified: existingUser.emailVerified,
+        isBlocked: existingUser.isBlocked,
+        isLoggedIn: existingUser.isLoggedIn,
+        creationDate: existingUser.creationDate,
+      },
+    });
+  } catch (error) {
+    console.error("Facebook authentication error:", error);
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
 };

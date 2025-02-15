@@ -47,10 +47,12 @@ const customerProfileSchema = new mongoose.Schema({
     sparse: true
   },
   countryCode: {
-    type: String
+    type: String,
+    default: null
   },
   country: {
-    type: String
+    type: String,
+    default: null
   },
   location: {
     type: String
@@ -73,12 +75,6 @@ const customerProfileSchema = new mongoose.Schema({
 
   isLoggedIn: { type: Boolean, default: false },
 
-  favorites: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Consultant_Profile',
-    }
-  ]
 
 });
 

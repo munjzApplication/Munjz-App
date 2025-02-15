@@ -69,15 +69,14 @@ export const getWalletDetails = async (req, res, next) => {
       }
     ]);
 
-    if (!walletData.length) {
-      return res.status(404).json({ success: false, message: "No wallet data found." });
-    }
+     // If no wallet exists, set default values
+     let wallet = walletData.length ? walletData[0] : { customerId, balance: 0, walletActivity: [] };
 
-    const wallet = walletData[0];
 
     // Format wallet details
-    const formattedBalance = formatMinutesToMMSS(wallet.balance); // Use the new helper function
-    const balanceInSec = wallet.balance * 60;
+    const formattedBalance = wallet.balance > 0 ? formatMinutesToMMSS(wallet.balance) : "0:00";
+    const balanceInSec = wallet.balance > 0 ? parseFloat((wallet.balance * 60).toFixed(2)) : 0;
+
     const formattedWalletActivity = wallet.walletActivity.map(activity => ({
       ...activity,
       minute: formatMinutesToMMSS(activity.minute), // Use the new helper function

@@ -14,7 +14,6 @@ import {
   getExchangeRate
 } from "../../../../helper/customer/currencyHelper.js";
 
-
 export const handleConsultationDetails = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -56,12 +55,10 @@ export const handleConsultationDetails = async (req, res, next) => {
       consultant.countryCode || consultantPersonalDetails.country;
 
     if (!consultant || !customer || !consultantPersonalDetails) {
-      return res
-        .status(404)
-        .json({
-          message:
-            "Consultant, Customer, or Consultant's personal details not found."
-        });
+      return res.status(404).json({
+        message:
+          "Consultant, Customer, or Consultant's personal details not found."
+      });
     }
 
     // Fetch dividend for the consultant's country
