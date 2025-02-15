@@ -23,8 +23,9 @@ export const profileSetup = async (req, res, next) => {
       profilePhoto = await uploadFileToS3(file, "profile-pictures");
     } else {
       // Use a dummy profile picture if no file is uploaded
-      profilePhoto = "https://static.vecteezy.com/system/resources/thumbnails/020/765/399/small/default-profile-account-unknown-icon-black-silhouette-free-vector.jpg"
-   }
+      profilePhoto =
+        "https://static.vecteezy.com/system/resources/thumbnails/020/765/399/small/default-profile-account-unknown-icon-black-silhouette-free-vector.jpg";
+    }
 
     // Fetch the user profile
     const userProfile = await CustomerProfile.findById(userId);
@@ -61,6 +62,75 @@ export const profileSetup = async (req, res, next) => {
   }
 };
 
+export const countrySetup = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { country, countryCode, phoneNumber } = req.body;
+
+    if (!country || !countryCode) {
+      return res.status(400).json({
+        success: false,
+        message: "Country and country code are required.",
+      });
+    }
+
+    let customerProfile = await CustomerProfile.findOne({ _id: userId });
+
+    if (customerProfile) {
+      // Update existing profile
+      customerProfile.country = country;
+      customerProfile.countryCode = countryCode;
+
+      if (phoneNumber) {
+        const isPhoneExists = await CustomerProfile.findOne({
+          phoneNumber,
+          _id: { $ne: userId }, // Ensure phone number is unique for other users
+        });
+
+        if (isPhoneExists) {
+          return res.status(400).json({
+            success: false,
+            message: "Phone number is already in use.",
+          });
+        }
+
+        customerProfile.phoneNumber = phoneNumber;
+      }
+
+      await customerProfile.save();
+    } else {
+      // Create new profile
+      const isPhoneExists = await CustomerProfile.findOne({ phoneNumber });
+
+      if (isPhoneExists) {
+        return res.status(400).json({
+          message: "Phone number is already in use.",
+        });
+      }
+
+      customerProfile = await CustomerProfile.create({
+        _id: userId,
+        country,
+        countryCode,
+        phoneNumber,
+      });
+    }
+
+    res.status(200).json({
+      message: "Country updated successfully.",
+     
+    });
+  } catch (error) {
+    console.error("Error in country setup:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+      error: error.message,
+    });
+  }
+};
+
+
 export const getProfile = async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -75,7 +145,7 @@ export const getProfile = async (req, res, next) => {
     // Avoid sending any sensitive data
     const filteredProfile = {
       ...profile.toObject(),
-      password: undefined 
+      password: undefined
     };
 
     res.status(200).json({ profile: filteredProfile });
@@ -112,7 +182,7 @@ export const updateProfile = async (req, res, next) => {
     }
 
     res.status(200).json({
-      message: "Profile updated successfully.",
+      message: "Profile updated successfully."
     });
   } catch (error) {
     next(error);

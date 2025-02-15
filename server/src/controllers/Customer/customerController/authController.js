@@ -284,7 +284,7 @@ export const googleAuthWithToken = async (req, res, next) => {
 
       // Create a new user if they don't exist
       existingUser = await CustomerProfile.create({
-        Name: Name || "Google User", 
+        Name: Name || "Google User",
         email,
         googleId,
         customerUniqueId,
@@ -330,7 +330,7 @@ export const googleAuthWithToken = async (req, res, next) => {
     return res.status(500).json({
       message: error.message,
     });
-    
+
   }
 };
 
@@ -362,7 +362,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
 
       // Create a new user if they don't exist
       existingUser = await CustomerProfile.create({
-        Name: Name || "Facebook User", 
+        Name: Name || "Facebook User",
         email,
         facebookId,
         customerUniqueId,
@@ -418,6 +418,83 @@ export const facebookAuthWithToken = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Facebook authentication error:", error);
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const appleAuthWithToken = async (req, res, next) => {
+  const { access_token } = req.body;
+
+  if (!access_token) {
+    return res.status(400).json({ message: "Access token is required." });
+  }
+
+  try {
+    // Fetch user profile data from Apple
+    const userInfoResponse = await axios.get(
+      `https://appleid.apple.com/auth/token`, 
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+
+    const { sub: appleId, email } = userInfoResponse.data;
+    let Name = "Apple User"; // Apple may not always provide a name
+    let message;
+
+    // Check if the user already exists by appleId or email
+    let existingUser = await CustomerProfile.findOne({
+      $or: [{ appleId }, { email }]
+    });
+
+    if (!existingUser) {
+      // Generate the customerUniqueId for new user
+      const customerUniqueId = await generateCustomerUniqueId();
+
+      // Create a new user if they don't exist
+      existingUser = await CustomerProfile.create({
+        Name,
+        email,
+        appleId,
+        customerUniqueId,
+        profilePhoto: null, // Apple does not provide profile photos
+        emailVerified: true,
+        isBlocked: false,
+        isLoggedIn: true,
+        creationDate: new Date()
+      });
+
+      message = "Registration successful.";
+    } else {
+      // If the user exists, update their profile
+      existingUser.appleId = appleId;
+      existingUser.emailVerified = true;
+      existingUser.isLoggedIn = true;
+
+      await existingUser.save();
+      message = "Login successful.";
+    }
+
+    // Generate JWT
+    const token = generateToken(existingUser._id, existingUser.emailVerified);
+
+    await notificationService.sendToCustomer(
+      existingUser._id,
+      "Apple Authentication Successful",
+      "You have successfully signed in using Apple."
+    );
+
+    return res.status(200).json({
+      message,
+      token
+    });
+
+  } catch (error) {
+    console.error("Apple authentication error:", error);
     return res.status(500).json({
       message: error.message,
     });

@@ -113,26 +113,26 @@ export const convertEarningsToLocalCurrency = async (req, res, next) => {
     console.log("Consultant Currency:", consultantCurrency);
 
     let convertedAmount = totalEarnings;
-    let convertedCurrency = "AED";
+    let convertedCurrency = currency;
 
     if (currency === "AED" && consultantCurrency !== "AED") {
-      // Convert AED to consultant's own currency
-      const exchangeRateToOriginal = await getExchangeRate(
-        "AED",
-        consultantCurrency
-      );
-      convertedAmount = parseFloat(
-        (totalEarnings * exchangeRateToOriginal).toFixed(2)
-      );
+      // Convert AED to consultant's currency
+      const exchangeRateToOriginal = await getExchangeRate("AED", consultantCurrency);
+      convertedAmount = parseFloat((totalEarnings * exchangeRateToOriginal).toFixed(2));
       convertedCurrency = consultantCurrency;
 
-      console.log(
-        `Converted ${totalEarnings} AED to ${convertedAmount} ${consultantCurrency}`
-      );
-    } else {
-      console.log(
-        `No conversion needed, total earnings: ${convertedAmount} ${currency}`
-      );
+      console.log(`Converted ${totalEarnings} AED to ${convertedAmount} ${consultantCurrency}`);
+    } 
+    else if (currency !== "AED" && currency === consultantCurrency) {
+      // Convert consultant's currency to AED
+      const exchangeRateToAED = await getExchangeRate(consultantCurrency, "AED");
+      convertedAmount = parseFloat((totalEarnings * exchangeRateToAED).toFixed(2));
+      convertedCurrency = "AED";
+
+      console.log(`Converted ${totalEarnings} ${consultantCurrency} to ${convertedAmount} AED`);
+    } 
+    else {
+      console.log(`No conversion needed, total earnings: ${convertedAmount} ${currency}`);
     }
 
     return res.status(200).json({

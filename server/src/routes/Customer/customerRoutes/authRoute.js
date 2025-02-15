@@ -5,6 +5,7 @@ import {
   googleAuthWithToken,
   verifyEmail,
   facebookAuthWithToken,
+  appleAuthWithToken,
   TempCustomerRegister,
   isEmailVerified
 } from "../../../controllers/Customer/customerController/authController.js";
@@ -25,5 +26,6 @@ router.post("/google/callback", googleAuthWithToken);
 
 // router.get("/facebook", facebookAuth);
 router.post("/facebook/callback", facebookAuthWithToken);
+router.post("/apple/callback", appleAuthWithToken);
 
 export default router;

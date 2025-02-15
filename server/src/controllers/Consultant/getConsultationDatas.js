@@ -60,7 +60,7 @@ export const getConsultationDetails = async (req, res, next) => {
 
 export const getConsultationDataByDate = async (req, res, next) => {
   try {
-    const { DateTime } = req.body; // Full DateTime string from frontend
+    const { DateTime } = req.body; 
     const consultantId = req.user._id;
 
     if (!DateTime) {

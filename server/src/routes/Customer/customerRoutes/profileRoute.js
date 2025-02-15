@@ -7,7 +7,8 @@ import {
   updateProfile,
   updateProfilePicture,
   getAllServices,
-  profileSetup
+  profileSetup,
+  countrySetup
 } from "../../../controllers/Customer/customerController/profileController.js";
 
 import upload from "../../../middlewares/fileUpload.js";
@@ -16,7 +17,7 @@ const router = express.Router();
 
 
 router.post('/profile-setup', upload.single("profilePicture"), profileSetup);
-
+router.post('/setup-country',countrySetup)
 router.get("/get-profile", getProfile);
 router.put("/update-profile", updateProfile);
 router.delete("/delete-profile", deleteProfile);
