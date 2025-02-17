@@ -7,19 +7,23 @@ export const getAllCustomerData = async (req, res) => {
       {
         $project: {
           _id: 1,
+          customerUniqueId: 1,
           name: 1,
           email: 1,
           phoneNumber: 1,
           creationDate: 1,
           isBlocked: 1,
-          profilePicture: 1
+          profilePhoto: 1,
+          countryCode: 1,
+          country: 1,
+
           // ✅ Do NOT mix exclusion (0) with inclusion (1)
         }
       },
       { $sort: { creationDate: -1 } } // Sort customers from newest to oldest
     ]);
 
-    const categorizedCustomers = {
+    const customersData = {
       active: [],
       declined: []
     };
@@ -32,15 +36,16 @@ export const getAllCustomerData = async (req, res) => {
       };
 
       if (!customer.isBlocked) {
-        categorizedCustomers.active.push(formattedCustomer);
+        customersData.active.push(formattedCustomer);
       } else {
-        categorizedCustomers.declined.push(formattedCustomer);
+        customersData.declined.push(formattedCustomer);
       }
     });
+console.log("customersData", customersData);
 
     res.status(200).json({
       message: "Customer data fetched successfully.",
-      categorizedCustomers
+      customersData
     });
   } catch (error) {
     console.error("Error fetching customer data:", error.message);
