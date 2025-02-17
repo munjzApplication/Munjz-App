@@ -323,7 +323,12 @@ export const googleAuthWithToken = async (req, res, next) => {
 
     return res.status(200).json({
       message,
-      token
+      token,
+      user: {
+        id: existingUser._id,
+        Name: existingUser.Name,
+        profilePhoto: existingUser.profilePhoto,
+      }
     });
   } catch (error) {
     console.error("Google authentication error:", error);
@@ -406,14 +411,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
-        email: existingUser.email,
-        facebookId: existingUser.facebookId,
-        customerUniqueId: existingUser.customerUniqueId,
         profilePhoto: existingUser.profilePhoto,
-        emailVerified: existingUser.emailVerified,
-        isBlocked: existingUser.isBlocked,
-        isLoggedIn: existingUser.isLoggedIn,
-        creationDate: existingUser.creationDate,
       },
     });
   } catch (error) {
