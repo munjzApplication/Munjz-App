@@ -8,7 +8,7 @@ export const getAllCustomerData = async (req, res) => {
         $project: {
           _id: 1,
           customerUniqueId: 1,
-          name: 1,
+          Name: 1,
           email: 1,
           phoneNumber: 1,
           creationDate: 1,
