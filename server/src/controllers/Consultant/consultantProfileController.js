@@ -190,7 +190,7 @@ export const deleteProfile = async (req, res, next) => {
     await session.commitTransaction();
     session.endSession();
 
-    res.status(200).json({ message: "Profile marked as deleted successfully." });
+    res.status(200).json({ message: "Profile deleted successfully." });
   } catch (error) {
     // Rollback transaction
     await session.abortTransaction();
