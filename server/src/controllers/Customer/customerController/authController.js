@@ -311,15 +311,21 @@ export const googleAuthWithToken = async (req, res, next) => {
 
       message = "Login successful.";
     }
-    // **Check if country & countryCode are missing**
-    if (!existingUser.country || !existingUser.countryCode) {
-      return res.status(200).json({
-        message: "Registration successful."
-      });
-    }
 
     // Generate JWT
     const token = generateToken(existingUser._id, existingUser.emailVerified);
+    // **Check if country & countryCode are missing**
+    if (!existingUser.country || !existingUser.countryCode) {
+      return res.status(200).json({
+        message: "Registration successful.",
+        token,
+        user: {
+          id: existingUser._id,
+          Name: existingUser.Name,
+          profilePhoto: existingUser.profilePhoto
+        }
+      });
+    }
 
     await notificationService.sendToCustomer(
       existingUser._id,
@@ -469,7 +475,7 @@ export const appleAuthWithToken = async (req, res, next) => {
         email,
         appleId,
         customerUniqueId,
-        profilePhoto: null, 
+        profilePhoto: null,
         emailVerified: true,
         isBlocked: false,
         isLoggedIn: true,
