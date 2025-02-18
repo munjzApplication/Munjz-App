@@ -311,6 +311,12 @@ export const googleAuthWithToken = async (req, res, next) => {
 
       message = "Login successful.";
     }
+    // **Check if country & countryCode are missing**
+    if (!existingUser.country || !existingUser.countryCode) {
+      return res.status(400).json({
+        message: "Registration successful."
+      });
+    }
 
     // Generate JWT
     const token = generateToken(existingUser._id, existingUser.emailVerified);
@@ -327,15 +333,14 @@ export const googleAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
-        profilePhoto: existingUser.profilePhoto,
+        profilePhoto: existingUser.profilePhoto
       }
     });
   } catch (error) {
     console.error("Google authentication error:", error);
     return res.status(500).json({
-      message: error.message,
+      message: error.message
     });
-
   }
 };
 
@@ -352,11 +357,16 @@ export const facebookAuthWithToken = async (req, res, next) => {
       `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${access_token}`
     );
 
-    const { name: Name, email, id: facebookId, picture: profilePhoto } = facebookUserInfoResponse.data;
+    const {
+      name: Name,
+      email,
+      id: facebookId,
+      picture: profilePhoto
+    } = facebookUserInfoResponse.data;
 
     // Check if the user already exists by Facebook ID or email
     let existingUser = await CustomerProfile.findOne({
-      $or: [{ facebookId }, { email }],
+      $or: [{ facebookId }, { email }]
     });
 
     let message;
@@ -375,7 +385,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
         emailVerified: true,
         isBlocked: false,
         isLoggedIn: true,
-        creationDate: new Date(),
+        creationDate: new Date()
       });
 
       message = "Registration successful.";
@@ -411,13 +421,13 @@ export const facebookAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
-        profilePhoto: existingUser.profilePhoto,
-      },
+        profilePhoto: existingUser.profilePhoto
+      }
     });
   } catch (error) {
     console.error("Facebook authentication error:", error);
     return res.status(500).json({
-      message: error.message,
+      message: error.message
     });
   }
 };
@@ -432,11 +442,11 @@ export const appleAuthWithToken = async (req, res, next) => {
   try {
     // Fetch user profile data from Apple
     const userInfoResponse = await axios.get(
-      `https://appleid.apple.com/auth/token`, 
+      `https://appleid.apple.com/auth/token`,
       {
         headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
+          Authorization: `Bearer ${access_token}`
+        }
       }
     );
 
@@ -459,7 +469,7 @@ export const appleAuthWithToken = async (req, res, next) => {
         email,
         appleId,
         customerUniqueId,
-        profilePhoto: null, // Apple does not provide profile photos
+        profilePhoto: null, 
         emailVerified: true,
         isBlocked: false,
         isLoggedIn: true,
@@ -490,11 +500,10 @@ export const appleAuthWithToken = async (req, res, next) => {
       message,
       token
     });
-
   } catch (error) {
     console.error("Apple authentication error:", error);
     return res.status(500).json({
-      message: error.message,
+      message: error.message
     });
   }
 };
