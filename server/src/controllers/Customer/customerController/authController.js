@@ -313,7 +313,7 @@ export const googleAuthWithToken = async (req, res, next) => {
     }
     // **Check if country & countryCode are missing**
     if (!existingUser.country || !existingUser.countryCode) {
-      return res.status(400).json({
+      return res.status(200).json({
         message: "Registration successful."
       });
     }
