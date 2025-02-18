@@ -4,6 +4,7 @@ import { uploadFileToS3 } from "../../../utils/s3Uploader.js";
 import courtServiceDetailsModel from "../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import notaryServiceDetailsModel from "../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import { notificationService } from "../../../service/sendPushNotification.js";
+import mongoose from "mongoose";
 
 export const profileSetup = async (req, res, next) => {
   try {
@@ -118,7 +119,7 @@ export const countrySetup = async (req, res, next) => {
 
     res.status(200).json({
       message: "Country updated successfully.",
-     
+
     });
   } catch (error) {
     console.error("Error in country setup:", error);
@@ -243,19 +244,34 @@ export const updateProfilePicture = async (req, res, next) => {
 
 // Delete Profile
 export const deleteProfile = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const userId = req.user._id;
 
-    const deletedProfile = await CustomerProfile.findByIdAndDelete(userId);
-    if (!deletedProfile) {
+    const updatedProfile = await CustomerProfile.findByIdAndUpdate(
+      userId,
+      { $set: { deleted: true } }, // Marking as deleted
+      { new: true, session } // Ensures updated document is returned
+    );
+
+    if (!updatedProfile) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ message: "Profile not found." });
     }
 
-    res.status(200).json({ message: "Profile deleted successfully." });
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Profile marked as deleted.", profile: updatedProfile });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
+
 
 // Change Password
 export const changePassword = async (req, res, next) => {

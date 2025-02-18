@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const TranslationDetailsSchema = new mongoose.Schema({
-  customerID: {
+  customerId: {
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Customer_Profile',
     required: true

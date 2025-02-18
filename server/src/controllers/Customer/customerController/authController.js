@@ -413,6 +413,18 @@ export const facebookAuthWithToken = async (req, res, next) => {
 
     // Generate JWT
     const token = generateToken(existingUser._id, existingUser.emailVerified);
+// **Check if country & countryCode are missing**
+if (!existingUser.country || !existingUser.countryCode) {
+  return res.status(200).json({
+    message: "Registration successful.",
+    token,
+    user: {
+      id: existingUser._id,
+      Name: existingUser.Name,
+      profilePhoto: existingUser.profilePhoto
+    }
+  });
+}
 
     // Send notification
     await notificationService.sendToCustomer(
