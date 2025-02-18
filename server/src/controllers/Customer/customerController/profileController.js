@@ -242,37 +242,6 @@ export const updateProfilePicture = async (req, res, next) => {
   }
 };
 
-// Delete Profile
-export const deleteProfile = async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  try {
-    const userId = req.user._id;
-
-    const updatedProfile = await CustomerProfile.findByIdAndUpdate(
-      userId,
-      { $set: { deleted: true } }, // Marking as deleted
-      { new: true, session } // Ensures updated document is returned
-    );
-
-    if (!updatedProfile) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ message: "Profile not found." });
-    }
-
-    await session.commitTransaction();
-    session.endSession();
-
-    res.status(200).json({ message: "Profile deleted successfully." });
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    next(error);
-  }
-};
-
-
 // Change Password
 export const changePassword = async (req, res, next) => {
   try {
@@ -367,5 +336,52 @@ export const getAllServices = async (req, res) => {
       message: "Failed to fetch service",
       error: error.message
     });
+  }
+};
+
+
+// Delete Profile
+export const deleteProfile = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const userId = req.user._id;
+
+    // Find the user first
+    const user = await CustomerProfile.findById(userId).session(session);
+    if (!user) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "Profile not found." });
+    }
+
+    // Prepare update fields (conditionally remove social logins)
+    const updateFields = {
+      Name: "Deleted_User",
+      profilePhoto: null,
+      email: null,
+      phoneNumber: null,
+      password: null,
+    };
+
+    if (user.googleId) updateFields.googleId = null;
+    if (user.facebookId) updateFields.facebookId = null;
+    if (user.appleId) updateFields.appleId = null;
+
+    // Update user with the soft delete fields
+    const updatedProfile = await CustomerProfile.findByIdAndUpdate(
+      userId,
+      { $set: updateFields },
+      { new: true, session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Profile deleted successfully." });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    next(error);
   }
 };

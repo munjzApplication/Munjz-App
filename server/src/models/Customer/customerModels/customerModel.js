@@ -47,6 +47,11 @@ const customerProfileSchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
+  appleId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
   countryCode: {
     type: String,
     default: null
@@ -75,10 +80,6 @@ const customerProfileSchema = new mongoose.Schema({
   },
 
   isLoggedIn: { type: Boolean, default: false },
-  deleted: {
-    type: Boolean,
-    default: false  
-  }
 
 
 });

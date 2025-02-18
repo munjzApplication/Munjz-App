@@ -174,17 +174,32 @@ export const deleteProfile = async (req, res, next) => {
     const consultantId = req.user._id;
 
     // Soft delete Consultant Profile by setting a `deleted` flag
-    const deletedProfile = await ConsultantProfile.findByIdAndUpdate(
-      consultantId,
-      { deleted: true }, // Add a `deleted` flag to mark the profile as deleted
-      { new: true, session }
-    );
-
-    if (!deletedProfile) {
+    const user = await ConsultantProfile.findById(consultantId).session(session);
+    if (!user) {
       await session.abortTransaction();
       session.endSession();
       return res.status(404).json({ message: "Profile not found." });
     }
+
+  // Prepare update fields (conditionally remove social logins)
+  const updateFields = {
+    Name: "Deleted_User",
+    profilePhoto: null,
+    email: null,
+    phoneNumber: null,
+    password: null,
+  };
+
+  if (user.googleId) updateFields.googleId = null;
+  if (user.facebookId) updateFields.facebookId = null;
+  if (user.appleId) updateFields.appleId = null;
+
+  // Update user with the soft delete fields
+  const updatedProfile = await CustomerProfile.findByIdAndUpdate(
+    userId,
+    { $set: updateFields },
+    { new: true, session }
+  );
 
     // Commit transaction
     await session.commitTransaction();
