@@ -519,7 +519,7 @@ export const appleAuthWithToken = async (req, res, next) => {
         user: {
           id: existingUser._id,
           Name: existingUser.Name,
-          profilePhoto: existingUser.profilePhoto, 
+          profilePhoto: null, 
         },
       });
     }
@@ -537,7 +537,7 @@ export const appleAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
-        profilepicture: existingUser.profilepicture,
+        profilepicture:null,
       },
     });
   } catch (error) {
