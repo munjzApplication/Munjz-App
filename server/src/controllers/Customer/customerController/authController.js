@@ -254,20 +254,20 @@ export const Login = async (req, res, next) => {
 };
 
 export const googleAuthWithToken = async (req, res, next) => {
-  const { identity_token } = req.body;
+  const { access_token } = req.body;
 
-  if (!identity_token) {
+  if (!access_token) {
     return res.status(400).json({ message: "Access token is required." });
   }
 
   try {
     // Get token info (email and other basic details)
-    const tokenInfoResponse = await client.getTokenInfo(identity_token);
+    const tokenInfoResponse = await client.getTokenInfo(access_token);
     const { email, sub: googleId } = tokenInfoResponse;
 
     // Fetch additional user profile data from Google
     const userInfoResponse = await axios.get(
-      `https://www.googleapis.com/oauth2/v3/userinfo?identity_token=${identity_token}`
+      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`
     );
     const { name: Name, picture: profilePhoto } = userInfoResponse.data;
 
@@ -344,23 +344,21 @@ export const googleAuthWithToken = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Google authentication error:", error);
-    return res.status(500).json({
-      message: error.message
-    });
+    next(error);
   }
 };
 
 export const facebookAuthWithToken = async (req, res, next) => {
-  const { identity_token } = req.body;
+  const { access_token } = req.body;
 
-  if (!identity_token) {
+  if (!access_token) {
     return res.status(400).json({ message: "Access token is required." });
   }
 
   try {
     // Fetch user profile from Facebook using the access token
     const facebookUserInfoResponse = await axios.get(
-      `https://graph.facebook.com/me?fields=id,name,email,picture&identity_token=${identity_token}`
+      `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${access_token}`
     );
 
     const {
@@ -444,9 +442,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Facebook authentication error:", error);
-    return res.status(500).json({
-      message: error.message
-    });
+next(error);
   }
 };
 
@@ -467,7 +463,8 @@ export const appleAuthWithToken = async (req, res, next) => {
     const { email, sub: appleId } = decoded.payload;
 
     // Extract name (if provided)
-    let Name = name || "null"; // Fallback if name isn't provided
+    let Name = name || "null";
+    // let defaultProfilePic = "/assets/profile.jpg";
 
     // Check if the user already exists
     let existingUser = await CustomerProfile.findOne({
@@ -489,6 +486,7 @@ export const appleAuthWithToken = async (req, res, next) => {
         isBlocked: false,
         isLoggedIn: true,
         creationDate: new Date(),
+        profilePhoto: null,
       });
 
       message = "Registration successful.";
@@ -499,10 +497,13 @@ export const appleAuthWithToken = async (req, res, next) => {
       existingUser.isLoggedIn = true;
 
       // Update name only if it's the first login (name isn't saved yet)
-      if (!existingUser.Name || existingUser.Name === "Apple User") {
+      if (!existingUser.Name || existingUser.Name === "null") {
         existingUser.Name = Name;
       }
-
+       // Set default profile picture if it doesn't exist
+       if (!existingUser.profilePhoto) {
+        existingUser.profilePhoto = defaultProfilePic;
+      }
       await existingUser.save();
       message = "Login successful.";
     }
@@ -518,6 +519,7 @@ export const appleAuthWithToken = async (req, res, next) => {
         user: {
           id: existingUser._id,
           Name: existingUser.Name,
+          profilePhoto: existingUser.profilePhoto, 
         },
       });
     }
@@ -535,11 +537,12 @@ export const appleAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
+        profilepicture: existingUser.profilepicture,
       },
     });
   } catch (error) {
     console.error("Apple authentication error:", error);
-    return res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
