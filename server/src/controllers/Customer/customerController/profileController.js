@@ -67,6 +67,7 @@ export const countrySetup = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const { country, countryCode, phoneNumber } = req.body;
+    console.log("Country Setup:", req.body);
 
     if (!country || !countryCode) {
       return res.status(400).json({
@@ -75,47 +76,34 @@ export const countrySetup = async (req, res, next) => {
       });
     }
 
-    let customerProfile = await CustomerProfile.findOne({ _id: userId });
-
-    if (customerProfile) {
-      // Update existing profile
-      customerProfile.country = country;
-      customerProfile.countryCode = countryCode;
-
-      if (phoneNumber) {
-        const isPhoneExists = await CustomerProfile.findOne({
-          phoneNumber,
-          _id: { $ne: userId }, // Ensure phone number is unique for other users
-        });
-
-        if (isPhoneExists) {
-          return res.status(400).json({
-            success: false,
-            message: "Phone number is already in use.",
-          });
-        }
-
-        customerProfile.phoneNumber = phoneNumber;
-      }
-
-      await customerProfile.save();
-    } else {
-      // Create new profile
-      const isPhoneExists = await CustomerProfile.findOne({ phoneNumber });
+    
+    // Ensure phoneNumber is unique if provided
+    if (phoneNumber) {
+      const isPhoneExists = await CustomerProfile.findOne({
+        phoneNumber,
+        _id: { $ne: userId }, // Exclude current user
+      });
 
       if (isPhoneExists) {
         return res.status(400).json({
+          success: false,
           message: "Phone number is already in use.",
         });
       }
+    }
 
-      customerProfile = await CustomerProfile.create({
-        _id: userId,
+    // Update or create customer profile
+    const customerProfile = await CustomerProfile.findOneAndUpdate(
+      { _id: userId },
+      {
         country,
         countryCode,
-        phoneNumber,
-      });
-    }
+        phoneNumber: phoneNumber || null, // Ensure null if empty
+      },
+      { new: true, upsert: true, runValidators: true } // Creates if not exists
+    );
+
+    console.log("Updated Profile:", customerProfile);
 
     res.status(200).json({
       message: "Country updated successfully.",
