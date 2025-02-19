@@ -6,7 +6,7 @@ import { generateUniqueServiceID } from "../../helper/uniqueIDHelper.js";
 import Notification from "../../models/Admin/notificationModels/notificationModel.js";
 
 export const saveNotaryCase = async ({
-  customerID,
+  customerId,
   serviceName, 
   selectedServiceCountry, 
   caseDescription, 
@@ -16,7 +16,7 @@ export const saveNotaryCase = async ({
   const notaryServiceID = await generateUniqueServiceID("notary");
 
   const notaryCase = new NotaryCase({
-    customerID,
+    customerId,
     notaryServiceID,
     serviceName,
     selectedServiceCountry,

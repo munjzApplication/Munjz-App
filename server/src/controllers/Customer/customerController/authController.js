@@ -254,20 +254,20 @@ export const Login = async (req, res, next) => {
 };
 
 export const googleAuthWithToken = async (req, res, next) => {
-  const { access_token } = req.body;
+  const { identity_token } = req.body;
 
-  if (!access_token) {
+  if (!identity_token) {
     return res.status(400).json({ message: "Access token is required." });
   }
 
   try {
     // Get token info (email and other basic details)
-    const tokenInfoResponse = await client.getTokenInfo(access_token);
+    const tokenInfoResponse = await client.getTokenInfo(identity_token);
     const { email, sub: googleId } = tokenInfoResponse;
 
     // Fetch additional user profile data from Google
     const userInfoResponse = await axios.get(
-      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`
+      `https://www.googleapis.com/oauth2/v3/userinfo?identity_token=${identity_token}`
     );
     const { name: Name, picture: profilePhoto } = userInfoResponse.data;
 
@@ -351,16 +351,16 @@ export const googleAuthWithToken = async (req, res, next) => {
 };
 
 export const facebookAuthWithToken = async (req, res, next) => {
-  const { access_token } = req.body;
+  const { identity_token } = req.body;
 
-  if (!access_token) {
+  if (!identity_token) {
     return res.status(400).json({ message: "Access token is required." });
   }
 
   try {
     // Fetch user profile from Facebook using the access token
     const facebookUserInfoResponse = await axios.get(
-      `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${access_token}`
+      `https://graph.facebook.com/me?fields=id,name,email,picture&identity_token=${identity_token}`
     );
 
     const {
@@ -451,47 +451,44 @@ export const facebookAuthWithToken = async (req, res, next) => {
 };
 
 export const appleAuthWithToken = async (req, res, next) => {
-  const { access_token } = req.body;
+  const { identity_token , name } = req.body;
 
-  if (!access_token) {
-    return res.status(400).json({ message: "Access token is required." });
+  if (!identity_token) {
+    return res.status(400).json({ message: "Identity token is required." });
   }
 
   try {
-    // Fetch user profile data from Apple
-    const userInfoResponse = await axios.get(
-      `https://appleid.apple.com/auth/token`,
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`
-        }
-      }
-    );
+    // Decode the Apple ID token
+    const decoded = jwt.decode(identity_token, { complete: true });
+    if (!decoded) {
+      return res.status(400).json({ message: "Invalid identity token." });
+    }
 
-    const { sub: appleId, email } = userInfoResponse.data;
-    let Name = "Apple User"; // Apple may not always provide a name
-    let message;
+    const { email, sub: appleId } = decoded.payload;
 
-    // Check if the user already exists by appleId or email
+    // Extract name (if provided)
+    let Name = name || "null"; // Fallback if name isn't provided
+
+    // Check if the user already exists
     let existingUser = await CustomerProfile.findOne({
-      $or: [{ appleId }, { email }]
+      $or: [{ appleId }, { email }],
     });
 
+    let message;
+
     if (!existingUser) {
-      // Generate the customerUniqueId for new user
+      // Generate unique ID for new user
       const customerUniqueId = await generateCustomerUniqueId();
 
-      // Create a new user if they don't exist
       existingUser = await CustomerProfile.create({
-        Name,
+        Name, // Store name if available
         email,
         appleId,
         customerUniqueId,
-        profilePhoto: null,
         emailVerified: true,
         isBlocked: false,
         isLoggedIn: true,
-        creationDate: new Date()
+        creationDate: new Date(),
       });
 
       message = "Registration successful.";
@@ -501,6 +498,11 @@ export const appleAuthWithToken = async (req, res, next) => {
       existingUser.emailVerified = true;
       existingUser.isLoggedIn = true;
 
+      // Update name only if it's the first login (name isn't saved yet)
+      if (!existingUser.Name || existingUser.Name === "Apple User") {
+        existingUser.Name = Name;
+      }
+
       await existingUser.save();
       message = "Login successful.";
     }
@@ -508,6 +510,19 @@ export const appleAuthWithToken = async (req, res, next) => {
     // Generate JWT
     const token = generateToken(existingUser._id, existingUser.emailVerified);
 
+    // **Check if country & countryCode are missing**
+    if (!existingUser.country || !existingUser.countryCode) {
+      return res.status(200).json({
+        message: "Registration successful.",
+        token,
+        user: {
+          id: existingUser._id,
+          Name: existingUser.Name,
+        },
+      });
+    }
+
+    // Send notification
     await notificationService.sendToCustomer(
       existingUser._id,
       "Apple Authentication Successful",
@@ -516,12 +531,17 @@ export const appleAuthWithToken = async (req, res, next) => {
 
     return res.status(200).json({
       message,
-      token
+      token,
+      user: {
+        id: existingUser._id,
+        Name: existingUser.Name,
+      },
     });
   } catch (error) {
     console.error("Apple authentication error:", error);
-    return res.status(500).json({
-      message: error.message
-    });
+    return res.status(500).json({ message: error.message });
   }
 };
+
+
+

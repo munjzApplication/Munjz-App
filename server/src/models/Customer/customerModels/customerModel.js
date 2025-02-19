@@ -34,7 +34,7 @@ const customerProfileSchema = new mongoose.Schema({
   password: {
     type: String,
     required: function () {
-      return !this.googleId && !this.facebookId;
+      return !this.googleId && !this.facebookId && !this.appleId;
     }
   },
   googleId: {

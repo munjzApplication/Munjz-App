@@ -8,7 +8,7 @@ import Notification from "../../../../models/Admin/notificationModels/notificati
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 
 export const saveNotaryServiceDetails = async (req, res, next) => {
-  const { customerID } = req.params;
+  const { customerId } = req.params;
 
   try {
     const {
@@ -23,13 +23,13 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
     } = req.body;
 
     // Validate customer
-    const customer = await Customer.findById(customerID);
+    const customer = await Customer.findById(customerId);
     if (!customer) {
       return res.status(400).json({ error: "Invalid customer email" });
     }
     // Check if the case is already registered
     const existingCase = await NotaryCase.findOne({
-      customerID,
+      customerId,
       serviceName,
       selectedServiceCountry
     });
@@ -46,7 +46,7 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
         : "free";
     // Save Notary Case
     const { notaryCase, notaryServiceID } = await saveNotaryCase({
-      customerID,
+      customerId,
       serviceName,
       selectedServiceCountry,
       caseDescription,
