@@ -501,9 +501,9 @@ export const appleAuthWithToken = async (req, res, next) => {
         existingUser.Name = Name;
       }
        // Set default profile picture if it doesn't exist
-       if (!existingUser.profilePhoto) {
-        existingUser.profilePhoto = defaultProfilePic;
-      }
+      //  if (!existingUser.profilePhoto) {
+      //   existingUser.profilePhoto = defaultProfilePic;
+      // }
       await existingUser.save();
       message = "Login successful.";
     }
