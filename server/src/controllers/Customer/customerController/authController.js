@@ -297,7 +297,6 @@ export const googleAuthWithToken = async (req, res, next) => {
 
       message = "Registration successful.";
     } else {
-
       existingUser.googleId = googleId;
       existingUser.emailVerified = true;
       existingUser.isLoggedIn = true;
@@ -348,10 +347,6 @@ export const googleAuthWithToken = async (req, res, next) => {
   }
 };
 
-
-
-
-
 export const facebookAuthWithToken = async (req, res, next) => {
   const { access_token } = req.body;
   console.log("access_token received:", access_token);
@@ -364,7 +359,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
     let facebookUserInfo;
 
     // Check if the token is a JWT (ID token)
-    if (access_token.split('.').length === 3) {
+    if (access_token.split(".").length === 3) {
       // Decode the JWT token
       const decodedToken = jwt.decode(access_token);
       if (!decodedToken) {
@@ -385,8 +380,13 @@ export const facebookAuthWithToken = async (req, res, next) => {
       );
 
       // If Facebook responds with an error, it means the token is invalid
-      if (!facebookUserInfoResponse.data || facebookUserInfoResponse.data.error) {
-        return res.status(401).json({ message: "Invalid Facebook access token." });
+      if (
+        !facebookUserInfoResponse.data ||
+        facebookUserInfoResponse.data.error
+      ) {
+        return res
+          .status(401)
+          .json({ message: "Invalid Facebook access token." });
       }
 
       facebookUserInfo = facebookUserInfoResponse.data;
@@ -476,7 +476,9 @@ export const facebookAuthWithToken = async (req, res, next) => {
 
     // Handle different Facebook API errors
     if (error.response && error.response.data && error.response.data.error) {
-      return res.status(401).json({ message: "Invalid or expired Facebook access token." });
+      return res
+        .status(401)
+        .json({ message: "Invalid or expired Facebook access token." });
     }
 
     next(error);
@@ -484,7 +486,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
 };
 
 export const appleAuthWithToken = async (req, res, next) => {
-  const { identity_token , name } = req.body;
+  const { identity_token, name } = req.body;
 
   if (!identity_token) {
     return res.status(400).json({ message: "Identity token is required." });
@@ -505,7 +507,7 @@ export const appleAuthWithToken = async (req, res, next) => {
 
     // Check if the user already exists
     let existingUser = await CustomerProfile.findOne({
-      $or: [{ appleId }, { email }],
+      $or: [{ appleId }, { email }]
     });
 
     let message;
@@ -523,7 +525,7 @@ export const appleAuthWithToken = async (req, res, next) => {
         isBlocked: false,
         isLoggedIn: true,
         creationDate: new Date(),
-        profilePhoto: null,
+        profilePhoto: null
       });
 
       message = "Registration successful.";
@@ -537,7 +539,7 @@ export const appleAuthWithToken = async (req, res, next) => {
       if (!existingUser.Name || existingUser.Name === "null") {
         existingUser.Name = Name;
       }
-       // Set default profile picture if it doesn't exist
+      // Set default profile picture if it doesn't exist
       //  if (!existingUser.profilePhoto) {
       //   existingUser.profilePhoto = defaultProfilePic;
       // }
@@ -556,8 +558,8 @@ export const appleAuthWithToken = async (req, res, next) => {
         user: {
           id: existingUser._id,
           Name: existingUser.Name,
-          profilePhoto: null, 
-        },
+          profilePhoto: null
+        }
       });
     }
 
@@ -574,15 +576,12 @@ export const appleAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
-        profilepicture:null,
-      },
+        profilepicture: null
+      }
     });
   } catch (error) {
     console.error("Apple authentication error:", error);
-    
+
     next(error);
   }
 };
-
-
-

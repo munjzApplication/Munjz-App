@@ -30,10 +30,6 @@ export const getTransactionDetails = async (req, res, next) => {
       }
     ]);
 
-    if (!transactionData.length) {
-      return res.status(404).json({ success: false, message: "No transaction details found." });
-    }
-
     // Format createdAt using the helper function
     const formattedTransactions = transactionData.map(transaction => ({
       ...transaction,
