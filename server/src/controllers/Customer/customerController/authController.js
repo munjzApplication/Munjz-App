@@ -348,25 +348,56 @@ export const googleAuthWithToken = async (req, res, next) => {
   }
 };
 
+
+
+
+
 export const facebookAuthWithToken = async (req, res, next) => {
   const { access_token } = req.body;
+  console.log("access_token received:", access_token);
 
   if (!access_token) {
     return res.status(400).json({ message: "Access token is required." });
   }
 
   try {
-    // Fetch user profile from Facebook using the access token
-    const facebookUserInfoResponse = await axios.get(
-      `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${access_token}`
-    );
+    let facebookUserInfo;
+
+    // Check if the token is a JWT (ID token)
+    if (access_token.split('.').length === 3) {
+      // Decode the JWT token
+      const decodedToken = jwt.decode(access_token);
+      if (!decodedToken) {
+        return res.status(401).json({ message: "Invalid Facebook ID token." });
+      }
+
+      // Extract user info from the decoded token
+      facebookUserInfo = {
+        id: decodedToken.sub,
+        name: decodedToken.name,
+        email: decodedToken.email,
+        picture: { data: { url: decodedToken.picture } }
+      };
+    } else {
+      // If it's not a JWT, assume it's a standard Facebook access token
+      const facebookUserInfoResponse = await axios.get(
+        `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${access_token}`
+      );
+
+      // If Facebook responds with an error, it means the token is invalid
+      if (!facebookUserInfoResponse.data || facebookUserInfoResponse.data.error) {
+        return res.status(401).json({ message: "Invalid Facebook access token." });
+      }
+
+      facebookUserInfo = facebookUserInfoResponse.data;
+    }
 
     const {
       name: Name,
       email,
       id: facebookId,
       picture: profilePhoto
-    } = facebookUserInfoResponse.data;
+    } = facebookUserInfo;
 
     // Check if the user already exists by Facebook ID or email
     let existingUser = await CustomerProfile.findOne({
@@ -385,7 +416,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
         email,
         facebookId,
         customerUniqueId,
-        profilePhoto: profilePhoto.data.url,
+        profilePhoto: profilePhoto?.data?.url,
         emailVerified: true,
         isBlocked: false,
         isLoggedIn: true,
@@ -401,16 +432,16 @@ export const facebookAuthWithToken = async (req, res, next) => {
 
       // Update profile photo if it's missing
       if (!existingUser.profilePhoto) {
-        existingUser.profilePhoto = profilePhoto.data.url;
+        existingUser.profilePhoto = profilePhoto?.data?.url;
       }
 
       await existingUser.save();
-
       message = "Login successful.";
     }
 
     // Generate JWT
     const token = generateToken(existingUser._id, existingUser.emailVerified);
+
     // **Check if country & countryCode are missing**
     if (!existingUser.country || !existingUser.countryCode) {
       return res.status(200).json({
@@ -442,7 +473,13 @@ export const facebookAuthWithToken = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Facebook authentication error:", error);
-next(error);
+
+    // Handle different Facebook API errors
+    if (error.response && error.response.data && error.response.data.error) {
+      return res.status(401).json({ message: "Invalid or expired Facebook access token." });
+    }
+
+    next(error);
   }
 };
 
@@ -542,6 +579,7 @@ export const appleAuthWithToken = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Apple authentication error:", error);
+    
     next(error);
   }
 };

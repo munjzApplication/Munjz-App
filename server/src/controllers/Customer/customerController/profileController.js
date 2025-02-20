@@ -72,22 +72,21 @@ export const countrySetup = async (req, res, next) => {
     if (!country || !countryCode) {
       return res.status(400).json({
         success: false,
-        message: "Country and country code are required.",
+        message: "Country and country code are required."
       });
     }
 
-    
     // Ensure phoneNumber is unique if provided
     if (phoneNumber) {
       const isPhoneExists = await CustomerProfile.findOne({
         phoneNumber,
-        _id: { $ne: userId }, // Exclude current user
+        _id: { $ne: userId } // Exclude current user
       });
 
       if (isPhoneExists) {
         return res.status(400).json({
           success: false,
-          message: "Phone number is already in use.",
+          message: "Phone number is already in use."
         });
       }
     }
@@ -98,7 +97,7 @@ export const countrySetup = async (req, res, next) => {
       {
         country,
         countryCode,
-        phoneNumber: phoneNumber || null, // Ensure null if empty
+        phoneNumber: phoneNumber || null // Ensure null if empty
       },
       { new: true, upsert: true, runValidators: true } // Creates if not exists
     );
@@ -106,19 +105,17 @@ export const countrySetup = async (req, res, next) => {
     console.log("Updated Profile:", customerProfile);
 
     res.status(200).json({
-      message: "Country updated successfully.",
-
+      message: "Country updated successfully."
     });
   } catch (error) {
     console.error("Error in country setup:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error.",
-      error: error.message,
+      error: error.message
     });
   }
 };
-
 
 export const getProfile = async (req, res, next) => {
   try {
@@ -327,7 +324,6 @@ export const getAllServices = async (req, res) => {
   }
 };
 
-
 // Delete Profile
 export const deleteProfile = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -349,7 +345,7 @@ export const deleteProfile = async (req, res, next) => {
       profilePhoto: null,
       email: null,
       phoneNumber: null,
-      password: null,
+      password: null
     };
 
     if (user.googleId) updateFields.googleId = null;
