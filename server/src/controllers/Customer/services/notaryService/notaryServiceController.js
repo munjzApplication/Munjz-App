@@ -1,134 +1,91 @@
 import {
   saveNotaryCase,
   saveNotaryDocuments,
-  saveNotaryPayment
+  saveNotaryPayment,
 } from "../../../../helper/notaryService/notaryCaseHelper.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import Notification from "../../../../models/Admin/notificationModels/notificationModel.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
+import mongoose from "mongoose"; 
 
 export const saveNotaryServiceDetails = async (req, res, next) => {
-  const { customerId } = req.params;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
-    const {
-      serviceName,
-      selectedServiceCountry,
-      caseDescription,
-      paymentAmount,
-      paidCurrency,
-      paymentMethod,
-      transactionId,
-      paymentDate
-    } = req.body;
-
+    const customerId = req.user._id;
+    const { serviceName, selectedServiceCountry, caseDescription, paymentAmount, paidCurrency, paymentDate } = req.body;
+    
     // Validate customer
-    const customer = await Customer.findById(customerId);
+    const customer = await Customer.findById(customerId).lean(); // Use lean() for better performance
     if (!customer) {
-      return res.status(400).json({ error: "Invalid customer email" });
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: "Invalid customer" });
     }
-    // Check if the case is already registered
-    const existingCase = await NotaryCase.findOne({
-      customerId,
-      serviceName,
-      selectedServiceCountry
-    });
-    if (existingCase) {
-      return res.status(409).json({
-        error: "A Notary case with this service name is already registered."
-      });
-    }
-    let customerName = customer.Name;
-    // Determine payment status
-    const casePaymentStatus =
-      paymentAmount && paidCurrency && paymentMethod && transactionId
-        ? "paid"
-        : "free";
-    // Save Notary Case
-    const { notaryCase, notaryServiceID } = await saveNotaryCase({
-      customerId,
-      serviceName,
-      selectedServiceCountry,
-      caseDescription,
-      requesterEmail: customer.email,
-      casePaymentStatus
-    });
+    const customerName = customer.Name;
 
-    // Save Documents
-    if (req.files && req.files.length > 0) {
-      await saveNotaryDocuments(req.files, notaryServiceID, notaryCase._id);
+    if (!paymentAmount || !paidCurrency) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: "Payment is required for registration." });
+    }
+
+    // Save Notary Case
+    const { notaryCase, notaryServiceID } = await saveNotaryCase(
+      { customerId, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus: "paid" },
+      { session } // Use transaction session
+    );
+
+    // Save Documents if any
+    if (req.files?.length > 0) {
+      await saveNotaryDocuments(req.files, notaryServiceID, notaryCase._id, session);
     }
 
     // Save Payment
-    if (paymentAmount && paidCurrency && paymentMethod && transactionId) {
-      const payment = await saveNotaryPayment({
-        notaryServiceID,
-        notaryCaseId: notaryCase._id,
-        paymentAmount,
-        paidCurrency,
-        serviceName,
-        selectedServiceCountry,
-        paymentMethod,
-        transactionId,
-        paymentDate,
-        customerName
-      });
+    const payment = await saveNotaryPayment(
+      { notaryServiceID, notaryCaseId: notaryCase._id, paymentAmount, paidCurrency, serviceName, selectedServiceCountry, paymentDate, customerName },
+      { session }
+    );
 
-      return res.status(201).json({
-        message:
-          "Notary case, original documents, and payment saved successfully",
-        notaryCase,
-        payment
-      });
-    } else {
-      const notification = new Notification({
-        notificationDetails: {
-          type: "Case Registration",
-          title: "Notary Service Registered Without Payment",
-          message: `The Notary service "${serviceName}" has been successfully registered for ${customerName} without a payment.`,
-          additionalDetails: {
-            customerName,
-            serviceName,
-            country: selectedServiceCountry,
-            caseDescription,
-            paymentStatus: "unpaid"
-          }
-        }
-      });
+    // Commit transaction
+    await session.commitTransaction();
+    session.endSession();
 
-      await notification.save();
-
-      res.status(201).json({
-        message: "Notary case saved successfully without payment",
-        notaryCase
-      });
-    }
+    return res.status(201).json({
+      message: "Notary case registered successfully",
+    
+    });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
 
+
 export const getServices = async (req, res, next) => {
   try {
     const { country } = req.params;
-    const services = await NotaryServicePricing.find({
-      [`BigPricingMaps.${country}`]: { $exists: true }
-    })
-      .select("serviceId BigPricingMaps")
-      .populate("serviceId", "ServiceNameEnglish");
 
-    if (!services || services.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No services found for this country" });
+    // Fetch only required fields and use lean() for performance
+    const services = await NotaryServicePricing.find(
+      { [`BigPricingMaps.${country}`]: { $exists: true } },
+      { serviceId: 1, [`BigPricingMaps.${country}`]: 1 }
+    )
+      .populate("serviceId", "ServiceNameEnglish")
+      .lean();
+
+    if (!services.length) {
+      return res.status(404).json({ message: "No services found for this country" });
     }
 
-    const formattedServices = services.map(service => {
-      const countryData = Object.fromEntries(service.BigPricingMaps)[country];
+    const formattedServices = services.map(({ serviceId, BigPricingMaps }) => {
+      const [price, currency] = BigPricingMaps[country];
       return {
-        serviceName: service.serviceId.ServiceNameEnglish,
-        price: countryData[0],
-        currency: countryData[1]
+        serviceName: serviceId.ServiceNameEnglish,
+        price,
+        currency,
       };
     });
 
@@ -137,3 +94,4 @@ export const getServices = async (req, res, next) => {
     next(error);
   }
 };
+

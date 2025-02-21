@@ -9,6 +9,6 @@ import upload from "../../../../middlewares/fileUpload.js";
 const router = express.Router();
 
 router.get("/get-service/:country", getServices);
-router.post("/submit-notary-service/:customerId",upload.array("documents", 5),saveNotaryServiceDetails);
+router.post("/register",upload.array("documents"),saveNotaryServiceDetails);
 
 export default router;

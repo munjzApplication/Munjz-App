@@ -26,18 +26,10 @@ const PaymentSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
-  paymentMethod: { 
-    type: String, 
-    required: true 
-  },
   paymentStatus: {
     type: String,
     enum: ['unread', 'pending', 'paid'],
     default: 'unread',
-  },
-  transactionId: { 
-    type: String, 
-    required: true 
   },
   paymentDate: { 
     type: Date, 

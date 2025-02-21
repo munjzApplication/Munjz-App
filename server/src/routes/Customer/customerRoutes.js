@@ -31,7 +31,7 @@ router.use('/transaction',authenticateUser,transactionRoute);
 router.use('/favorite',authenticateUser,favRoute);
 router.use('/court',authenticateUser,courtServiceRoute);
 router.use('/adminCourt-req-submit',authenticateUser,courtServiceReqRoute);
-router.use('/notary',authenticateUser,notaryServiceRoute);
+router.use('/notary-service',authenticateUser,notaryServiceRoute);
 router.use('/adminNotary-req-submit',authenticateUser,notaryServiceReqRoute);
 router.use('/translation',authenticateUser,translationRoute);
 router.use('/adminreqinvoice',authenticateUser,adminreqinvoiceRoute);
