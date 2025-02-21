@@ -8,6 +8,10 @@ import { generateConsultantUniqueId } from "../../helper/consultant/consultantHe
 import Notification from "../../models/Admin/notificationModels/notificationModel.js";
 import { notificationService } from "../../service/sendPushNotification.js";
 import TempConsultant from "../../models/Consultant/tempUser.js";
+import { OAuth2Client } from "google-auth-library";
+import axios from "axios";
+
+const client = new OAuth2Client(process.env.CONSULTANT_GOOGLE_CLIENT_ID);
 
 const generateToken = (id , emailVerified) => {
   return jwt.sign({ id, emailVerified }, process.env.JWT_SECRET, {
@@ -219,90 +223,336 @@ export const Login = async (req, res, next) => {
   }
 };
 
-export const googleAuth = (req, res, next) => {
-  passport.authenticate("consultant-google", { scope: ["profile", "email"] })(
-    req,
-    res,
-    next
-  );
-};
-export const googleCallback = async (req, res, next) => {
-  passport.authenticate(
-    "consultant-google",
-    { failureRedirect: "/" },
-    async (err, user, info) => {
-      try {
-        if (err || !user) {
-          console.error("Google Authentication error:", err || info);
-          return res.status(500).json({
-            success: false,
-            message: "Google authentication failed. Please try again.",
-            error: err || info
-          });
-        }
+export const googleAuthWithToken = async (req, res, next) => {
+  const { access_token } = req.body;
 
-        // Generate a token for the user
-        const token = generateToken(user._id , user.emailVerified);
+  if (!access_token) {
+    return res.status(400).json({ message: "Access token is required." });
+  }
 
-        await notificationService.sendToConsultant(
-          user._id,
-          "Google Authentication Successful",
-          "You have successfully signed in using Google."
-        );
+  try {
+    // Get token info (email and other basic details)
+    const tokenInfoResponse = await client.getTokenInfo(access_token);
+    const { email, sub: googleId } = tokenInfoResponse;
 
-        res.status(200).json({
-          success: true,
-          message: "Google authentication successful!",
-          token,
-          user
-        });
-      } catch (error) {
-        next(error);
+    // Fetch additional user profile data from Google
+    const userInfoResponse = await axios.get(
+      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`
+    );
+    const { name: Name, picture: profilePhoto } = userInfoResponse.data;
+
+    // Check if the user already exists by googleId or email
+    let existingUser = await ConsultantProfile.findOne({
+      $or: [{ googleId }, { email }]
+    });
+
+    let message;
+
+    if (!existingUser) {
+      // Generate the customerUniqueId for new user
+      const consultantUniqueId = await generateConsultantUniqueId();
+
+      // Create a new user if they don't exist
+      existingUser = await ConsultantProfile.create({
+        Name: Name || "Google User",
+        email,
+        googleId,
+        consultantUniqueId,
+        profilePhoto,
+        emailVerified: true,
+        isBlocked: false,
+        isLoggedIn: true,
+        creationDate: new Date()
+      });
+
+      message = "Registration successful.";
+    } else {
+      existingUser.googleId = googleId;
+      existingUser.emailVerified = true;
+      existingUser.isLoggedIn = true;
+
+      // Update profile photo if it's missing
+      if (!existingUser.profilePhoto) {
+        existingUser.profilePhoto = profilePhoto;
       }
-    }
-  )(req, res, next);
-};
 
-export const facebookAuth = (req, res, next) => {
-  passport.authenticate("consultant-facebook", { scope: ["email"] })(
-    req,
-    res,
-    next
-  );
-};
-export const facebookCallback = async (req, res, next) => {
-  passport.authenticate(
-    "consultant-facebook",
-    { failureRedirect: "/" },
-    async (err, user, info) => {
-      try {
-        if (err || !user) {
-          console.error("Facebook Authentication error:", err || info);
-          return res.status(500).json({
-            success: false,
-            message: "Facebook authentication failed. Please try again.",
-            error: err || info
-          });
+      await existingUser.save();
+
+      message = "Login successful.";
+    }
+
+    // Generate JWT
+    const token = generateToken(existingUser._id, existingUser.emailVerified);
+    // **Check if country & countryCode are missing**
+    if (!existingUser.country || !existingUser.countryCode) {
+      return res.status(200).json({
+        message: "Registration successful.",
+        token,
+        user: {
+          id: existingUser._id,
+          Name: existingUser.Name,
+          profilePhoto: existingUser.profilePhoto
         }
-
-        // Generate a token for the user
-        const token = generateToken(user._id , user.emailVerified);
-
-        await notificationService.sendToConsultant(
-          user._id,
-          "Facebook Authentication Successful",
-          "You have successfully signed in using Facebook."
-        );
-
-        res.status(200).json({
-          success: true,
-          message: "Facebook authentication successful!",
-          token,
-          user
-        });
-      } catch (error) {
-        next(error);
-      }
+      });
     }
-  )(req, res, next);
+
+    await notificationService.sendToConsultant(
+      existingUser._id,
+      "Google Authentication Successful",
+      "You have successfully signed in using Google."
+    );
+
+    return res.status(200).json({
+      message,
+      token,
+      user: {
+        id: existingUser._id,
+        Name: existingUser.Name,
+        profilePhoto: existingUser.profilePhoto
+      }
+    });
+  } catch (error) {
+    console.error("Google authentication error:", error);
+    next(error);
+  }
 };
+
+export const facebookAuthWithToken = async (req, res, next) => {
+  const { access_token } = req.body;
+  console.log("access_token received:", access_token);
+
+  if (!access_token) {
+    return res.status(400).json({ message: "Access token is required." });
+  }
+
+  try {
+    let facebookUserInfo;
+
+    // Check if the token is a JWT (ID token)
+    if (access_token.split(".").length === 3) {
+      // Decode the JWT token
+      const decodedToken = jwt.decode(access_token);
+      if (!decodedToken) {
+        return res.status(401).json({ message: "Invalid Facebook ID token." });
+      }
+
+      // Extract user info from the decoded token
+      facebookUserInfo = {
+        id: decodedToken.sub,
+        name: decodedToken.name,
+        email: decodedToken.email,
+        picture: { data: { url: decodedToken.picture } }
+      };
+    } else {
+      // If it's not a JWT, assume it's a standard Facebook access token
+      const facebookUserInfoResponse = await axios.get(
+        `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${access_token}`
+      );
+
+      // If Facebook responds with an error, it means the token is invalid
+      if (
+        !facebookUserInfoResponse.data ||
+        facebookUserInfoResponse.data.error
+      ) {
+        return res
+          .status(401)
+          .json({ message: "Invalid Facebook access token." });
+      }
+
+      facebookUserInfo = facebookUserInfoResponse.data;
+    }
+
+    const {
+      name: Name,
+      email,
+      id: facebookId,
+      picture: profilePhoto
+    } = facebookUserInfo;
+
+    // Check if the user already exists by Facebook ID or email
+    let existingUser = await ConsultantProfile.findOne({
+      $or: [{ facebookId }, { email }]
+    });
+
+    let message;
+
+    if (!existingUser) {
+      // Generate the customerUniqueId for new user
+      const consultantUniqueId = await generateCustomerUniqueId();
+
+      // Create a new user if they don't exist
+      existingUser = await ConsultantProfile.create({
+        Name: Name || "Facebook User",
+        email,
+        facebookId,
+        consultantUniqueId,
+        profilePhoto: profilePhoto?.data?.url,
+        emailVerified: true,
+        isBlocked: false,
+        isLoggedIn: true,
+        creationDate: new Date()
+      });
+
+      message = "Registration successful.";
+    } else {
+      // If the user exists, update their profile
+      existingUser.facebookId = facebookId;
+      existingUser.emailVerified = true;
+      existingUser.isLoggedIn = true;
+
+      // Update profile photo if it's missing
+      if (!existingUser.profilePhoto) {
+        existingUser.profilePhoto = profilePhoto?.data?.url;
+      }
+
+      await existingUser.save();
+      message = "Login successful.";
+    }
+
+    // Generate JWT
+    const token = generateToken(existingUser._id, existingUser.emailVerified);
+
+    // **Check if country & countryCode are missing**
+    if (!existingUser.country || !existingUser.countryCode) {
+      return res.status(200).json({
+        message: "Registration successful.",
+        token,
+        user: {
+          id: existingUser._id,
+          Name: existingUser.Name,
+          profilePhoto: existingUser.profilePhoto
+        }
+      });
+    }
+
+    // Send notification
+    await notificationService.sendToConsultant(
+      existingUser._id,
+      "Facebook Authentication Successful",
+      "You have successfully signed in using Facebook."
+    );
+
+    return res.status(200).json({
+      message,
+      token,
+      user: {
+        id: existingUser._id,
+        Name: existingUser.Name,
+        profilePhoto: existingUser.profilePhoto
+      }
+    });
+  } catch (error) {
+    console.error("Facebook authentication error:", error);
+
+    // Handle different Facebook API errors
+    if (error.response && error.response.data && error.response.data.error) {
+      return res
+        .status(401)
+        .json({ message: "Invalid or expired Facebook access token." });
+    }
+
+    next(error);
+  }
+};
+
+export const appleAuthWithToken = async (req, res, next) => {
+  const { identity_token, name } = req.body;
+
+  if (!identity_token) {
+    return res.status(400).json({ message: "Identity token is required." });
+  }
+
+  try {
+    // Decode the Apple ID token
+    const decoded = jwt.decode(identity_token, { complete: true });
+    if (!decoded) {
+      return res.status(400).json({ message: "Invalid identity token." });
+    }
+
+    const { email, sub: appleId } = decoded.payload;
+
+    // Extract name (if provided)
+    let Name = name || "null";
+    // let defaultProfilePic = "/assets/profile.jpg";
+
+    // Check if the user already exists
+    let existingUser = await ConsultantProfile.findOne({
+      $or: [{ appleId }, { email }]
+    });
+
+    let message;
+
+    if (!existingUser) {
+      // Generate unique ID for new user
+      const consultantUniqueId = await generateConsultantUniqueId();
+
+      existingUser = await ConsultantProfile.create({
+        Name, // Store name if available
+        email,
+        appleId,
+        consultantUniqueId,
+        emailVerified: true,
+        isBlocked: false,
+        isLoggedIn: true,
+        creationDate: new Date(),
+        profilePhoto: null
+      });
+
+      message = "Registration successful.";
+    } else {
+      // If the user exists, update their profile
+      existingUser.appleId = appleId;
+      existingUser.emailVerified = true;
+      existingUser.isLoggedIn = true;
+
+      // Update name only if it's the first login (name isn't saved yet)
+      if (!existingUser.Name || existingUser.Name === "null") {
+        existingUser.Name = Name;
+      }
+      // Set default profile picture if it doesn't exist
+      //  if (!existingUser.profilePhoto) {
+      //   existingUser.profilePhoto = defaultProfilePic;
+      // }
+      await existingUser.save();
+      message = "Login successful.";
+    }
+
+    // Generate JWT
+    const token = generateToken(existingUser._id, existingUser.emailVerified);
+
+    // **Check if country & countryCode are missing**
+    if (!existingUser.country || !existingUser.countryCode) {
+      return res.status(200).json({
+        message: "Registration successful.",
+        token,
+        user: {
+          id: existingUser._id,
+          Name: existingUser.Name,
+          profilePhoto: null
+        }
+      });
+    }
+
+    // Send notification
+    await notificationService.sendToConsultant(
+      existingUser._id,
+      "Apple Authentication Successful",
+      "You have successfully signed in using Apple."
+    );
+
+    return res.status(200).json({
+      message,
+      token,
+      user: {
+        id: existingUser._id,
+        Name: existingUser.Name,
+        profilepicture: null
+      }
+    });
+  } catch (error) {
+    console.error("Apple authentication error:", error);
+
+    next(error);
+  }
+};
+

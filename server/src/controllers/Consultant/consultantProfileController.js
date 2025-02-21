@@ -171,43 +171,41 @@ export const deleteProfile = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const consultantId = req.user._id;
+    const userId = req.user._id;
 
-    // Soft delete Consultant Profile by setting a `deleted` flag
-    const user = await ConsultantProfile.findById(consultantId).session(session);
+    // Find the user first
+    const user = await ConsultantProfile.findById(userId).session(session);
     if (!user) {
       await session.abortTransaction();
       session.endSession();
       return res.status(404).json({ message: "Profile not found." });
     }
 
-  // Prepare update fields (conditionally remove social logins)
-  const updateFields = {
-    Name: "Deleted_User",
-    profilePhoto: null,
-    email: null,
-    phoneNumber: null,
-    password: null,
-  };
+    // Prepare update fields (conditionally remove social logins)
+    const updateFields = {
+      Name: "Deleted_User",
+      profilePhoto: null,
+      email: null,
+      phoneNumber: null,
+      password: null
+    };
 
-  if (user.googleId) updateFields.googleId = null;
-  if (user.facebookId) updateFields.facebookId = null;
-  if (user.appleId) updateFields.appleId = null;
+    if (user.googleId) updateFields.googleId = null;
+    if (user.facebookId) updateFields.facebookId = null;
+    if (user.appleId) updateFields.appleId = null;
 
-  // Update user with the soft delete fields
-  const updatedProfile = await CustomerProfile.findByIdAndUpdate(
-    userId,
-    { $set: updateFields },
-    { new: true, session }
-  );
+    // Update user with the soft delete fields
+    const updatedProfile = await ConsultantProfile.findByIdAndUpdate(
+      userId,
+      { $set: updateFields },
+      { new: true, session }
+    );
 
-    // Commit transaction
     await session.commitTransaction();
     session.endSession();
 
     res.status(200).json({ message: "Profile deleted successfully." });
   } catch (error) {
-    // Rollback transaction
     await session.abortTransaction();
     session.endSession();
     next(error);

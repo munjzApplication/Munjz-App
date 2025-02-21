@@ -2,11 +2,10 @@ import express from "express";
 import {
   Register,
   Login,
-  googleAuth,
-  googleCallback,
   verifyEmail,
-  facebookAuth,
-  facebookCallback,
+  googleAuthWithToken,
+  facebookAuthWithToken,
+  appleAuthWithToken,
   TempConsultantRegister,
   isEmailVerified
 } from "../../../controllers/Consultant/authController.js";
@@ -21,11 +20,8 @@ router.post("/isEmailVerified", isEmailVerified);
 router.post("/register", Register);
 router.post("/login", Login);
 
-
-router.get("/google", googleAuth);
-router.get("/google/callback", googleCallback);
-
-router.get("/facebook", facebookAuth);
-router.get("/facebook/callback", facebookCallback);
+router.get("/google/callback", googleAuthWithToken);
+router.get("/facebook/callback", facebookAuthWithToken);
+router.post("/apple/callback",appleAuthWithToken);
 
 export default router;

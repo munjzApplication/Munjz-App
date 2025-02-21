@@ -1,86 +1,114 @@
 import mongoose from "mongoose";
 import customerProfile from "../../../models/Customer/customerModels/customerModel.js";
+import consultantProfile from "../../../models/Consultant/User.js";
 import consultationDetails from "../../../models/Customer/consultationModel/consultationModel.js";
 import walletDetails from "../../../models/Customer/customerModels/walletModel.js";
 import notaryService from "../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import courtService from "../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import translationService from "../../../models/Customer/translationModel/translationDetails.js";
-import { formatDate, formatMinutesToMMSS } from "../../../helper/dateFormatter.js";
+import {
+  formatDate,
+  formatMinutesToMMSS
+} from "../../../helper/dateFormatter.js";
 
 export const getWalletDetails = async (req, res, next) => {
-    const { customerId, serviceType = "all", page = 1, limit = 10 } = req.body;
+  const { customerId, actionType } = req.body;
 
-    try {
-        // Convert customerId to ObjectId for efficiency
-        const customerObjectId = new mongoose.Types.ObjectId(customerId);
+  try {
+    // Fetch customer and wallet details
+    const customer = await customerProfile.findById(customerId).lean();
+    const wallet = await walletDetails.findOne({ customerId }).lean();
 
-        // Fetch customer and wallet in parallel
-        const [customer, wallet] = await Promise.all([
-            customerProfile.findById(customerObjectId).lean(),
-            walletDetails.findOne({ customerId: customerObjectId }).lean(),
-        ]);
+    let services = [];
 
-        if (!customer) return res.status(404).json({ message: "Customer not found" });
-        if (!wallet) return res.status(404).json({ message: "Wallet not found" });
+    // Fetch all services if actionType is "ALL" or specific services based on actionType
+    if (actionType === "ALL" || actionType === "CONSULTATION") {
+      // Fetch consultations (only necessary fields) and sort by consultationDate in descending order
+      const consultations = await consultationDetails
+        .find({ customerId })
+        .select(
+          "consultantId consultationDate consultationDuration consultationRate"
+        )
+        .sort({ consultationDate: -1 }) // Sorting by consultationDate in descending order
+        .lean();
 
-        // Pagination settings
-        const skip = (page - 1) * limit;
-        let totalServices = 0;
-        let services = [];
+      // Extract consultantIds and fetch consultant names
+      const consultantIds = consultations.map(service => service.consultantId);
+      const consultants = await consultantProfile
+        .find({ _id: { $in: consultantIds } })
+        .select("Name")
+        .lean();
 
-        // Define a map for service models
-        const serviceModels = {
-            consultation: consultationDetails,
-            courtservice: courtService,
-            notaryservice: notaryService,
-            translation: translationService,
-        };
+      // Map consultantId to consultantName
+      const consultantMap = consultants.reduce((acc, consultant) => {
+        acc[consultant._id] = consultant.Name;
+        return acc;
+      }, {});
 
-        // Fetch services based on serviceType
-        if (serviceType === "all") {
-            const servicePromises = Object.values(serviceModels).map(model =>
-                model.find({ customerId: customerObjectId })
-                    .sort({ createdAt: -1 })
-                    .skip(skip)
-                    .limit(limit)
-                    .lean()
-            );
-
-            services = await Promise.all(servicePromises);
-            services = services.flat(); // Flatten the array of service results
-            totalServices = services.length;
-        } else {
-            const model = serviceModels[serviceType.toLowerCase()];
-            if (!model) return res.status(400).json({ message: "Invalid service type" });
-
-            services = await model.find({ customerId: customerObjectId })
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit)
-                .lean();
-
-            totalServices = await model.countDocuments({ customerId: customerObjectId });
-        }
-
-        // Format response data
-        const formattedServices = services.map(service => ({
-            ...service,
-            createdAt: formatDate(service.createdAt),
-            consultationDuration: service.consultationDuration
-                ? formatMinutesToMMSS(service.consultationDuration / 60) // Convert seconds to minutes
-                : undefined
-        }));
-
-        return res.status(200).json({
-            walletBalance: wallet.balance,
-            totalServices,
-            services: formattedServices,
-            currentPage: page,
-            totalPages: Math.ceil(totalServices / limit),
-        });
-
-    } catch (error) {
-        console.error("Error fetching wallet details:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
+      // Add consultantName, format date and duration, and map the necessary fields
+      services = [
+        ...services,
+        ...consultations.map(service => ({
+          consultantName: consultantMap[service.consultantId] || "Unknown",
+          consultationDate: formatDate(service.consultationDate), // Formatting the date
+          consultationDuration: formatMinutesToMMSS(
+            service.consultationDuration
+          ), // Formatting duration
+          consultationRate: service.consultationRating,
+          serviceType: "CONSULTATION"
+        }))
+      ];
     }
+
+    if (actionType === "ALL" || actionType === "NOTARYSERVICE") {
+      // Fetch notary services
+      const notaryServices = await notaryService.find({ customerId }).lean();
+      services = [
+        ...services,
+        ...notaryServices.map(service => ({
+          ...service,
+          serviceType: "NOTARYSERVICE"
+        }))
+      ];
+    }
+
+    if (actionType === "ALL" || actionType === "COURTSERVICE") {
+      // Fetch court services
+      const courtServices = await courtService.find({ customerId }).lean();
+      services = [
+        ...services,
+        ...courtServices.map(service => ({
+          ...service,
+          serviceType: "COURTSERVICE"
+        }))
+      ];
+    }
+
+    if (actionType === "ALL" || actionType === "TRANSLATIONSERVICE") {
+      // Fetch translation services
+      const translationServices = await translationService
+        .find({ customerId })
+        .lean();
+      services = [
+        ...services,
+        ...translationServices.map(service => ({
+          ...service,
+          serviceType: "TRANSLATIONSERVICE"
+        }))
+      ];
+    }
+
+    // Send the response
+    return res.status(200).json({
+      customer: {
+        name: customer.Name,
+        email: customer.email,
+        walletBalance: wallet.balance
+      },
+      services
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
