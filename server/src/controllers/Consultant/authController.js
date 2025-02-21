@@ -13,7 +13,7 @@ import axios from "axios";
 
 const client = new OAuth2Client(process.env.CONSULTANT_GOOGLE_CLIENT_ID);
 
-const generateToken = (id , emailVerified) => {
+const generateToken = (id, emailVerified) => {
   return jwt.sign({ id, emailVerified }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
@@ -60,11 +60,11 @@ export const verifyEmail = async (req, res, next) => {
     tempUser.emailVerified = true;
     await tempUser.save();
 
-      await notificationService.sendToConsultant(
-        TempConsultant._id,
-          "Email Verified Successfully",
-          "Your email has been verified successfully. You can now proceed with registration."
-        );
+    await notificationService.sendToConsultant(
+      TempConsultant._id,
+      "Email Verified Successfully",
+      "Your email has been verified successfully. You can now proceed with registration."
+    );
 
     res
       .status(200)
@@ -99,17 +99,17 @@ export const isEmailVerified = async (req, res, next) => {
 
 export const Register = async (req, res, next) => {
   try {
-    const { Name, email, phoneNumber, password ,countryCode } = req.body;
+    const { Name, email, phoneNumber, password, countryCode } = req.body;
 
     if (!phoneNumber) {
       return res.status(400).json({ message: "Phone number is required." });
     }
 
-        // Check if the customer is already registered
-        const existingCustomer = await ConsultantProfile.findOne({ email });
-        if (existingCustomer) {
-          return res.status(400).json({ message: "The email is already registered." });
-        }
+    // Check if the customer is already registered
+    const existingCustomer = await ConsultantProfile.findOne({ email });
+    if (existingCustomer) {
+      return res.status(400).json({ message: "The email is already registered." });
+    }
 
     const TempConsultantData = await TempConsultant.findOne({
       email,
@@ -154,17 +154,17 @@ export const Register = async (req, res, next) => {
     });
     await notification.save();
 
-    const token = generateToken(newUser._id , newUser.emailVerified);
+    const token = generateToken(newUser._id, newUser.emailVerified);
 
     res.status(201).json({
       message: "Registration successful. Welcome!",
       token,
-      user : {
+      user: {
         id: newUser._id,
         Name: newUser.Name,
         email: newUser.email,
         phoneNumber: newUser.phoneNumber,
-        countryCode:newUser.countryCode,
+        countryCode: newUser.countryCode,
         consultantUniqueId: newUser.consultantUniqueId,
         creationDate: newUser.creationDate
       }
@@ -198,7 +198,7 @@ export const Login = async (req, res, next) => {
       return res.status(401).json({ message: "Incorrect password." });
     }
 
-    const token = generateToken(user._id , user.emailVerified);
+    const token = generateToken(user._id, user.emailVerified);
 
     await notificationService.sendToConsultant(
       user._id,
@@ -273,7 +273,7 @@ export const googleAuthWithToken = async (req, res, next) => {
 
       await existingUser.save();
 
-      message = "Login successful.";
+      message = "Login successful";
     }
 
     // Generate JWT
@@ -375,7 +375,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
         creationDate: new Date()
       });
 
-      message = "Registration successful.";
+      message = "Registration successful. Welcome!";
     } else {
       // If the user exists, update their profile
       existingUser.facebookId = facebookId;
@@ -383,7 +383,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
       existingUser.isLoggedIn = true;
 
       await existingUser.save();
-      message = "Login successful.";
+      message = "Login successful";
     }
 
     // Generate JWT
@@ -402,7 +402,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
-  
+
       }
     });
   } catch (error) {
@@ -462,7 +462,7 @@ export const appleAuthWithToken = async (req, res, next) => {
         profilePhoto: null
       });
 
-      message = "Registration successful.";
+      message = "Registration successful. Welcome!";
     } else {
       // If the user exists, update their profile
       existingUser.appleId = appleId;
@@ -473,9 +473,9 @@ export const appleAuthWithToken = async (req, res, next) => {
       if (!existingUser.Name || existingUser.Name === "null") {
         existingUser.Name = Name;
       }
-      
+
       await existingUser.save();
-      message = "Login successful.";
+      message = "Login successful";
     }
 
     // Generate JWT
@@ -494,7 +494,7 @@ export const appleAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
-       
+
       }
     });
   } catch (error) {
