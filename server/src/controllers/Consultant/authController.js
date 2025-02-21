@@ -265,16 +265,11 @@ export const googleAuthWithToken = async (req, res, next) => {
         creationDate: new Date()
       });
 
-      message = "Registration successful.";
+      message = "Registration successful. Welcome!";
     } else {
       existingUser.googleId = googleId;
       existingUser.emailVerified = true;
       existingUser.isLoggedIn = true;
-
-      // Update profile photo if it's missing
-      if (!existingUser.profilePhoto) {
-        existingUser.profilePhoto = profilePhoto;
-      }
 
       await existingUser.save();
 
@@ -283,18 +278,6 @@ export const googleAuthWithToken = async (req, res, next) => {
 
     // Generate JWT
     const token = generateToken(existingUser._id, existingUser.emailVerified);
-    // **Check if country & countryCode are missing**
-    if (!existingUser.country || !existingUser.countryCode) {
-      return res.status(200).json({
-        message: "Registration successful.",
-        token,
-        user: {
-          id: existingUser._id,
-          Name: existingUser.Name,
-          profilePhoto: existingUser.profilePhoto
-        }
-      });
-    }
 
     await notificationService.sendToConsultant(
       existingUser._id,
@@ -308,7 +291,6 @@ export const googleAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
-        profilePhoto: existingUser.profilePhoto
       }
     });
   } catch (error) {
@@ -400,30 +382,12 @@ export const facebookAuthWithToken = async (req, res, next) => {
       existingUser.emailVerified = true;
       existingUser.isLoggedIn = true;
 
-      // Update profile photo if it's missing
-      if (!existingUser.profilePhoto) {
-        existingUser.profilePhoto = profilePhoto?.data?.url;
-      }
-
       await existingUser.save();
       message = "Login successful.";
     }
 
     // Generate JWT
     const token = generateToken(existingUser._id, existingUser.emailVerified);
-
-    // **Check if country & countryCode are missing**
-    if (!existingUser.country || !existingUser.countryCode) {
-      return res.status(200).json({
-        message: "Registration successful.",
-        token,
-        user: {
-          id: existingUser._id,
-          Name: existingUser.Name,
-          profilePhoto: existingUser.profilePhoto
-        }
-      });
-    }
 
     // Send notification
     await notificationService.sendToConsultant(
@@ -438,7 +402,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
-        profilePhoto: existingUser.profilePhoto
+  
       }
     });
   } catch (error) {
@@ -509,29 +473,13 @@ export const appleAuthWithToken = async (req, res, next) => {
       if (!existingUser.Name || existingUser.Name === "null") {
         existingUser.Name = Name;
       }
-      // Set default profile picture if it doesn't exist
-      //  if (!existingUser.profilePhoto) {
-      //   existingUser.profilePhoto = defaultProfilePic;
-      // }
+      
       await existingUser.save();
       message = "Login successful.";
     }
 
     // Generate JWT
     const token = generateToken(existingUser._id, existingUser.emailVerified);
-
-    // **Check if country & countryCode are missing**
-    if (!existingUser.country || !existingUser.countryCode) {
-      return res.status(200).json({
-        message: "Registration successful.",
-        token,
-        user: {
-          id: existingUser._id,
-          Name: existingUser.Name,
-          profilePhoto: null
-        }
-      });
-    }
 
     // Send notification
     await notificationService.sendToConsultant(
@@ -546,7 +494,7 @@ export const appleAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
-        profilepicture: null
+       
       }
     });
   } catch (error) {

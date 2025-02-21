@@ -20,8 +20,8 @@ router.post("/isEmailVerified", isEmailVerified);
 router.post("/register", Register);
 router.post("/login", Login);
 
-router.get("/google/callback", googleAuthWithToken);
-router.get("/facebook/callback", facebookAuthWithToken);
+router.post("/google/callback", googleAuthWithToken);
+router.post("/facebook/callback", facebookAuthWithToken);
 router.post("/apple/callback",appleAuthWithToken);
 
 export default router;
