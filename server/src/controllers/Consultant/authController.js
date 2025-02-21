@@ -291,6 +291,7 @@ export const googleAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
+        email: existingUser.email,
       }
     });
   } catch (error) {
@@ -402,6 +403,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
+        email: existingUser.email,
 
       }
     });
@@ -494,6 +496,7 @@ export const appleAuthWithToken = async (req, res, next) => {
       user: {
         id: existingUser._id,
         Name: existingUser.Name,
+        email: existingUser.email,
 
       }
     });
