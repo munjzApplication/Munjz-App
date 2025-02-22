@@ -4,7 +4,7 @@ import IDProof from "../../models/Consultant/idProof.js";
 import BankDetails from "../../models/Consultant/bankDetails.js";
 import bcrypt from "bcrypt";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
-import{notificationService} from "../../service/sendPushNotification.js";
+import { notificationService } from "../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 
 export const getConsultantProfile = async (req, res) => {
@@ -54,6 +54,31 @@ export const getConsultantProfile = async (req, res) => {
   }
 };
 
+export const addPhoneNumber = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { phoneNumber } = req.body;
+
+    if (!phoneNumber) {
+      return res.status(400).json({ message: "Phone number is required." });
+    }
+
+    const profile = await ConsultantProfile.findById(userId);
+    if (!profile) {
+      return res.status(404).json({ message: "Consultant not found." });
+    }
+
+    profile.phoneNumber = phoneNumber;
+    await profile.save();
+
+    res.status(200).json({ 
+      message: "Phone number added successfully.",
+      phoneNumber
+     });
+  } catch (error) {
+    next(error);
+  }
+}
 
 export const changePassword = async (req, res, next) => {
   try {
@@ -61,7 +86,9 @@ export const changePassword = async (req, res, next) => {
     const consultantId = req.user._id;
 
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: "Both Current and new passwords are required." });
+      return res
+        .status(400)
+        .json({ message: "Both Current and new passwords are required." });
     }
 
     const consultant = await ConsultantProfile.findById(consultantId);
@@ -70,12 +97,16 @@ export const changePassword = async (req, res, next) => {
     }
 
     if (!consultant.password) {
-      return res.status(400).json({ message: "Password not set. Please contact support." });
+      return res
+        .status(400)
+        .json({ message: "Password not set. Please contact support." });
     }
 
     const isMatch = await bcrypt.compare(currentPassword, consultant.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Current password is incorrect." });
+      return res
+        .status(400)
+        .json({ message: "Current password is incorrect." });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -90,7 +121,10 @@ export const changePassword = async (req, res, next) => {
         "Your password has been updated successfully."
       );
     } catch (notificationError) {
-      console.error("Error sending password change notification:", notificationError);
+      console.error(
+        "Error sending password change notification:",
+        notificationError
+      );
     }
 
     res.status(200).json({ message: "Password updated successfully." });
@@ -160,7 +194,7 @@ export const updateProfilePicture = async (req, res, next) => {
 
     res.status(200).json({
       message: "Your profile picture has been updated successfully.",
-      profilePicture: profilePicture 
+      profilePicture: profilePicture
     });
   } catch (error) {
     next(error);
@@ -181,7 +215,9 @@ export const deleteProfile = async (req, res, next) => {
       return res.status(404).json({ message: "Profile not found." });
     }
     await IDProof.findOneAndDelete({ consultantId: userId }).session(session);
-    await BankDetails.findOneAndDelete({ consultantId: userId }).session(session);
+    await BankDetails.findOneAndDelete({ consultantId: userId }).session(
+      session
+    );
     // Prepare update fields (conditionally remove social logins)
     const updateFields = {
       Name: "Deleted_User",
