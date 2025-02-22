@@ -180,7 +180,8 @@ export const deleteProfile = async (req, res, next) => {
       session.endSession();
       return res.status(404).json({ message: "Profile not found." });
     }
-
+    await IDProof.findOneAndDelete({ consultantId: userId }).session(session);
+    await BankDetails.findOneAndDelete({ consultantId: userId }).session(session);
     // Prepare update fields (conditionally remove social logins)
     const updateFields = {
       Name: "Deleted_User",
