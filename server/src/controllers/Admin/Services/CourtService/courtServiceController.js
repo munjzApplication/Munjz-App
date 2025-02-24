@@ -40,7 +40,7 @@ export const addCourtService = async (req, res, next) => {
 
 export const getAllCourtServices = async (req, res, next) => {
   try {
-    const services = await CourtService.find({}, "serviceNo ServiceNameArabic ServiceNameEnglish").sort({ createdAt: -1 }).lean();
+    const services = await CourtService.find({}, "serviceNo ServiceNameArabic ServiceNameEnglish").lean();
 
     res.status(200).json({
       message: "Court services fetched successfully",
