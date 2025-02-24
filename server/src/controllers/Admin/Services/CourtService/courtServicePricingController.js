@@ -32,15 +32,13 @@ export const addCourtServicePricing = async (req, res, next) => {
 
     await CourtServicePricing.findOneAndUpdate({ service }, update, options);
 
-    res
-      .status(201)
-      .json({
-        message: "New country pricing added successfully",
-        service,
-        country,
-        price,
-        currency
-      });
+    res.status(201).json({
+      message: "New country pricing added successfully",
+      service,
+      country,
+      price,
+      currency
+    });
   } catch (error) {
     next(error);
   }
@@ -50,9 +48,9 @@ export const getCourtServicePricing = async (req, res, next) => {
   try {
     const { serviceId } = req.params;
 
-    const pricing = await CourtServicePricing.findOne({ serviceId }).populate(
-      "serviceId"
-    );
+    const pricing = await CourtServicePricing.findOne({
+      service: serviceId
+    }).populate("service");
 
     if (!pricing) {
       return res
@@ -71,8 +69,6 @@ export const updateCourtServicePricing = async (req, res, next) => {
     const { serviceId } = req.params;
     const { country, price, currency } = req.body;
 
-    console.log("Service ID: ", serviceId);
-
     if (!mongoose.Types.ObjectId.isValid(serviceId)) {
       return res.status(400).json({ message: "Invalid ID format" });
     }
@@ -80,8 +76,6 @@ export const updateCourtServicePricing = async (req, res, next) => {
     const pricing = await CourtServicePricing.findOne({
       service: serviceId
     }).select("service pricingTiers");
-
-    console.log("Current Pricing: ", pricing);
 
     if (!pricing) {
       return res.status(404).json({ message: "Pricing item not found" });
@@ -93,12 +87,9 @@ export const updateCourtServicePricing = async (req, res, next) => {
         .json({ message: `No pricing found for country: ${country}` });
     }
 
-    // Update the pricing for the given country
-    pricing.pricingTiers.set(country, [price, currency]);
+    pricing.pricingTiers.set(country, { price, currency });
 
     await pricing.save();
-
-    console.log("Updated Pricing: ", pricing);
 
     res.status(200).json({
       message: "Pricing updated successfully",
@@ -132,9 +123,6 @@ export const getServicesByCountry = async (req, res, next) => {
   try {
     const { country } = req.params;
 
-    console.log("Fetching service names for country:", country);
-
-    // Find pricing entries that contain the specified country
     const pricingEntries = await CourtServicePricing.find({
       [`pricingTiers.${country}`]: { $exists: true }
     });
@@ -145,20 +133,17 @@ export const getServicesByCountry = async (req, res, next) => {
         .json({ message: "No services found for this country" });
     }
 
-    // Extract service ids from the pricing entries (added list)
-    const serviceIds = pricingEntries.map((entry) => entry.service);
+    const serviceIds = pricingEntries.map(entry => entry.service);
 
-    // Fetch the CourtService documents based on the serviceIds
     const services = await CourtService.find({
       _id: { $in: serviceIds }
     }).sort({ serviceNo: 1 });
 
-    const addedList = services.map((service) => {
+    const addedList = services.map(service => {
       const pricingEntry = pricingEntries.find(
-        (entry) => entry.service.toString() === service._id.toString()
+        entry => entry.service.toString() === service._id.toString()
       );
-
-      const [price, currency] = pricingEntry.pricingTiers.get(country);
+      const { price, currency } = pricingEntry.pricingTiers.get(country);
 
       return {
         serviceNameEnglish: service.ServiceNameEnglish,
@@ -173,7 +158,7 @@ export const getServicesByCountry = async (req, res, next) => {
       _id: { $nin: serviceIds }
     }).sort({ serviceNo: 1 });
 
-    const notAddedListNames = notAddedList.map((service) => ({
+    const notAddedListNames = notAddedList.map(service => ({
       serviceNameEnglish: service.ServiceNameEnglish,
       serviceNameArabic: service.ServiceNameArabic,
       serviceNo: service.serviceNo
