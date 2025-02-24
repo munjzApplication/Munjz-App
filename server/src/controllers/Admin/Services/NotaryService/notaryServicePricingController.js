@@ -149,7 +149,9 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
       .lean();
 
     // Fetch all services (since we need to return all if no prices exist)
-    const allServices = await NotaryService.find().sort({ serviceNo: 1 }).lean();
+    const allServices = await NotaryService.find()
+      .sort({ serviceNo: 1 })
+      .lean();
 
     // If no services have pricing details, return all in notAddedList
     if (serviceIdsWithPrice.length === 0) {
@@ -157,7 +159,7 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
         message: "Service names fetched successfully",
         addedList: [],
         notAddedList: allServices.map(service => ({
-          serviceId:service._id,
+          serviceId: service._id,
           serviceNameEnglish: service.ServiceNameEnglish,
           serviceNameArabic: service.ServiceNameArabic,
           serviceNo: service.serviceNo
@@ -172,7 +174,7 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
       );
       const [price, currency] = pricingEntry.pricingTiers.get(country);
       return {
-        serviceId:service._id,
+        serviceId: service._id,
         serviceNameEnglish: service.ServiceNameEnglish,
         serviceNameArabic: service.ServiceNameArabic,
         price,
@@ -189,7 +191,7 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
       .lean();
 
     const notAddedListNames = notAddedList.map(service => ({
-      serviceId:service._id,
+      serviceId: service._id,
       serviceNameEnglish: service.ServiceNameEnglish,
       serviceNameArabic: service.ServiceNameArabic,
       serviceNo: service.serviceNo

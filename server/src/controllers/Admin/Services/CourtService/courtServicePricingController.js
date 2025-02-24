@@ -159,6 +159,7 @@ export const getServicesByCountry = async (req, res, next) => {
     }).sort({ serviceNo: 1 });
 
     const notAddedListNames = notAddedList.map(service => ({
+      serviceId: service._id,
       serviceNameEnglish: service.ServiceNameEnglish,
       serviceNameArabic: service.ServiceNameArabic,
       serviceNo: service.serviceNo
