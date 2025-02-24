@@ -127,12 +127,6 @@ export const getServicesByCountry = async (req, res, next) => {
       [`pricingTiers.${country}`]: { $exists: true }
     });
 
-    if (!pricingEntries.length) {
-      return res
-        .status(404)
-        .json({ message: "No services found for this country" });
-    }
-
     const serviceIds = pricingEntries.map(entry => entry.service);
 
     const services = await CourtService.find({
@@ -146,6 +140,7 @@ export const getServicesByCountry = async (req, res, next) => {
       const { price, currency } = pricingEntry.pricingTiers.get(country);
 
       return {
+        serviceId: service._id,
         serviceNameEnglish: service.ServiceNameEnglish,
         serviceNameArabic: service.ServiceNameArabic,
         price,
@@ -165,6 +160,10 @@ export const getServicesByCountry = async (req, res, next) => {
       serviceNo: service.serviceNo
     }));
 
+    if (!addedList.length && !notAddedListNames.length) {
+      return res.status(404).json({ message: "No services found for this country" });
+    }
+
     res.status(200).json({
       message: "Service names fetched successfully",
       addedList,
@@ -174,3 +173,4 @@ export const getServicesByCountry = async (req, res, next) => {
     next(error);
   }
 };
+
