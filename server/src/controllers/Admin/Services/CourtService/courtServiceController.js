@@ -1,34 +1,36 @@
 import CourtService from "../../../../models/Admin/courtServiceModels/courtServiceModel.js";
-import CourtServicePricing from "../../../../models/Admin/courtServiceModels/courtServicePricingModel.js";
 import mongoose from "mongoose";
+
 export const addCourtService = async (req, res, next) => {
   try {
     const { ServiceNameArabic, ServiceNameEnglish } = req.body;
 
-    const existingService = await CourtService.findOne({ ServiceNameEnglish });
+    const existingService = await CourtService.findOne({
+      $or: [
+        { ServiceNameEnglish },
+        { ServiceNameArabic }
+      ]
+    }).lean();
+
     if (existingService) {
       return res.status(400).json({ message: "Notary Service already exists" });
     }
 
+    const serviceNo = (await CourtService.estimatedDocumentCount()) + 1;
 
-    const serviceCount = await CourtService.countDocuments();
-    const serviceNo = serviceCount + 1; 
-
-    const newService = new CourtService({
+    const newService = await CourtService.create({
       ServiceNameArabic,
       ServiceNameEnglish,
-      serviceNo 
+      serviceNo
     });
 
-    await newService.save();
     res.status(201).json({
       message: "Court Service added successfully",
-      service : {
-        _id:newService._id,
-        serviceNo : newService.serviceNo,
-        ServiceNameArabic : newService.ServiceNameArabic,
+      service: {
+        _id: newService._id,
+        serviceNo: newService.serviceNo,
+        ServiceNameArabic: newService.ServiceNameArabic,
         ServiceNameEnglish: newService.ServiceNameEnglish
-
       }
     });
   } catch (error) {
@@ -38,13 +40,11 @@ export const addCourtService = async (req, res, next) => {
 
 export const getAllCourtServices = async (req, res, next) => {
   try {
-    const services = await CourtService.find()
-      .select("serviceNo ServiceNameArabic ServiceNameEnglish")
-      .sort({ serviceNo: 1 }); 
+    const services = await CourtService.find({}, "serviceNo ServiceNameArabic ServiceNameEnglish").sort({ createdAt: -1 }).lean();
 
     res.status(200).json({
       message: "Court services fetched successfully",
-      services 
+      services
     });
   } catch (error) {
     next(error);
@@ -56,14 +56,26 @@ export const updateCourtService = async (req, res, next) => {
     const { id } = req.params;
     const { ServiceNameArabic, ServiceNameEnglish } = req.body;
 
-        // Check if ID is a valid MongoDB ObjectId
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-          return res.status(400).json({ message: "Invalid ID format" });
-        }
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid ID format" });
+    }
+
+    const existingService = await CourtService.findOne({
+      $or: [
+        { ServiceNameEnglish },
+        { ServiceNameArabic }
+      ],
+      _id: { $ne: id } // Exclude the current service being updated
+    }).lean();
+
+    if (existingService) {
+      return res.status(400).json({ message: "Notary Service with these names already exists" });
+    }
+
     const updatedService = await CourtService.findByIdAndUpdate(
       id,
-      { ServiceNameArabic, ServiceNameEnglish },
-      { new: true }
+      { $set: { ServiceNameArabic, ServiceNameEnglish } },
+      { new: true, lean: true }
     );
 
     if (!updatedService) {
@@ -72,12 +84,7 @@ export const updateCourtService = async (req, res, next) => {
 
     res.status(200).json({
       message: "Court Service updated successfully",
-      service:{
-        _id : updatedService._id,
-        serviceNo:updatedService.serviceNo,
-        ServiceNameArabic:updatedService.ServiceNameArabic,
-        ServiceNameEnglish:updatedService.ServiceNameEnglish
-      } 
+      service: updatedService
     });
   } catch (error) {
     next(error);
@@ -87,6 +94,10 @@ export const updateCourtService = async (req, res, next) => {
 export const deleteCourtService = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid ID format" });
+    }
 
     const deletedService = await CourtService.findByIdAndDelete(id);
 
@@ -99,4 +110,3 @@ export const deleteCourtService = async (req, res, next) => {
     next(error);
   }
 };
-
