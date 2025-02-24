@@ -15,20 +15,32 @@ export const addCourtServicePricing = async (req, res, next) => {
       return res.status(404).json({ message: "Court service not found" });
     }
 
-    const pricing = await CourtServicePricing.findOneAndUpdate(
-      { service, [`pricingTiers.${country}`]: { $exists: false } },
-      { $set: { [`pricingTiers.${country}`]: [price, currency] } },
-      { new: true, upsert: true, select: '-__v -createdAt -updatedAt' }
-    );
-
-    if (!updatedPricing) {
-      return res.status(400).json({ message: "Pricing for this country already exists" });
+    const existingPricing = await CourtServicePricing.findOne({
+      service,
+      [`pricingTiers.${country}`]: { $exists: true }
+    });
+    if (existingPricing) {
+      return res
+        .status(400)
+        .json({ message: "Pricing for this country already exists" });
     }
 
-    res.status(201).json({
-      message: "New country pricing added successfully",
-      pricing
-    });
+    const update = {
+      $set: { [`pricingTiers.${country}`]: { price, currency } }
+    };
+    const options = { new: true, upsert: true };
+
+    await CourtServicePricing.findOneAndUpdate({ service }, update, options);
+
+    res
+      .status(201)
+      .json({
+        message: "New country pricing added successfully",
+        service,
+        country,
+        price,
+        currency
+      });
   } catch (error) {
     next(error);
   }
@@ -134,16 +146,16 @@ export const getServicesByCountry = async (req, res, next) => {
     }
 
     // Extract service ids from the pricing entries (added list)
-    const serviceIds = pricingEntries.map(entry => entry.service);
+    const serviceIds = pricingEntries.map((entry) => entry.service);
 
     // Fetch the CourtService documents based on the serviceIds
     const services = await CourtService.find({
       _id: { $in: serviceIds }
     }).sort({ serviceNo: 1 });
 
-    const addedList = services.map(service => {
+    const addedList = services.map((service) => {
       const pricingEntry = pricingEntries.find(
-        entry => entry.service.toString() === service._id.toString()
+        (entry) => entry.service.toString() === service._id.toString()
       );
 
       const [price, currency] = pricingEntry.pricingTiers.get(country);
@@ -161,7 +173,7 @@ export const getServicesByCountry = async (req, res, next) => {
       _id: { $nin: serviceIds }
     }).sort({ serviceNo: 1 });
 
-    const notAddedListNames = notAddedList.map(service => ({
+    const notAddedListNames = notAddedList.map((service) => ({
       serviceNameEnglish: service.ServiceNameEnglish,
       serviceNameArabic: service.ServiceNameArabic,
       serviceNo: service.serviceNo
