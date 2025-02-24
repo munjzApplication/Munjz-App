@@ -361,7 +361,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
 
     if (!existingUser) {
       // Generate the customerUniqueId for new user
-      const consultantUniqueId = await generateCustomerUniqueId();
+      const consultantUniqueId = await generateConsultantUniqueId();
 
       // Create a new user if they don't exist
       existingUser = await ConsultantProfile.create({
