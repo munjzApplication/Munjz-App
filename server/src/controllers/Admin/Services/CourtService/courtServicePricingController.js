@@ -5,33 +5,25 @@ import mongoose from "mongoose";
 export const addCourtServicePricing = async (req, res, next) => {
   try {
     const { service, country, price, currency } = req.body;
+
     if (!service || !country || !price || !currency) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    const existingService = await CourtService.findOne({ _id: service });
 
+    const existingService = await CourtService.findById(service);
     if (!existingService) {
       return res.status(404).json({ message: "Court service not found" });
     }
 
-    let pricing = await CourtServicePricing.findOne({ service });
+    const pricing = await CourtServicePricing.findOneAndUpdate(
+      { service, [`pricingTiers.${country}`]: { $exists: false } },
+      { $set: { [`pricingTiers.${country}`]: [price, currency] } },
+      { new: true, upsert: true, select: '-__v -createdAt -updatedAt' }
+    );
 
-    if (!pricing) {
-      pricing = new NotaryServicePricing({
-        service,
-        pricingTiers: {}
-      });
+    if (!updatedPricing) {
+      return res.status(400).json({ message: "Pricing for this country already exists" });
     }
-
-    if (pricing.pricingTiers.has(country)) {
-      return res
-        .status(400)
-        .json({ message: "Pricing for this country already exists" });
-    }
-
-    pricing.pricingTiers.set(country, [price, currency]);
-
-    await pricing.save();
 
     res.status(201).json({
       message: "New country pricing added successfully",
@@ -41,6 +33,7 @@ export const addCourtServicePricing = async (req, res, next) => {
     next(error);
   }
 };
+
 export const getCourtServicePricing = async (req, res, next) => {
   try {
     const { serviceId } = req.params;

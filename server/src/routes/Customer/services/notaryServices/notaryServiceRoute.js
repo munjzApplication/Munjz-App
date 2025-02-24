@@ -1,8 +1,8 @@
 import express from "express";
 import {
   saveNotaryServiceDetails,
-  getServices
 } from "../../../../controllers/Customer/services/notaryService/notaryServiceController.js";
+import { getServices } from "../../../../controllers/Customer/services/notaryService/notaryServicesController.js";
 
 import upload from "../../../../middlewares/fileUpload.js";
 

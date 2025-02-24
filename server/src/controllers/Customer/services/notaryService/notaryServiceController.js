@@ -64,34 +64,6 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
 };
 
 
-export const getServices = async (req, res, next) => {
-  try {
-    const { country } = req.params;
 
-    // Fetch only required fields and use lean() for performance
-    const services = await NotaryServicePricing.find(
-      { [`BigPricingMaps.${country}`]: { $exists: true } },
-      { serviceId: 1, [`BigPricingMaps.${country}`]: 1 }
-    )
-      .populate("serviceId", "ServiceNameEnglish")
-      .lean();
 
-    if (!services.length) {
-      return res.status(404).json({ message: "No services found for this country" });
-    }
-
-    const formattedServices = services.map(({ serviceId, BigPricingMaps }) => {
-      const [price, currency] = BigPricingMaps[country];
-      return {
-        serviceName: serviceId.ServiceNameEnglish,
-        price,
-        currency,
-      };
-    });
-
-    res.status(200).json(formattedServices);
-  } catch (error) {
-    next(error);
-  }
-};
 
