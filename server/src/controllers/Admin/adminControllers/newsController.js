@@ -24,7 +24,7 @@ export const createNews = async (req, res) => {
     const fileUrls = await Promise.all(req.files.map(file => uploadFileToS3(file)));
 
     const news = await News.create({ images: fileUrls, title, description, readTime });
-    res.status(201).json(news);
+    res.status(201).json({ message: 'News created successfully', news });
   } catch (error) {
     res.status(400).json({ message: 'Failed to create news', error: error.message });
   }
@@ -45,7 +45,7 @@ export const updateNews = async (req, res) => {
     const news = await News.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
     if (!news) return res.status(404).json({ message: 'News article not found' });
 
-    res.status(200).json(news);
+    res.status(200).json({ message: 'News updated successfully', news });
   } catch (error) {
     res.status(400).json({ message: "Failed to update news", error: error.message });
   }
