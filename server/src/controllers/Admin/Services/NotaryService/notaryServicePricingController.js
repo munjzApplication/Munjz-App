@@ -9,34 +9,34 @@ export const addNotaryServicePricing = async (req, res, next) => {
     if (!service || !country || !price || !currency) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    const existingService = await NotaryService.findOne({ _id: service });
-
+    const existingService = await NotaryService.findById(service);
     if (!existingService) {
-      return res.status(404).json({ message: "Notary service not found" });
+      return res.status(404).json({ message: "Court service not found" });
     }
 
-    let pricing = await NotaryServicePricing.findOne({ service });
-
-    if (!pricing) {
-      pricing = new NotaryServicePricing({
-        service,
-        pricingTiers: {}
-      });
-    }
-
-    if (pricing.pricingTiers.has(country)) {
+    const existingPricing = await NotaryServicePricing.findOne({
+      service,
+      [`pricingTiers.${country}`]: { $exists: true }
+    });
+    if (existingPricing) {
       return res
         .status(400)
         .json({ message: "Pricing for this country already exists" });
     }
 
-    pricing.pricingTiers.set(country, [price, currency]);
+    const update = {
+      $set: { [`pricingTiers.${country}`]: { price, currency } }
+    };
+    const options = { new: true, upsert: true };
 
-    await pricing.save();
+    await NotaryServicePricing.findOneAndUpdate({ service }, update, options);
 
     res.status(201).json({
       message: "New country pricing added successfully",
-      pricing
+      service,
+      country,
+      price,
+      currency
     });
   } catch (error) {
     next(error);
@@ -47,9 +47,9 @@ export const getNotaryServicePricing = async (req, res, next) => {
   try {
     const { service } = req.params;
 
-    const pricing = await NotaryServicePricing.findOne({ service }).populate(
-      "service"
-    );
+    const pricing = await NotaryServicePricing.findOne({
+      service: service
+    }).populate("service");
 
     if (!pricing) {
       return res
@@ -62,6 +62,8 @@ export const getNotaryServicePricing = async (req, res, next) => {
     next(error);
   }
 };
+
+
 
 export const updateNotaryServicePricing = async (req, res, next) => {
   try {
@@ -91,7 +93,7 @@ export const updateNotaryServicePricing = async (req, res, next) => {
     }
 
     // Update the pricing for the given country
-    pricing.pricingTiers.set(country, [price, currency]);
+    pricing.pricingTiers.set(country, { price, currency });
 
     await pricing.save();
 
@@ -136,43 +138,40 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
       [`pricingTiers.${country}`]: { $exists: true }
     });
 
-    // Extract service IDs where price details exist
-    const serviceIdsWithPrice = pricingEntries
-      .filter(entry => entry.pricingTiers.get(country))
-      .map(entry => entry.service);
+    console.log("Pricing Entries:", pricingEntries);
 
-    // Fetch services that have pricing details
-    const addedList = await NotaryService.find({
-      _id: { $in: serviceIdsWithPrice }
-    })
-      .sort({ serviceNo: 1 })
-      .lean();
+    const serviceIds = pricingEntries.map(entry => entry.service);
 
-    // Fetch all services (since we need to return all if no prices exist)
-    const allServices = await NotaryService.find()
-      .sort({ serviceNo: 1 })
-      .lean();
+    const services = await NotaryService.find({
+      _id: { $in: serviceIds }
+    }).sort({ serviceNo: 1 });
 
-    // If no services have pricing details, return all in notAddedList
-    if (serviceIdsWithPrice.length === 0) {
-      return res.status(200).json({
-        message: "Service names fetched successfully",
-        addedList: [],
-        notAddedList: allServices.map(service => ({
-          serviceId: service._id,
-          serviceNameEnglish: service.ServiceNameEnglish,
-          serviceNameArabic: service.ServiceNameArabic,
-          serviceNo: service.serviceNo
-        }))
-      });
-    }
+    console.log("Services:", services);
 
-    // Map addedList with pricing details
-    const addedListWithPrices = addedList.map(service => {
+    const addedList = services.map(service => {
       const pricingEntry = pricingEntries.find(
         entry => entry.service.toString() === service._id.toString()
       );
-      const [price, currency] = pricingEntry.pricingTiers.get(country);
+      console.log("Full Pricing Tiers:", JSON.stringify(pricingEntry.pricingTiers, null, 2));
+      console.log(`Checking pricing for country: ${country}`);
+      
+      if (!pricingEntry) {
+        console.warn(`No pricing entry found for service ${service._id}`);
+        return null;
+      }
+
+      const countryPricing = pricingEntry?.pricingTiers.get(country);
+
+
+      console.log("Country Pricing:", countryPricing);
+
+      if (!countryPricing) {
+        console.warn(`No pricing found for country ${country} in service ${service._id}`);
+        return null;
+      }
+
+      const { price, currency } = countryPricing;
+
       return {
         serviceId: service._id,
         serviceNameEnglish: service.ServiceNameEnglish,
@@ -181,14 +180,11 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
         currency,
         serviceNo: service.serviceNo
       };
-    });
+    }).filter(Boolean);
 
-    // Fetch services that do not have pricing details
     const notAddedList = await NotaryService.find({
-      _id: { $nin: serviceIdsWithPrice }
-    })
-      .sort({ serviceNo: 1 })
-      .lean();
+      _id: { $nin: serviceIds }
+    }).sort({ serviceNo: 1 });
 
     const notAddedListNames = notAddedList.map(service => ({
       serviceId: service._id,
@@ -197,12 +193,30 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
       serviceNo: service.serviceNo
     }));
 
+    if (!addedList.length && !notAddedListNames.length) {
+      return res.status(404).json({ message: "No services found for this country" });
+    }
+
     res.status(200).json({
       message: "Service names fetched successfully",
-      addedList: addedListWithPrices,
+      addedList,
       notAddedList: notAddedListNames
     });
   } catch (error) {
+    console.error("Error fetching notary services:", error);
     next(error);
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+

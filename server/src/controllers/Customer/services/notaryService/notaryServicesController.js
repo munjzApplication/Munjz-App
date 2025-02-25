@@ -30,8 +30,8 @@ export const getServices = async (req, res, next) => {
           serviceId: "$serviceDetails._id",
           serviceNameEnglish: "$serviceDetails.ServiceNameEnglish",
           serviceNameArabic: "$serviceDetails.ServiceNameArabic",
-          price: { $arrayElemAt: [`$pricingTiers.${country}`, 0] },
-          currency: { $arrayElemAt: [`$pricingTiers.${country}`, 1] }
+          price: `$pricingTiers.${country}.price`,
+          currency: `$pricingTiers.${country}.currency`
         }
       }
     ]);

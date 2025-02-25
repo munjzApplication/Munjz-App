@@ -6,14 +6,11 @@ export const addCourtService = async (req, res, next) => {
     const { ServiceNameArabic, ServiceNameEnglish } = req.body;
 
     const existingService = await CourtService.findOne({
-      $or: [
-        { ServiceNameEnglish },
-        { ServiceNameArabic }
-      ]
+      $or: [{ ServiceNameEnglish }, { ServiceNameArabic }]
     }).lean();
 
     if (existingService) {
-      return res.status(400).json({ message: "Notary Service already exists" });
+      return res.status(400).json({ message: "Court Service already exists" });
     }
 
     const serviceNo = (await CourtService.estimatedDocumentCount()) + 1;
@@ -40,7 +37,10 @@ export const addCourtService = async (req, res, next) => {
 
 export const getAllCourtServices = async (req, res, next) => {
   try {
-    const services = await CourtService.find({}, "serviceNo ServiceNameArabic ServiceNameEnglish").lean();
+    const services = await CourtService.find(
+      {},
+      "serviceNo ServiceNameArabic ServiceNameEnglish"
+    ).lean();
 
     res.status(200).json({
       message: "Court services fetched successfully",
@@ -61,15 +61,14 @@ export const updateCourtService = async (req, res, next) => {
     }
 
     const existingService = await CourtService.findOne({
-      $or: [
-        { ServiceNameEnglish },
-        { ServiceNameArabic }
-      ],
+      $or: [{ ServiceNameEnglish }, { ServiceNameArabic }],
       _id: { $ne: id } // Exclude the current service being updated
     }).lean();
 
     if (existingService) {
-      return res.status(400).json({ message: "Notary Service with these names already exists" });
+      return res
+        .status(400)
+        .json({ message: "Court Service with these names already exists" });
     }
 
     const updatedService = await CourtService.findByIdAndUpdate(
