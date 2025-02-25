@@ -23,7 +23,7 @@ export const createNews = async (req, res) => {
     // Upload a single file to S3 and get its URL
     const imageUrl = await uploadFileToS3(req.file);
 
-    const news = await News.create({ images: imageUrl, title, description, readTime });
+    const news = await News.create({ image: imageUrl, title, description, readTime });
     res.status(201).json({ message: 'News created successfully', news });
   } catch (error) {
     res.status(400).json({ message: 'Failed to create news', error: error.message });
@@ -38,7 +38,7 @@ export const updateNews = async (req, res) => {
   try {
     if (req.file) {
       // Upload a single file to S3 and get its URL
-      updates.images = await uploadFileToS3(req.file);
+      updates.image = await uploadFileToS3(req.file);
     }
 
     const news = await News.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
@@ -54,9 +54,12 @@ export const updateNews = async (req, res) => {
 // Delete a news article
 export const deleteNews = async (req, res) => {
   const { id } = req.params;
+console.log(id);
 
   try {
     const news = await News.findByIdAndDelete(id);
+    console.log(news);
+    
     if (!news) return res.status(404).json({ message: 'News article not found' });
 
     res.status(200).json({ message: 'News article deleted successfully' });
