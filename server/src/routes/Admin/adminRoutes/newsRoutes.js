@@ -5,8 +5,8 @@ import upload from '../../../middlewares/fileUpload.js';
 const router = express.Router();
 
 router.get('/news', protectAdmin,getAllNews);
-router.post('/create', protectAdmin, upload.array('files'), createNews); 
-router.put('/update/:id', protectAdmin, upload.array('files'), updateNews);
+router.post('/create', protectAdmin, upload.single('files'), createNews); 
+router.put('/update/:id', protectAdmin, upload.single('files'), updateNews);
 router.delete('/delete/:id',protectAdmin, deleteNews);
 
 export default router;

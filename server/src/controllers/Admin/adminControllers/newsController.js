@@ -16,20 +16,19 @@ export const createNews = async (req, res) => {
   const { title, description, readTime } = req.body;
 
   try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: 'No files uploaded' });
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Upload multiple files to S3 and get their URLs
-    const fileUrls = await Promise.all(req.files.map(file => uploadFileToS3(file)));
+    // Upload a single file to S3 and get its URL
+    const imageUrl = await uploadFileToS3(req.file);
 
-    const news = await News.create({ images: fileUrls, title, description, readTime });
+    const news = await News.create({ images: imageUrl, title, description, readTime });
     res.status(201).json({ message: 'News created successfully', news });
   } catch (error) {
     res.status(400).json({ message: 'Failed to create news', error: error.message });
   }
 };
-
 
 // Update a news article with optional S3 image upload
 export const updateNews = async (req, res) => {
@@ -37,9 +36,9 @@ export const updateNews = async (req, res) => {
   const updates = req.body;
 
   try {
-    if (req.files && req.files.length > 0) {
-      // Upload multiple files to S3 and get their URLs
-      updates.images = await Promise.all(req.files.map(file => uploadFileToS3(file)));
+    if (req.file) {
+      // Upload a single file to S3 and get its URL
+      updates.images = await uploadFileToS3(req.file);
     }
 
     const news = await News.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
