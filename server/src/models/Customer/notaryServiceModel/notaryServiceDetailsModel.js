@@ -25,6 +25,11 @@ const NotaryCaseSchema = new mongoose.Schema(
       enum: ['free', 'paid'], 
       default: 'free', 
     },
+    status: {
+      type: String,
+      enum: ['submitted', 'working', 'completed', 'rejected'],
+
+    },
     follower: {
       type: String,
       default: "unread"

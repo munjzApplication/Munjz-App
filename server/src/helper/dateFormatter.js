@@ -13,3 +13,11 @@ export const formatMinutesToMMSS = (minutes) => {
   const secs = Math.round((minutes - mins) * 60);
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 };
+
+
+export const formatDatewithmonth = (dateString) => {
+  const date = new Date(dateString);
+  const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false };
+  return date.toLocaleString('en-US', options).replace(',', '').replace(' at', '');
+};
+

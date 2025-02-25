@@ -6,6 +6,8 @@ import {
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import Notification from "../../../../models/Admin/notificationModels/notificationModel.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
+import notaryServicePayment from "../../../../models/Customer/notaryServiceModel/notaryServicePayment.js";
+import { formatDatewithmonth } from "../../../../helper/dateFormatter.js";
 import mongoose from "mongoose"; 
 
 export const saveNotaryServiceDetails = async (req, res, next) => {
@@ -44,7 +46,17 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
 
     // Save Payment
     const payment = await saveNotaryPayment(
-      { notaryServiceID, notaryCaseId: notaryCase._id, paymentAmount, paidCurrency, serviceName, selectedServiceCountry, paymentDate, customerName },
+      { 
+        notaryServiceID, 
+        notaryCaseId: notaryCase._id, 
+        paymentAmount, 
+        paidCurrency, 
+        serviceName, 
+        selectedServiceCountry, 
+        paymentDate, 
+        customerName,
+        status: "submitted"
+       },
       { session }
     );
 
@@ -64,6 +76,49 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
 };
 
 
+
+export const getAllNotaryCases = async (req, res, next) => {
+  try {
+    const customerId = req.user._id;
+
+    const notaryCases = await NotaryCase.aggregate([
+      { $match: { customerId } },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "notaryservice_payments",
+          localField: "notaryServiceID",
+          foreignField: "notaryServiceID",
+          as: "paymentDetails"
+        }
+      },
+      { $unwind: { path: "$paymentDetails", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          createdAt: 1,
+          notaryServiceID: 1,
+          serviceName: 1,
+          selectedServiceCountry: 1,
+          caseDescription: 1,
+          casePaymentStatus: 1,
+          follower: 1,
+          status: 1,
+          amount: "$paymentDetails.amount",
+          paidCurrency: "$paymentDetails.paidCurrency"
+        }
+      }
+    ]);
+
+    const formattedCases = notaryCases.map(caseItem => ({
+      ...caseItem,
+      createdAt: formatDatewithmonth(caseItem.createdAt)
+    }));
+
+    return res.status(200).json({ message: "Notary cases fetched successfully", formattedCases });
+  } catch (error) {
+    next(error);
+  }
+};
 
 
 
