@@ -15,7 +15,6 @@ const fetchCaseIds = async customerId => {
     TranslationCase.find({ customerId }).select("_id").lean()
   ]);
 
-
   return {
     courtCaseIds: courtCases.map(c => c._id),
     notaryCaseIds: notaryCases.map(c => c._id),
@@ -45,7 +44,6 @@ const fetchPayments = async caseIds => {
       .select("amountPaid currency paymentDate status createdAt")
       .lean()
   ]);
- 
 
   return {
     courtPayments,
@@ -63,15 +61,12 @@ const formatTransactions = payments => {
     consultationPayments
   } = payments;
 
-
   return [
     ...consultationPayments.map(payment => ({
       _id: payment._id,
       amount: payment.amountPaid,
       currency: payment.currency,
-      paymentDate: formatDatewithmonth(
-        payment.paymentDate || payment.createdAt
-      ),
+      paymentDate: formatDatewithmonth(payment.paymentDate || payment.createdAt),
       status: payment.status,
       serviceType: "Consultation"
     })),
@@ -79,9 +74,7 @@ const formatTransactions = payments => {
       _id: payment._id,
       amount: payment.amount,
       currency: payment.paidCurrency,
-      paymentDate: formatDatewithmonth(
-        payment.paymentDate || payment.createdAt
-      ),
+      paymentDate: formatDatewithmonth(payment.paymentDate || payment.createdAt),
       status: payment.paymentStatus,
       serviceType: "CourtService"
     })),
@@ -89,9 +82,7 @@ const formatTransactions = payments => {
       _id: payment._id,
       amount: payment.amount,
       currency: payment.paidCurrency,
-      paymentDate: formatDatewithmonth(
-        payment.paymentDate || payment.createdAt
-      ),
+      paymentDate: formatDatewithmonth(payment.paymentDate || payment.createdAt),
       status: payment.paymentStatus,
       serviceType: "NotaryService"
     })),
@@ -99,9 +90,7 @@ const formatTransactions = payments => {
       _id: payment._id,
       amount: payment.amount,
       currency: payment.paidCurrency,
-      paymentDate: formatDatewithmonth(
-        payment.paymentDate || payment.createdAt
-      ),
+      paymentDate: formatDatewithmonth(payment.paymentDate || payment.createdAt),
       status: payment.paymentStatus,
       serviceType: "TranslationService"
     }))
@@ -111,7 +100,6 @@ const formatTransactions = payments => {
 export const getCustomerTransactions = async (req, res) => {
   try {
     const customerId = req.user._id;
-    const { page = 1, limit = 10 } = req.query;
 
     const caseIds = await fetchCaseIds(customerId);
     const payments = await fetchPayments({ ...caseIds, customerId });
@@ -121,28 +109,16 @@ export const getCustomerTransactions = async (req, res) => {
       (a, b) => new Date(b.paymentDate) - new Date(a.paymentDate)
     );
 
-    const totalTransactions = transactions.length;
-    const totalPages = Math.ceil(totalTransactions / limit);
-    const paginatedTransactions = transactions.slice(
-      (page - 1) * limit,
-      page * limit
-    );
-
     res.status(200).json({
-      success: true,
-      totalTransactions,
-      currentPage: parseInt(page),
-      totalPages,
-      transactions: paginatedTransactions
+      message: "Transactions fetched successfully",
+      transactions
     });
   } catch (error) {
     console.error("Error fetching transactions:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching transactions",
-        error: error.message
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error fetching transactions",
+      error: error.message
+    });
   }
 };
