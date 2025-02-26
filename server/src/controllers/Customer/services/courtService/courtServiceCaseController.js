@@ -15,7 +15,7 @@ export const saveCourtServiceDetails = async (req, res, next) => {
 
     try {
         const customerId = req.user._id;
-        const { serviceName, selectedServiceCountry, caseDescription, paymentAmount, paidCurrency, paymentDate } = req.body;
+        const { serviceName, selectedServiceCountry, caseDescription, paymentAmount, paidCurrency } = req.body;
 
         // Validate customer
         const customer = await Customer.findById(customerId).lean();

@@ -13,7 +13,7 @@ import {
   deleteNotaryServicePricing,
   getNotaryServicesByCountry
 } from "../../../../controllers/Admin/Services/NotaryService/notaryServicePricingController.js";
-
+import { getAllNotaryCases } from "../../../../controllers/Admin/Services/NotaryService/getNotarycaseController.js";
 const router = express.Router();
 
 // notary Service Routes
@@ -29,6 +29,8 @@ router.post("/add-pricing", addNotaryServicePricing);
 router.get("/get-pricing/:serviceId", getNotaryServicePricing);
 router.put("/update-pricing/:serviceId", updateNotaryServicePricing);
 router.delete("/delete-pricing/:id", deleteNotaryServicePricing);
+
+router.get("/get-cases", getAllNotaryCases);
 
 
 export default router;

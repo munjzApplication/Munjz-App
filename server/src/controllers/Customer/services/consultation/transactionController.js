@@ -60,7 +60,8 @@ export const createTransaction = async (req, res, next) => {
       reason: paymentReason,
       payerId: payerID,
       status: paymentStatus,
-      purchasedMinutes // Store minutes in DB
+      purchasedMinutes,
+      paymentDate : new Date()
     });
 
     await newTransaction.save();
