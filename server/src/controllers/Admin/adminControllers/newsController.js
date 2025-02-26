@@ -7,7 +7,9 @@ export const getAllNews = async (req, res) => {
     const news = await News.find().sort({ createdAt: -1 }); // Sorted by newest first
     res.status(200).json({ message: "News fetched successfully", news });
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch news", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch news", error: error.message });
   }
 };
 
@@ -17,16 +19,23 @@ export const createNews = async (req, res) => {
 
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
+      return res.status(400).json({ message: "No file uploaded" });
     }
 
     // Upload a single file to S3 and get its URL
     const imageUrl = await uploadFileToS3(req.file);
 
-    const news = await News.create({ image: imageUrl, title, description, readTime });
-    res.status(201).json({ message: 'News created successfully', news });
+    const news = await News.create({
+      image: imageUrl,
+      title,
+      description,
+      readTime
+    });
+    res.status(201).json({ message: "News created successfully", news });
   } catch (error) {
-    res.status(400).json({ message: 'Failed to create news', error: error.message });
+    res
+      .status(400)
+      .json({ message: "Failed to create news", error: error.message });
   }
 };
 
@@ -41,29 +50,37 @@ export const updateNews = async (req, res) => {
       updates.image = await uploadFileToS3(req.file);
     }
 
-    const news = await News.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
-    if (!news) return res.status(404).json({ message: 'News article not found' });
+    const news = await News.findByIdAndUpdate(id, updates, {
+      new: true,
+      runValidators: true
+    });
+    if (!news)
+      return res.status(404).json({ message: "News article not found" });
 
-    res.status(200).json({ message: 'News updated successfully', news });
+    res.status(200).json({ message: "News updated successfully", news });
   } catch (error) {
-    res.status(400).json({ message: "Failed to update news", error: error.message });
+    res
+      .status(400)
+      .json({ message: "Failed to update news", error: error.message });
   }
 };
-
 
 // Delete a news article
 export const deleteNews = async (req, res) => {
   const { id } = req.params;
-console.log(id);
+  console.log(id);
 
   try {
     const news = await News.findByIdAndDelete(id);
     console.log(news);
-    
-    if (!news) return res.status(404).json({ message: 'News article not found' });
 
-    res.status(200).json({ message: 'News article deleted successfully' });
+    if (!news)
+      return res.status(404).json({ message: "News article not found" });
+
+    res.status(200).json({ message: "News article deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Failed to delete news", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to delete news", error: error.message });
   }
 };
