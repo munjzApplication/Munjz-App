@@ -9,24 +9,28 @@ import Notification from "../../models/Admin/notificationModels/notificationMode
 /**
  * Save Notary Case Details
  */
-export const saveNotaryCase = async ({
-  customerId,
-  serviceName, 
-  selectedServiceCountry, 
-  caseDescription, 
-  casePaymentStatus
-}) => {
+export const saveNotaryCase = async (
+  { customerId, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus,status },
+  session
+) => {
   try {
     const notaryServiceID = await generateUniqueServiceID("notary");
+console.log("notaryServiceID", notaryServiceID);
 
-    const notaryCase = await NotaryCase.create({
-      customerId,
-      notaryServiceID,
-      serviceName,
-      selectedServiceCountry,
-      caseDescription,
-      casePaymentStatus
-    });
+    const [notaryCase] = await NotaryCase.create(
+      [
+        {
+          customerId,
+          notaryServiceID,
+          serviceName,
+          selectedServiceCountry,
+          caseDescription,
+          casePaymentStatus,
+          status
+        },
+      ],
+      { session } // Ensure session is passed correctly
+    );
 
     return { notaryCase, notaryServiceID };
   } catch (error) {
@@ -38,104 +42,100 @@ export const saveNotaryCase = async ({
 /**
  * Save Notary Documents
  */
-export const saveNotaryDocuments = async (files, notaryServiceID, notaryCaseId) => {
+export const saveNotaryDocuments = async (files, notaryCaseId, session) => {
   if (!files?.length) throw new Error("No files provided for document upload.");
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
-    // Upload files to S3
-    const documentUploads = await Promise.all(
-      files.map(file => uploadFileToS3(file, "NotaryCaseDocs"))
+    console.log("Uploading files to S3...");
+    const documentUploads = await Promise.allSettled(
+      files.map((file) => uploadFileToS3(file, "NotaryCaseDocs"))
     );
 
-    const documentData = documentUploads.map(url => ({
+    const successfulUploads = documentUploads.filter(res => res.status === "fulfilled").map(res => res.value);
+    const failedUploads = documentUploads.filter(res => res.status === "rejected");
+
+    if (failedUploads.length > 0) {
+      console.error("Some uploads failed:", failedUploads);
+      throw new Error("Some document uploads failed");
+    }
+
+    console.log("Document Upload Success:", successfulUploads);
+
+    const documentData = successfulUploads.map((url) => ({
       documentUrl: url,
       uploadedAt: new Date(),
     }));
 
-    const document = await DocumentModel.create(
-      [{
-        notaryServiceCase: notaryCaseId,
-        notaryServiceID,
-        Documents: documentData,
-        requestStatus: "unread",
-      }],
+    const [document] = await DocumentModel.create(
+      [
+        {
+          notaryServiceCase: notaryCaseId,
+          Documents: documentData,
+          requestStatus: "unread",
+        },
+      ],
       { session }
     );
 
-    await session.commitTransaction();
-    session.endSession();
-    
+    console.log("Document Saved to DB:", document);
     return document;
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
     console.error("Error saving Notary Documents:", error);
     throw new Error("Failed to save Notary Documents.");
   }
 };
 
+
 /**
  * Save Notary Payment
  */
-export const saveNotaryPayment = async ({
-  notaryServiceID,
-  notaryCaseId,
-  paymentAmount,
-  paidCurrency,
-  serviceName,
-  selectedServiceCountry,
-  paymentDate,
-  customerName
-}) => {
+export const saveNotaryPayment = async (
+  { notaryCaseId, paymentAmount, paidCurrency, serviceName, selectedServiceCountry, paymentDate, customerName, customerId },
+  session
+) => {
   if (!paymentAmount || !paidCurrency) throw new Error("Missing required payment details.");
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
-    // Save Payment
-    const payment = await Payment.create(
-      [{
-        notaryServiceCase: notaryCaseId,
-        notaryServiceID,
-        amount: paymentAmount,
-        paidCurrency,
-        serviceName,
-        serviceCountry: selectedServiceCountry,
-        paymentDate: paymentDate || new Date(),
-        paymentStatus: "paid"
-      }],
+    const [payment] = await Payment.create(
+      [
+        {
+          notaryServiceCase: notaryCaseId,
+          amount: paymentAmount,
+          paidCurrency,
+          serviceName,
+          serviceCountry: selectedServiceCountry,
+          paymentDate: paymentDate || new Date(),
+          paymentStatus: "paid",
+        },
+      ],
       { session }
     );
 
-    // Create Notification
     await Notification.create(
-      [{
-        notificationDetails: {
-          type: "Payment",
-          title: "Notary Service Payment Successfully Processed",
-          message: `A payment of ${paymentAmount} ${paidCurrency} for your notary service has been successfully completed.`,
-          additionalDetails: {
-            customerName,
-            serviceName,
-            country: selectedServiceCountry,
-            paymentStatus: "paid"
-          }
-        }
-      }],
+      [
+        {
+          notificationDetails: {  // ✅ Wrap details inside `notificationDetails`
+            recipientType: "customer",
+            recipientId: customerId,
+            message: `A payment of ${paymentAmount} ${paidCurrency} for your notary service has been successfully completed.`,
+            type: "Payment",
+            additionalDetails: {
+              customerName,
+              serviceName,
+              country: selectedServiceCountry,
+              paymentStatus: "paid",
+            },
+          },
+          status: "unread",  // ✅ Status remains the same
+          createdAt: new Date(),
+        },
+      ],
       { session }
     );
-
-    await session.commitTransaction();
-    session.endSession();
+    
 
     return payment;
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
     console.error("Error saving Notary Payment:", error);
     throw new Error("Failed to save Notary Payment.");
   }

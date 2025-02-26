@@ -6,10 +6,6 @@ const DocumentSchema = new mongoose.Schema({
     ref: "CourtService_Case",
     required: true
   },
-  courtServiceID: {
-    type: String,
-    unique: true
-  },
   Documents: {
     type: [
       {

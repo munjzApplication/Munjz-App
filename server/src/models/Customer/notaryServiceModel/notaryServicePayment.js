@@ -6,10 +6,6 @@ const PaymentSchema = new mongoose.Schema({
     ref: 'NotaryService_Case',
     required: true
   },
-  notaryServiceID: {
-    type: String,
-    unique: true,
-  },
   amount: { 
     type: Number, 
     required: true 
