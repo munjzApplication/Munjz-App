@@ -28,7 +28,7 @@ const CourtCaseSchema = new mongoose.Schema(
     casePaymentStatus: {
       type: String,
       enum: ['free', 'paid'], 
-      default: 'free', 
+     
     },
     status: {
       type: String,

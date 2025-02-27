@@ -19,11 +19,11 @@ const TranslationDetailsSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  casePaymentStatus: {
+  PaymentStatus: {
     type: String,
-    enum: ['free', 'paid'], 
-    default: 'free', 
-  },
+    enum: ['paid'],  
+    default: 'paid'  
+  },  
   follower:{
     type: String, 
     default: "unread",

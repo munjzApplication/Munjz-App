@@ -31,13 +31,18 @@ export const submitTranslationRequest = async (req, res, next) => {
 
     if (paymentAmount && !paidCurrency)
       throw new Error(" Payment is required for registration.");
+  
+        if (!req.files || req.files.length === 0) {
+          throw new Error(" document file is required.");
+        }
+    
 
     const { translationCase, translationServiceID } = await saveTranslationCase(
       {
         customerId,
         documentLanguage,
         translationLanguage,
-        casePaymentStatus: "free",
+        PaymentStatus: "paid",
         submissionDate: new Date(),
         status: "submitted"
       },
@@ -77,3 +82,48 @@ export const submitTranslationRequest = async (req, res, next) => {
   }
 };
 
+export const getAllTranslation = async (req, res, next) => {
+  try {
+    const customerId = req.user._id;
+
+    const translation = await TranslationCase.aggregate([
+      { $match: { customerId } },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "translation_payments",
+          localField: "_id",
+          foreignField: "translationCase",
+          as: "paymentDetails"
+        }
+      },
+      {
+        $unwind: { path: "$paymentDetails", preserveNullAndEmptyArrays: true }
+      },
+      {
+        $project: {
+          createdAt: 1,
+          translationServiceID: 1,
+          documentLanguage: 1,
+          translationLanguage: 1,
+          PaymentStatus: 1,
+          follower: 1,
+          status: 1,
+          amount: "$paymentDetails.amount",
+          paidCurrency: "$paymentDetails.paidCurrency"
+        }
+      }
+    ]);
+
+    const translations = translation.map((caseItem) => ({
+      ...caseItem,
+      createdAt: formatDatewithmonth(caseItem.createdAt)
+    }));
+
+    return res
+      .status(200)
+      .json({ message: "Translations fetched successfully", translations });
+  } catch (error) {
+    next(error);
+  }
+};

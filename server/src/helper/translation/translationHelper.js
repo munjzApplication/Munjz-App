@@ -12,7 +12,7 @@ export const saveTranslationCase = async ({
   customerId,
   documentLanguage,
   translationLanguage,
-  casePaymentStatus,
+  PaymentStatus,
   submissionDate,
   status,
   session
@@ -27,7 +27,7 @@ export const saveTranslationCase = async ({
           translationServiceID,
           documentLanguage,
           translationLanguage,
-          casePaymentStatus,
+          PaymentStatus,
           submissionDate,
           status
         }
