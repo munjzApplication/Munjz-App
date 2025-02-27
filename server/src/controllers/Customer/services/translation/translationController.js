@@ -20,19 +20,19 @@ export const submitTranslationRequest = async (req, res, next) => {
       translationLanguage,
       paymentAmount,
       paidCurrency,
-      noOfPage,
+      noOfPage
     } = req.body;
-    console.log("reqbody",req.body);
-    console.log("reqfile",req.files);
-    
-    
+    console.log("reqbody", req.body);
+    console.log("reqfile", req.files);
+
     // Validate customer existence
     const customer = await Customer.findById(customerId).lean();
     if (!customer) throw new Error("Invalid customer");
 
     const customerName = customer.Name;
     if (!documentLanguage) throw new Error("Document language is required.");
-    if (!translationLanguage) throw new Error("Translation language is required.");
+    if (!translationLanguage)
+      throw new Error("Translation language is required.");
 
     if (paymentAmount && !paidCurrency)
       throw new Error(" Payment is required for registration.");
@@ -40,7 +40,6 @@ export const submitTranslationRequest = async (req, res, next) => {
     if (!req.files || req.files.length === 0) {
       throw new Error(" document file is required.");
     }
-
 
     const { translationCase, translationServiceID } = await saveTranslationCase(
       {
@@ -53,12 +52,14 @@ export const submitTranslationRequest = async (req, res, next) => {
       },
       session
     );
-    
 
     if (req.files?.length > 0) {
-      await saveTranslationDocuments(req.files, translationCase._id, noOfPage, session);
-
-
+      await saveTranslationDocuments(
+        req.files,
+        translationCase._id,
+        noOfPage,
+        session
+      );
     }
     await saveTranslationPayment(
       {
@@ -75,15 +76,13 @@ export const submitTranslationRequest = async (req, res, next) => {
     session.endSession();
 
     return res.status(201).json({
-      message: "Translation request submitted successfully",
-
+      message: "Translation request submitted successfully"
     });
   } catch (error) {
     console.log("Error in submitting translation request", error);
     await session.abortTransaction();
     session.endSession();
     next(error);
-
   }
 };
 

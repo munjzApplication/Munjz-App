@@ -27,7 +27,11 @@ export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCo
 /**
  * Save Court Documents
  */
-export const saveCourtDocuments = async (files, courtCaseId, session) => {
+export const saveCourtDocuments = async (
+  files, 
+  courtCaseId, 
+  session
+) => {
   if (!files?.length) throw new Error("No files provided for document upload.");
 
   try {

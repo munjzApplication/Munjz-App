@@ -13,7 +13,7 @@ const TranslationDocumentSchema = new mongoose.Schema({
         uploadedAt: { type: Date, required: true }
       }
     ],
-    required: true,
+    // required: true,
     default: []
   },
 
