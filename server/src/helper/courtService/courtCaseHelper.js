@@ -35,7 +35,16 @@ export const saveCourtDocuments = async (files, courtCaseId, session) => {
 
     const documentData = documentUploads.map(url => ({ documentUrl: url, uploadedAt: new Date() }));
 
-    const document = await DocumentModel.create([{ courtServiceCase: courtCaseId, Documents: documentData, requestStatus: "unread" }], { session });
+    const document = await DocumentModel.create(
+      [
+        {
+          courtServiceCase: courtCaseId,
+          Documents: documentData, 
+          requestStatus: "unread" 
+        }
+      ],
+       { session }
+      );
 
     return document;
   } catch (error) {

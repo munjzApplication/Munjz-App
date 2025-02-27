@@ -10,8 +10,8 @@ import upload from "../../../../middlewares/fileUpload.js";
 const router = express.Router();
 
 router.post(
-  "/submit-translation/:customerID",
-  upload.array("documents", 5),
+  "/register",
+  upload.array("documents"),
   submitTranslationRequest
 );
 router.post(

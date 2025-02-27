@@ -24,14 +24,18 @@ const TranslationDetailsSchema = new mongoose.Schema({
     enum: ['free', 'paid'], 
     default: 'free', 
   },
-  submissionDate: {
-    type: Date,
-    default: Date.now
-  },
   follower:{
     type: String, 
     default: "unread",
-  }
-});
+  },
+  status: {
+    type: String,
+    enum: ['submitted', 'working', 'completed', 'rejected'],
 
-export default mongoose.model("Translation_Details", TranslationDetailsSchema);
+  },
+
+},
+{ timestamps: true }
+);
+
+export default mongoose.model("Translation_Case", TranslationDetailsSchema);

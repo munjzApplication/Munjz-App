@@ -6,11 +6,6 @@ const TranslationDocumentSchema = new mongoose.Schema({
     ref: "Translation_Details",
     required: true
   },
-  translationServiceID: {
-    type: String,
-    required: true,
-    unique: true
-  },
   Documents: {
     type: [
       {
@@ -26,7 +21,7 @@ const TranslationDocumentSchema = new mongoose.Schema({
     type: Number,
     required: false
   },
-  SubmitionDateTime: {
+  SubmitionDate: {
     type: String,
     require: true
   },

@@ -6,24 +6,11 @@ const TranslationPaymentSchema = new mongoose.Schema({
     ref: 'Translation_Details',
     required: true,
   }, 
-  translationServiceID: {
-    type: String,
-    required: true,
-    unique: true
-  },
   amount: {
     type: Number,
     required: true,
   }, 
   paidCurrency: {
-    type: String,
-    required: true,
-  }, 
-  paymentMethod: {
-    type: String,
-    required: true,
-  }, 
-  transactionId: {
     type: String,
     required: true,
   }, 
