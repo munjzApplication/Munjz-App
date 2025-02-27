@@ -7,7 +7,7 @@ import Customer from "../../../../models/Customer/customerModels/customerModel.j
 import Notification from "../../../../models/Admin/notificationModels/notificationModel.js";
 import TranslationCase from "../../../../models/Customer/translationModel/translationDetails.js";
 import mongoose from "mongoose";
-import { formatDatewithmonth  } from "../../../../helper/dateFormatter.js";
+import { formatDatewithmonth } from "../../../../helper/dateFormatter.js";
 
 export const submitTranslationRequest = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -22,20 +22,25 @@ export const submitTranslationRequest = async (req, res, next) => {
       paidCurrency,
       noOfPage,
     } = req.body;
-
+    console.log("reqbody",req.body);
+    console.log("reqfile",req.files);
+    
+    
     // Validate customer existence
     const customer = await Customer.findById(customerId).lean();
     if (!customer) throw new Error("Invalid customer");
 
     const customerName = customer.Name;
+    if (!documentLanguage) throw new Error("Document language is required.");
+    if (!translationLanguage) throw new Error("Translation language is required.");
 
     if (paymentAmount && !paidCurrency)
       throw new Error(" Payment is required for registration.");
-  
-        if (!req.files || req.files.length === 0) {
-          throw new Error(" document file is required.");
-        }
-    
+
+    if (!req.files || req.files.length === 0) {
+      throw new Error(" document file is required.");
+    }
+
 
     const { translationCase, translationServiceID } = await saveTranslationCase(
       {
@@ -48,10 +53,10 @@ export const submitTranslationRequest = async (req, res, next) => {
       },
       session
     );
-    console.log("kkkkk",req.files);
     
+
     if (req.files?.length > 0) {
-      await saveTranslationDocuments(req.files,translationCase._id,noOfPage,session);
+      await saveTranslationDocuments(req.files, translationCase._id, noOfPage, session);
 
 
     }

@@ -18,11 +18,11 @@ const TranslationPaymentSchema = new mongoose.Schema({
     type: Date, 
     required: true 
   },
-  paymentStatus: {
+  PaymentStatus: {
     type: String,
-    enum: ['paid', 'pending', 'failed', 'unread'],
-    default: 'unread',
-  }, 
+    enum: ['paid'],  
+    default: 'paid'  
+  },  
 });
 
 export default mongoose.model('Translation_Payment', TranslationPaymentSchema);

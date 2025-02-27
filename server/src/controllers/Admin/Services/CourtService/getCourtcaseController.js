@@ -30,6 +30,7 @@ export const getAllCourtCases = async (req, res, next) => {
           casePaymentStatus: 1,
           follower: 1,
           createdAt: 1,
+          status: 1,
           customerName: "$customer.Name",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto"
@@ -82,6 +83,7 @@ export const getAllCourtCasesWithID = async (req, res, next) => {
           casePaymentStatus: 1,
           follower: 1,
           createdAt: 1,
+          status: 1,
           customerName: "$customer.Name",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto"

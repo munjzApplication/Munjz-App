@@ -51,14 +51,20 @@ export const saveTranslationDocuments = async (
   session
 ) => {
     console.log("Received files:", files);
+    console.log("transaltionid",translationCaseId);
+    
     console.log("Received noOfPage:", noOfPage);
 
 if (!files?.length) throw new Error("No files provided for document upload.");
 
   try {
-    const documentUploads = await Promise.all(files.map(file => uploadFileToS3(file, "CourtCaseDocs")));
+    const documentUploads = await Promise.all(
+      files.map(file => uploadFileToS3(file, "TranslationDocuments")));
 
-    const documentData = documentUploads.map(url => ({ documentUrl: url, uploadedAt: new Date() }));
+    const documentData = documentUploads.map(url => ({
+       documentUrl: url, 
+       uploadedAt: new Date() 
+      }));
 
     const document = await TranslationDocument.create(
       [
