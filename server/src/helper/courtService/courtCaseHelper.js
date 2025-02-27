@@ -27,11 +27,11 @@ export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCo
 /**
  * Save Court Documents
  */
-export const saveCourtDocuments = async (
-  files, 
-  courtCaseId, 
-  session
-) => {
+export const saveCourtDocuments = async (files, courtCaseId, session) => {
+  console.log("files",files);
+  console.log("courtcaseid",courtCaseId);
+  
+  
   if (!files?.length) throw new Error("No files provided for document upload.");
 
   try {
@@ -39,16 +39,7 @@ export const saveCourtDocuments = async (
 
     const documentData = documentUploads.map(url => ({ documentUrl: url, uploadedAt: new Date() }));
 
-    const document = await DocumentModel.create(
-      [
-        {
-          courtServiceCase: courtCaseId,
-          Documents: documentData, 
-          requestStatus: "unread" 
-        }
-      ],
-       { session }
-      );
+    const document = await DocumentModel.create([{ courtServiceCase: courtCaseId, Documents: documentData, requestStatus: "unread" }], { session });
 
     return document;
   } catch (error) {

@@ -16,7 +16,8 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
 
   try {
     console.log("Transaction Started...");
-
+    console.log("reqbody", req.body);
+    console.log("reqfile", req.files);
     const customerId = req.user._id;
     const {
       serviceName,

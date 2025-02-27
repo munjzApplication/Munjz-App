@@ -16,7 +16,8 @@ export const saveCourtServiceDetails = async (req, res, next) => {
     try {
         const customerId = req.user._id;
         const { serviceName, selectedServiceCountry, caseDescription, paymentAmount, paidCurrency } = req.body;
-
+        console.log("reqbody", req.body);
+        console.log("reqfile", req.files);
         // Validate customer
         const customer = await Customer.findById(customerId).lean();
         if (!customer) throw new Error("Invalid customer");
@@ -38,7 +39,7 @@ export const saveCourtServiceDetails = async (req, res, next) => {
             paidCurrency,
             serviceName,
             selectedServiceCountry,
-            paymentDate,
+            paymentDate : new Date(),
             customerName: customer.Name,
             customerId
         }, session);
