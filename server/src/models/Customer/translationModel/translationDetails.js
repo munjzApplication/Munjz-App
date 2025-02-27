@@ -21,8 +21,8 @@ const TranslationDetailsSchema = new mongoose.Schema({
   },
   PaymentStatus: {
     type: String,
-    enum: ['paid'],  
-    default: 'paid'  
+    enum: ['paid','unpaid'],  
+    default: 'paid'   
   },  
   follower:{
     type: String, 

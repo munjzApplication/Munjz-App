@@ -22,6 +22,7 @@ export const submitTranslationRequest = async (req, res, next) => {
       paidCurrency,
       noOfPage
     } = req.body;
+    
     console.log("reqbody", req.body);
     console.log("reqfile", req.files);
 
@@ -31,53 +32,56 @@ export const submitTranslationRequest = async (req, res, next) => {
 
     const customerName = customer.Name;
     if (!documentLanguage) throw new Error("Document language is required.");
-    if (!translationLanguage)
-      throw new Error("Translation language is required.");
-
-    if (paymentAmount && !paidCurrency)
-      throw new Error(" Payment is required for registration.");
+    if (!translationLanguage) throw new Error("Translation language is required.");
+    
+    if (paymentAmount && !paidCurrency) throw new Error("Paid currency is required for payment.");
 
     if (!req.files || req.files.length === 0) {
-      throw new Error(" document file is required.");
+      throw new Error("Document file is required.");
     }
 
-    const { translationCase, translationServiceID } = await saveTranslationCase(
+    // Determine Payment Status
+    const PaymentStatus = paymentAmount ? "paid" : "unpaid";
+
+    // Save Translation Case
+    const { translationCase } = await saveTranslationCase(
       {
         customerId,
         documentLanguage,
         translationLanguage,
-        PaymentStatus: "paid",
+        PaymentStatus,
         submissionDate: new Date(),
         status: "submitted"
       },
       session
     );
 
+    // Save Translation Documents
     if (req.files?.length > 0) {
-      await saveTranslationDocuments(
-        req.files,
-        translationCase._id,
-        noOfPage,
+      await saveTranslationDocuments(req.files, translationCase._id, noOfPage, session);
+    }
+
+    // Save Payment Details only if paymentAmount exists
+    if (paymentAmount) {
+      await saveTranslationPayment(
+        {
+          translationCaseId: translationCase._id,
+          paymentAmount,
+          paidCurrency,
+          customerName,
+          customerId
+        },
         session
       );
     }
-    await saveTranslationPayment(
-      {
-        translationCaseId: translationCase._id,
-        paymentAmount,
-        paidCurrency,
-        customerName,
-        customerId
-      },
-      session
-    );
 
     await session.commitTransaction();
     session.endSession();
 
     return res.status(201).json({
-      message: "Translation request submitted successfully"
+      message: "Translation request submitted successfully",
     });
+
   } catch (error) {
     console.log("Error in submitting translation request", error);
     await session.abortTransaction();
@@ -85,6 +89,7 @@ export const submitTranslationRequest = async (req, res, next) => {
     next(error);
   }
 };
+
 
 export const getAllTranslation = async (req, res, next) => {
   try {

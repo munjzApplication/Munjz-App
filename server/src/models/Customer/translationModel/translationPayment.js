@@ -20,7 +20,7 @@ const TranslationPaymentSchema = new mongoose.Schema({
   },
   PaymentStatus: {
     type: String,
-    enum: ['paid'],  
+    enum: ['paid','unpaid'],  
     default: 'paid'  
   },  
 });

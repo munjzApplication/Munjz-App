@@ -41,8 +41,9 @@ export const saveTranslationCase = async ({
     throw new Error("Failed to save Translation Case.");
   }
 };
+
 /**
- * Save Court Documents
+ * Save Translation Documents
  */
 export const saveTranslationDocuments = async (
   files,
@@ -50,21 +51,21 @@ export const saveTranslationDocuments = async (
   noOfPage,
   session
 ) => {
-    console.log("Received files:", files);
-    console.log("transaltionid",translationCaseId);
-    
-    console.log("Received noOfPage:", noOfPage);
+  console.log("Received files:", files);
+  console.log("Translation Case ID:", translationCaseId);
+  console.log("Received noOfPage:", noOfPage);
 
-if (!files?.length) throw new Error("No files provided for document upload.");
+  if (!files?.length) throw new Error("No files provided for document upload.");
 
   try {
     const documentUploads = await Promise.all(
-      files.map(file => uploadFileToS3(file, "TranslationDocuments")));
+      files.map(file => uploadFileToS3(file, "TranslationDocuments"))
+    );
 
     const documentData = documentUploads.map(url => ({
-       documentUrl: url, 
-       uploadedAt: new Date() 
-      }));
+      documentUrl: url, 
+      uploadedAt: new Date()
+    }));
 
     const document = await TranslationDocument.create(
       [
@@ -76,50 +77,54 @@ if (!files?.length) throw new Error("No files provided for document upload.");
           submissionDate: new Date()
         }
       ],
-       { session }
-      );
+      { session }
+    );
 
     return document;
-    
   } catch (error) {
     console.error("Error saving Translation Documents:", error.message);
     throw new Error(`Failed to save Translation Documents: ${error.message}`);
   }
 };
 
-
 /**
- * Save Court Payment
+ * Save Translation Payment
  */
 export const saveTranslationPayment = async ({
   translationCaseId,
   paymentAmount,
   paidCurrency,
-  paymentDate,
   customerName,
   session
 }) => {
-  if (!paymentAmount || !paidCurrency)
-    throw new Error("Missing required payment details.");
   try {
+    // If no payment is provided, return unpaid status
+    if (!paymentAmount || !paidCurrency) {
+      console.log("No payment provided, marking case as unpaid.");
+      return null; 
+    }
+
+    // Save payment details
     const translationPayment = await TranslationPayment.create(
       [
         {
           translationCase: translationCaseId,
           amount: paymentAmount,
           paidCurrency,
-          paymentDate: paymentDate || new Date(),
+          paymentDate: new Date(),
           paymentStatus: "paid"
         }
       ],
       { session }
     );
+
+    // Create payment success notification
     await Notification.create(
       [
         {
           notificationDetails: {
             type: "Payment",
-            title: "translationService Payment Successfully Processed",
+            title: "Translation Service Payment Successfully Processed",
             message: `Your payment of ${paymentAmount} ${paidCurrency} has been successfully processed.`,
             additionalDetails: {
               customerName,
@@ -132,6 +137,7 @@ export const saveTranslationPayment = async ({
       ],
       { session }
     );
+
     return translationPayment;
   } catch (error) {
     console.error("Error saving Translation Payment:", error);
