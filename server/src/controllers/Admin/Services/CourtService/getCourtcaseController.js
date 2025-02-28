@@ -20,6 +20,20 @@ export const getAllCourtCases = async (req, res, next) => {
         $unwind: "$customer"
       },
       {
+        $lookup: {
+          from: "courtservice_payments",
+          localField: "_id",
+          foreignField: "courtServiceCase",
+          as: "payment"
+        }
+      },
+      {
+        $unwind: {
+          path: "$payment",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
         $project: {
           _id: 1,
           customerId: 1,
@@ -32,14 +46,18 @@ export const getAllCourtCases = async (req, res, next) => {
           createdAt: 1,
           status: 1,
           customerName: "$customer.Name",
+          customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
-          customerProfile: "$customer.profilePhoto"
+          customerProfile: "$customer.profilePhoto",
+          paymentAmount: "$payment.amount",
+          paymentCurrency: "$payment.paidCurrency"
         }
       },
       {
         $sort: { createdAt: -1 }
       }
     ]);
+console.log("courtCases",courtCases);
 
     courtCases = courtCases.map(courtCases => ({
       ...courtCases,
@@ -73,6 +91,20 @@ export const getAllCourtCasesWithID = async (req, res, next) => {
       },
       { $unwind: "$customer" },
       {
+        $lookup: {
+          from: "courtservice_payments",
+          localField: "_id",
+          foreignField: "courtServiceCase",
+          as: "payment"
+        }
+      },
+      {
+        $unwind: {
+          path: "$payment",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
         $project: {
           _id: 1,
           customerId: 1,
@@ -85,8 +117,11 @@ export const getAllCourtCasesWithID = async (req, res, next) => {
           createdAt: 1,
           status: 1,
           customerName: "$customer.Name",
+          customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
-          customerProfile: "$customer.profilePhoto"
+          customerProfile: "$customer.profilePhoto",
+          paymentAmount: "$payment.amount",
+          paymentCurrency: "$payment.paidCurrency"
         }
       },
       { $sort: { createdAt: -1 } }

@@ -20,6 +20,20 @@ export const getAllTranslations = async (req, res, next) => {
         $unwind: "$customer"
       },
       {
+        $lookup: {
+          from: "translation_payments",
+          localField: "_id",
+          foreignField: "translationCase",
+          as: "payment"
+        }
+      },
+      {
+        $unwind: {
+          path: "$payment",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
         $project: {
           _id: 1,
           customerId: 1,
@@ -31,8 +45,11 @@ export const getAllTranslations = async (req, res, next) => {
           createdAt: 1,
           status: 1,
           customerName: "$customer.Name",
+          customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
-          customerProfile: "$customer.profilePhoto"
+          customerProfile: "$customer.profilePhoto",
+          paymentAmount: "$payment.amount",
+          paymentCurrency: "$payment.paidCurrency"
         }
       },
       {
@@ -72,6 +89,20 @@ export const getAllTranslationWithID = async (req, res, next) => {
       },
       { $unwind: "$customer" },
       {
+        $lookup: {
+          from: "translation_payments",
+          localField: "_id",
+          foreignField: "translationCase",
+          as: "payment"
+        }
+      },
+      {
+        $unwind: {
+          path: "$payment",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
         $project: {
             _id: 1,
             customerId: 1,
@@ -83,8 +114,11 @@ export const getAllTranslationWithID = async (req, res, next) => {
             createdAt: 1,
             status: 1,
             customerName: "$customer.Name",
+            customerEmail: "$customer.email",
             customerPhone: "$customer.phoneNumber",
-            customerProfile: "$customer.profilePhoto"
+            customerProfile: "$customer.profilePhoto",
+            paymentAmount: "$payment.amount",
+            paymentCurrency: "$payment.paidCurrency"
         }
       },
       { $sort: { createdAt: -1 } }
