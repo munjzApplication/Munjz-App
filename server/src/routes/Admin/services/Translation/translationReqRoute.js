@@ -1,7 +1,7 @@
 import express from 'express';
 import { requestDocuments ,requestAdditionalPayment } from '../../../../controllers/Admin/Services/Translation/translationReqController.js';
 import { adminSubmittedDoc } from "../../../../controllers/Admin/Services/Translation/adminUploadController.js";
-import { getAllTranslations , getAllTranslationWithID } from "../../../../controllers/Admin/Services/Translation/getTranslationController.js";
+import { getAllTranslations , getAllTranslationWithID ,getCaseDocs} from "../../../../controllers/Admin/Services/Translation/getTranslationController.js";
 import upload from '../../../../middlewares/fileUpload.js';
 import { protectAdmin } from '../../../../middlewares/adminMiddleware.js';
 const router = express.Router();
@@ -16,6 +16,7 @@ router.post('/admin-submittedDocument/:caseId',upload.array('file',5),protectAdm
 
 router.get("/get-cases", getAllTranslations);
 router.get("/customer-cases/:customerId",getAllTranslationWithID)
+router.get("/get-docs/:caseId",getCaseDocs)
 
 
 

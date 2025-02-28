@@ -15,7 +15,7 @@ import {
   updateCourtServicePricing,
   deleteCourtServicePricing
 } from "../../../../controllers/Admin/Services/CourtService/courtServicePricingController.js";
-import { getAllCourtCases ,getAllCourtCasesWithID } from "../../../../controllers/Admin/Services/CourtService/getCourtcaseController.js";
+import { getAllCourtCases ,getAllCourtCasesWithID ,getCaseDocs} from "../../../../controllers/Admin/Services/CourtService/getCourtcaseController.js";
 const router = express.Router();
 
 // Court Service Routes
@@ -33,7 +33,8 @@ router.put("/updated-service-pricing/:serviceId", updateCourtServicePricing);
 router.delete("/delete-service-pricing/:id", deleteCourtServicePricing);
 
 router.get("/get-cases", getAllCourtCases);
-router.get("/customer-cases/:customerId",getAllCourtCasesWithID)
+router.get("/customer-cases/:customerId",getAllCourtCasesWithID);
+router.get("/get-docs/:caseId",getCaseDocs)
 
 
 export default router;

@@ -57,7 +57,7 @@ export const getAllCourtCases = async (req, res, next) => {
         $sort: { createdAt: -1 }
       }
     ]);
-console.log("courtCases",courtCases);
+    console.log("courtCases", courtCases);
 
     courtCases = courtCases.map(courtCases => ({
       ...courtCases,
@@ -79,7 +79,7 @@ export const getAllCourtCasesWithID = async (req, res, next) => {
 
     let courtCases = await courtCaseModel.aggregate([
       {
-        $match: { customerId: new mongoose.Types.ObjectId(customerId) } 
+        $match: { customerId: new mongoose.Types.ObjectId(customerId) }
       },
       {
         $lookup: {
@@ -138,5 +138,26 @@ export const getAllCourtCasesWithID = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const getCaseDocs = async (req, res, next) => {
+  try {
+    const { caseId } = req.params;
+
+    // Fetch documents where courtServiceCase matches the provided caseId
+    const getdocs = await courtCaseeDocument.findOne({ courtServiceCase: caseId });
+
+    if (!getdocs) {
+      return res.status(404).json({ message: "No documents found for this case" });
+    }
+    if (getdocs.createdAt) {
+      getdocs.createdAt = formatDate(getdocs.createdAt);
+    }
+
+
+    return res.status(200).json({message : "Documents retrieved successfully",getdocs});
+  } catch (error) {
+    next(error); // Pass error to global error handler
   }
 };

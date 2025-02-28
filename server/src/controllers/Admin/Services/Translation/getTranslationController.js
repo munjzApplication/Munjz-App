@@ -137,3 +137,20 @@ export const getAllTranslationWithID = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getCaseDocs = async (req, res, next) => {
+  try {
+    const { caseId } = req.params;
+
+    // Fetch documents where courtServiceCase matches the provided caseId
+    const getdocs = await translationDocument.findOne({ translationCase: caseId });
+
+    if (!getdocs) {
+      return res.status(404).json({ message: "No documents found for this case" });
+    }
+
+    return res.status(200).json({ message : "Documents retrieved successfully",getdocs});
+  } catch (error) {
+    next(error); // Pass error to global error handler
+  }
+};
