@@ -17,6 +17,7 @@ import getConsultantListRoutes from "./consultantRoutes/getConsultantListRoute.j
 import getPricingRoutes from "./customerRoutes/getPricingRoute.js";
 import getDataRoutes from "./customerRoutes/getDataRoute.js";
 import consultationRoute from "./services/consultation/consultationRoute.js";
+import getNews from "./newses/newsRoutes.js";
 
 import {authenticateUser} from '../../middlewares/customerMiddleware.js';
 
@@ -39,7 +40,8 @@ router.use('/pendings',authenticateUser,customerPendingsRoute);
 router.use('/customer-notify',authenticateUser,notificationRoutes);
 router.use('/consultant-list',authenticateUser,getConsultantListRoutes);
 router.use('/pricing',authenticateUser,getPricingRoutes); 
-router.use('/get-datas',authenticateUser,getDataRoutes)
+router.use('/get-datas',authenticateUser,getDataRoutes);
+router.use('/news',authenticateUser,getNews)
 
 // Consultation Routesut
 router.use("/consultations",authenticateUser, consultationRoute);
