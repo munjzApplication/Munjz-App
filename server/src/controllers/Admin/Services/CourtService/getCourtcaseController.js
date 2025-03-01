@@ -151,12 +151,15 @@ export const getCaseDocs = async (req, res, next) => {
     if (!getdocs) {
       return res.status(404).json({ message: "No documents found for this case" });
     }
-    if (getdocs.createdAt) {
-      getdocs.createdAt = formatDate(getdocs.createdAt);
-    }
+    const documents = getdocs.Documents.map(doc => ({
+      ...doc.toObject(),
+      courtServiceCase: getdocs.courtServiceCase,
+      noOfPage: getdocs.noOfPage,
+      createdAt: getdocs.createdAt
+    }));
 
 
-    return res.status(200).json({message : "Documents retrieved successfully",getdocs});
+    return res.status(200).json({message : "Documents retrieved successfully",documents});
   } catch (error) {
     next(error); // Pass error to global error handler
   }

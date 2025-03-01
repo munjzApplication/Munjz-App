@@ -152,8 +152,15 @@ export const getCaseDocs = async (req, res, next) => {
     if (!getdocs) {
       return res.status(404).json({ message: "No documents found for this case" });
     }
+       // Flattening the documents array so they are directly accessible
+       const documents = getdocs.Documents.map(doc => ({
+        ...doc.toObject(),
+        notaryServiceCase: getdocs.notaryServiceCase,
+        noOfPage: getdocs.noOfPage,
+        createdAt: getdocs.createdAt
+      }));
 
-    return res.status(200).json({message : "Documents retrieved successfully",getdocs});
+    return res.status(200).json({message : "Documents retrieved successfully",documents});
   } catch (error) {
     next(error); // Pass error to global error handler
   }

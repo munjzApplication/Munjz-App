@@ -142,14 +142,22 @@ export const getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    // Fetch documents where courtServiceCase matches the provided caseId
+    // Fetch documents where translationCase matches the provided caseId
     const getdocs = await translationDocument.findOne({ translationCase: caseId });
 
     if (!getdocs) {
       return res.status(404).json({ message: "No documents found for this case" });
     }
 
-    return res.status(200).json({ message : "Documents retrieved successfully",getdocs});
+    // Flattening the documents array so they are directly accessible
+    const documents = getdocs.Documents.map(doc => ({
+      ...doc.toObject(),
+      translationCase: getdocs.translationCase,
+      noOfPage: getdocs.noOfPage,
+      createdAt: getdocs.createdAt
+    }));
+
+    return res.status(200).json({ message: "Documents retrieved successfully", documents });
   } catch (error) {
     next(error); // Pass error to global error handler
   }
