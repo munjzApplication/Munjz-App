@@ -82,7 +82,7 @@ export const getCaseDocs = async (req, res, next) => {
     ]);
 
     if (!notarycase) {
-      return res.status(404).json({ message: "Court case not found" });
+      return res.status(404).json({ message: "Notary case not found" });
     }
 
     const formattedCase = notarycaseDoc
@@ -90,7 +90,7 @@ export const getCaseDocs = async (req, res, next) => {
       : {};
 
     res.status(200).json({
-      message: "Court case fetched successfully",
+      message: "Notary case fetched successfully",
       notarycase: formattedCase
     });
   } catch (error) {
