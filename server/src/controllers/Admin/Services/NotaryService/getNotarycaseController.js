@@ -72,30 +72,26 @@ export const getAllNotaryCases = async (req, res, next) => {
 };
 
 
-export const  getCaseDocs = async (req, res, next) => {
+export const getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    // Fetch court case by ID
-    const notarycase = await notaryServiceDetailsModel.findById(caseId);
+    const [notarycase, notarycaseDoc] = await Promise.all([
+      notaryServiceDetailsModel.findById(caseId),
+      notaryServiceDocument.findOne({ notaryServiceCase: caseId })
+    ]);
+
     if (!notarycase) {
-      return res.status(404).json({ message: "Notary case not found" });
+      return res.status(404).json({ message: "Court case not found" });
     }
 
-    // Fetch associated court case document
-    const notarycaseDoc = await notaryServiceDocument.findOne({ notaryServiceCase: caseId });
-    console.log("notarycaseDoc", notarycaseDoc);
-
-    // Format the court case
-    const formattedCase = {
-      ...notarycaseDoc.toObject(),
-      createdAt: formatDate(notarycaseDoc.createdAt)
-    };
+    const formattedCase = notarycaseDoc
+      ? { ...notarycaseDoc.toObject(), createdAt: formatDate(notarycaseDoc.createdAt) }
+      : {};
 
     res.status(200).json({
-      message: "Notary case fetched successfully",
-      notarycase: formattedCase,
-      
+      message: "Court case fetched successfully",
+      notarycase: formattedCase
     });
   } catch (error) {
     next(error);

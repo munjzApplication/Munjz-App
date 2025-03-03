@@ -82,7 +82,6 @@ export const getCaseDocs  = async (req, res, next) => {
 
     // Fetch associated court case document
     const translationDoc = await translationDocument.findOne({ translationCase: caseId });
-    console.log("translationDoc", translationDoc);
 
     // Format the court case
     const formattedCase = {
@@ -99,6 +98,7 @@ export const getCaseDocs  = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
 export const getTranslationCaseById  = async (req, res, next) => {

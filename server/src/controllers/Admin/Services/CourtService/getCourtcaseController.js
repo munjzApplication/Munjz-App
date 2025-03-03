@@ -77,31 +77,28 @@ export const getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    // Fetch court case by ID
-    const courtCase = await courtCaseModel.findById(caseId);
+    const [courtCase, courtCaseDoc] = await Promise.all([
+      courtCaseModel.findById(caseId),
+      courtCaseeDocument.findOne({ courtServiceCase: caseId })
+    ]);
+
     if (!courtCase) {
       return res.status(404).json({ message: "Court case not found" });
     }
 
-    // Fetch associated court case document
-    const courtCaseDoc = await courtCaseeDocument.findOne({ courtServiceCase: caseId });
-    console.log("courtCaseDoc", courtCaseDoc);
-
-    // Format the court case
-    const formattedCase = {
-      ...courtCaseDoc.toObject(),
-      createdAt: formatDate(courtCaseDoc.createdAt)
-    };
+    const formattedCase = courtCaseDoc
+      ? { ...courtCaseDoc.toObject(), createdAt: formatDate(courtCaseDoc.createdAt) }
+      : {};
 
     res.status(200).json({
       message: "Court case fetched successfully",
-      courtCase: formattedCase,
-      
+      courtCase: formattedCase
     });
   } catch (error) {
     next(error);
   }
 };
+
 export const getCourtCaseById = async (req, res, next) => {
   try {
     const { caseId } = req.params;
