@@ -16,64 +16,52 @@ export const requestDocument = async (req, res) => {
     const { caseId } = req.params;
     const { reason } = req.body;
 
-     
-    const courtCase = await CourtCase.findOne({ _id: caseId });
+    const courtCase = await CourtCase.findById(caseId);
     if (!courtCase) {
       return res.status(404).json({ message: "Court case not found." });
     }
 
-    const customer = await Customer.findById(courtCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
-    }
     const document = await Document.findOne({ courtServiceCase: caseId });
-
     if (!document) {
       return res.status(404).json({ message: "Document not found." });
     }
 
     if (document.requestStatus === "pending") {
-      return res
-        .status(400)
-        .json({ message: "A document request is already pending." });
+      return res.status(400).json({ message: "A document request is already pending." });
     }
 
     document.requestReason = reason;
     document.requestStatus = "pending";
-    document.customerId = customer._id;
     document.requestUpdatedAt = new Date();
 
     await document.save();
 
-    
     const additionalDocument = new AdditionalDocument({
-      caseId,
+      courtServiceCase: caseId,
       courtServiceID: document.courtServiceID,
-      documents: [], 
+      documents: [],
       requestReason: reason,
       requestStatus: "pending",
-      requestUpdatedAt: new Date()
+      createdAt: new Date()
     });
 
     await additionalDocument.save();
 
-   
     await sendNotificationToCustomer(
-      customer._id,
+      courtCase.customer,
       `A document request has been made for Case ID: ${document.courtServiceID}.`,
       "Court Service Update",
-      { 
-        caseId, 
-        courtServiceID: document.courtServiceID, 
+      {
+        caseId,
+        courtServiceID: document.courtServiceID,
         requestReason: reason,
-        requestStatus: "pending" ,
+        requestStatus: "pending",
         requestUpdatedAt: new Date()
       }
     );
 
     res.status(200).json({
       message: "Document request created successfully.",
-      document,
       additionalDocument
     });
   } catch (error) {
@@ -83,6 +71,7 @@ export const requestDocument = async (req, res) => {
     });
   }
 };
+
 
 export const reviewDocument = async (req, res, next) => {
   try {

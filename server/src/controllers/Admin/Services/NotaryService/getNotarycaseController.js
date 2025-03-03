@@ -72,69 +72,30 @@ export const getAllNotaryCases = async (req, res, next) => {
 };
 
 
-export const getAllNotaryCasesWithID = async (req, res, next) => {
+export const getNotaryCaseById = async (req, res, next) => {
   try {
-    const { customerId } = req.params;
+    const { caseId } = req.params;
 
-    let notaryCases = await notaryServiceDetailsModel.aggregate([
-      {
-        $match: { customerId: new mongoose.Types.ObjectId(customerId) } 
-      },
-      {
-        $lookup: {
-          from: "customer_profiles",
-          localField: "customerId",
-          foreignField: "_id",
-          as: "customer"
-        }
-      },
-      { $unwind: "$customer" },
-      {
-        $lookup: {
-          from: "notaryservice_payments",
-          localField: "_id",
-          foreignField: "notaryServiceCase",
-          as: "payment"
-        }
-        
-      },
-      {
-        $unwind: {
-          path: "$payment",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          customerId: 1,
-          notaryServiceID: 1,
-          serviceName: 1,
-          selectedServiceCountry: 1,
-          caseDescription: 1,
-          casePaymentStatus: 1,
-          follower: 1,
-          createdAt: 1,
-          status: 1,
-          customerName: "$customer.Name",
-          customerEmail: "$customer.email",
-          customerPhone: "$customer.phoneNumber",
-          customerProfile: "$customer.profilePhoto",
-          paymentAmount: "$payment.amount",
-          paymentCurrency: "$payment.paidCurrency"
-        }
-      },
-      { $sort: { createdAt: -1 } }
-    ]);
+    // Fetch court case by ID
+    const notarycase = await notaryServiceDetailsModel.findById(caseId);
+    if (!notarycase) {
+      return res.status(404).json({ message: "Notary case not found" });
+    }
 
-    notaryCases = notaryCases.map(notaryCase => ({
-      ...notaryCase,
-      createdAt: formatDate(notaryCase.createdAt)
-    }));
+    // Fetch associated court case document
+    const notarycaseDoc = await notaryServiceDocument.findOne({ notaryServiceCase: caseId });
+    console.log("notarycaseDoc", notarycaseDoc);
+
+    // Format the court case
+    const formattedCase = {
+      ...notarycaseDoc.toObject(),
+      createdAt: formatDate(notarycaseDoc.createdAt)
+    };
 
     res.status(200).json({
-      message: "Notary cases fetched successfully",
-      notaryCases
+      message: "Notary case fetched successfully",
+      notarycase: formattedCase,
+      
     });
   } catch (error) {
     next(error);
@@ -149,18 +110,11 @@ export const getCaseDocs = async (req, res, next) => {
     // Fetch documents where courtServiceCase matches the provided caseId
     const getdocs = await notaryServiceDocument.findOne({ notaryServiceCase: caseId });
 
-    if (!getdocs) {
+    if (!getdocs || !getdocs.Documents) {
       return res.status(404).json({ message: "No documents found for this case" });
     }
-       // Flattening the documents array so they are directly accessible
-       const documents = getdocs.Documents.map(doc => ({
-        ...doc.toObject(),
-        notaryServiceCase: getdocs.notaryServiceCase,
-        noOfPage: getdocs.noOfPage,
-        createdAt: getdocs.createdAt
-      }));
 
-    return res.status(200).json({message : "Documents retrieved successfully",documents});
+    return res.status(200).json({message : "Documents retrieved successfully", Documents: getdocs.Documents });
   } catch (error) {
     next(error); // Pass error to global error handler
   }

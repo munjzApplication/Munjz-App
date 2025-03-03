@@ -70,94 +70,50 @@ export const getAllTranslations = async (req, res, next) => {
     next(error);
   }
 };
-
-export const getAllTranslationWithID = async (req, res, next) => {
+export const getTranslationCaseById = async (req, res, next) => {
   try {
-    const { customerId } = req.params;
+    const { caseId } = req.params;
 
-    let translations = await translationDetails.aggregate([
-      {
-        $match: { customerId: new mongoose.Types.ObjectId(customerId) } 
-      },
-      {
-        $lookup: {
-          from: "customer_profiles",
-          localField: "customerId",
-          foreignField: "_id",
-          as: "customer"
-        }
-      },
-      { $unwind: "$customer" },
-      {
-        $lookup: {
-          from: "translation_payments",
-          localField: "_id",
-          foreignField: "translationCase",
-          as: "payment"
-        }
-      },
-      {
-        $unwind: {
-          path: "$payment",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $project: {
-            _id: 1,
-            customerId: 1,
-            translationServiceID: 1,
-            documentLanguage: 1,
-            translationLanguage: 1,
-            PaymentStatus: 1,
-            follower: 1,
-            createdAt: 1,
-            status: 1,
-            customerName: "$customer.Name",
-            customerEmail: "$customer.email",
-            customerPhone: "$customer.phoneNumber",
-            customerProfile: "$customer.profilePhoto",
-            paymentAmount: "$payment.amount",
-            paymentCurrency: "$payment.paidCurrency"
-        }
-      },
-      { $sort: { createdAt: -1 } }
-    ]);
+    // Fetch court case by ID
+    const translation = await translationDetails.findById(caseId);
+    if (!translation) {
+      return res.status(404).json({ message: "translation not found" });
+    }
 
-    translations = translations.map(translations => ({
-      ...translations,
-      createdAt: formatDate(translations.createdAt)
-    }));
+    // Fetch associated court case document
+    const translationDoc = await translationDocument.findOne({ translationCase: caseId });
+    console.log("translationDoc", translationDoc);
+
+    // Format the court case
+    const formattedCase = {
+      ...translationDoc.toObject(),
+      createdAt: formatDate(translationDoc.createdAt)
+    };
 
     res.status(200).json({
-      message: "Translations fetched successfully",
-      translations
+      message: "translation  fetched successfully",
+      translation: formattedCase,
+      
     });
   } catch (error) {
     next(error);
   }
 };
 
+
 export const getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    // Fetch documents where translationCase matches the provided caseId
+    // Fetch documents where courtServiceCase matches the provided caseId
     const getdocs = await translationDocument.findOne({ translationCase: caseId });
 
-    if (!getdocs) {
+    if (!getdocs || !getdocs.Documents) {
       return res.status(404).json({ message: "No documents found for this case" });
     }
 
-    // Flattening the documents array so they are directly accessible
-    const documents = getdocs.Documents.map(doc => ({
-      ...doc.toObject(),
-      translationCase: getdocs.translationCase,
-      noOfPage: getdocs.noOfPage,
-      createdAt: getdocs.createdAt
-    }));
 
-    return res.status(200).json({ message: "Documents retrieved successfully", documents });
+    return res.status(200).json({ message : "Documents retrieved successfully",Documents: getdocs.Documents});
   } catch (error) {
     next(error); // Pass error to global error handler
   }

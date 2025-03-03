@@ -1,22 +1,19 @@
 import mongoose from "mongoose";
 
 const AdditionalDocumentSchema = new mongoose.Schema({
-  caseId: {
+  courtServiceCase: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "CourtService_Case",
     required: true
   },
-  courtServiceID: {
-    type: String,
-    required: true
-  },
-  documents: {
+  Documents: {
     type: [
       {
         documentUrl: { type: String, required: true },
         uploadedAt: { type: Date, required: true }
       }
     ],
+    default: [],
     required: true
   },
   requestReason: {
@@ -28,7 +25,7 @@ const AdditionalDocumentSchema = new mongoose.Schema({
     enum: ["unread", "pending", "updated"],
     default: "unread"
   },
-  requestUpdatedAt: {
+  createdAt: {
     type: Date,
     default: Date.now
   }

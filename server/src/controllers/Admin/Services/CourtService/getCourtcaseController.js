@@ -73,94 +73,47 @@ export const getAllCourtCases = async (req, res, next) => {
   }
 };
 
-export const getAllCourtCasesWithID = async (req, res, next) => {
+export const getCourtCaseById = async (req, res, next) => {
   try {
-    const { customerId } = req.params;
+    const { caseId } = req.params;
 
-    let courtCases = await courtCaseModel.aggregate([
-      {
-        $match: { customerId: new mongoose.Types.ObjectId(customerId) }
-      },
-      {
-        $lookup: {
-          from: "customer_profiles",
-          localField: "customerId",
-          foreignField: "_id",
-          as: "customer"
-        }
-      },
-      { $unwind: "$customer" },
-      {
-        $lookup: {
-          from: "courtservice_payments",
-          localField: "_id",
-          foreignField: "courtServiceCase",
-          as: "payment"
-        }
-      },
-      {
-        $unwind: {
-          path: "$payment",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          customerId: 1,
-          courtServiceID: 1,
-          serviceName: 1,
-          selectedServiceCountry: 1,
-          caseDescription: 1,
-          casePaymentStatus: 1,
-          follower: 1,
-          createdAt: 1,
-          status: 1,
-          customerName: "$customer.Name",
-          customerEmail: "$customer.email",
-          customerPhone: "$customer.phoneNumber",
-          customerProfile: "$customer.profilePhoto",
-          paymentAmount: "$payment.amount",
-          paymentCurrency: "$payment.paidCurrency"
-        }
-      },
-      { $sort: { createdAt: -1 } }
-    ]);
+    // Fetch court case by ID
+    const courtCase = await courtCaseModel.findById(caseId);
+    if (!courtCase) {
+      return res.status(404).json({ message: "Court case not found" });
+    }
 
-    courtCases = courtCases.map(courtCases => ({
-      ...courtCases,
-      createdAt: formatDate(courtCases.createdAt)
-    }));
+    // Fetch associated court case document
+    const courtCaseDoc = await courtCaseeDocument.findOne({ courtServiceCase: caseId });
+    console.log("courtCaseDoc", courtCaseDoc);
+
+    // Format the court case
+    const formattedCase = {
+      ...courtCaseDoc.toObject(),
+      createdAt: formatDate(courtCaseDoc.createdAt)
+    };
 
     res.status(200).json({
-      message: "Court cases fetched successfully",
-      courtCases
+      message: "Court case fetched successfully",
+      courtCase: formattedCase,
+      
     });
   } catch (error) {
     next(error);
   }
 };
-
 export const getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    // Fetch documents where courtServiceCase matches the provided caseId
     const getdocs = await courtCaseeDocument.findOne({ courtServiceCase: caseId });
 
-    if (!getdocs) {
+    if (!getdocs || !getdocs.Documents) {
       return res.status(404).json({ message: "No documents found for this case" });
     }
-    const documents = getdocs.Documents.map(doc => ({
-      ...doc.toObject(),
-      courtServiceCase: getdocs.courtServiceCase,
-      noOfPage: getdocs.noOfPage,
-      createdAt: getdocs.createdAt
-    }));
 
-
-    return res.status(200).json({message : "Documents retrieved successfully",documents});
+    return res.status(200).json({message : "Documents retrieved successfully", Documents: getdocs.Documents });
   } catch (error) {
-    next(error); // Pass error to global error handler
+    next(error);
   }
 };
