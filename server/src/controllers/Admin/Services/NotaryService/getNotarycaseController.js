@@ -72,7 +72,7 @@ export const getAllNotaryCases = async (req, res, next) => {
 };
 
 
-export const getNotaryCaseById = async (req, res, next) => {
+export const  getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
@@ -103,7 +103,7 @@ export const getNotaryCaseById = async (req, res, next) => {
 };
 
 
-export const getCaseDocs = async (req, res, next) => {
+export const getNotaryCaseById  = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 

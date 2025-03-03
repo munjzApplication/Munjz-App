@@ -73,7 +73,7 @@ export const getAllCourtCases = async (req, res, next) => {
   }
 };
 
-export const getCourtCaseById = async (req, res, next) => {
+export const getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
@@ -102,7 +102,7 @@ export const getCourtCaseById = async (req, res, next) => {
     next(error);
   }
 };
-export const getCaseDocs = async (req, res, next) => {
+export const getCourtCaseById = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
