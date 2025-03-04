@@ -101,15 +101,71 @@ export const getCaseDocs = async (req, res, next) => {
 
 export const getCourtCaseById = async (req, res, next) => {
   try {
-    const { caseId } = req.params;
+    const { customerId } = req.params;
 
-    const getdocs = await courtCaseeDocument.findOne({ courtServiceCase: caseId });
+    let courtCases = await courtCaseModel.aggregate([
+      {
+        $match: { customerId: new mongoose.Types.ObjectId(customerId) }
+      },
+      {
+        $lookup: {
+          from: "customer_profiles",
+          localField: "customerId",
+          foreignField: "_id",
+          as: "customer"
+        }
+      },
+      {
+        $unwind: "$customer"
+      },
+      {
+        $lookup: {
+          from: "courtservice_payments",
+          localField: "_id",
+          foreignField: "courtServiceCase",
+          as: "payment"
+        }
+      },
+      {
+        $unwind: {
+          path: "$payment",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          customerId: 1,
+          courtServiceID: 1,
+          serviceName: 1,
+          selectedServiceCountry: 1,
+          caseDescription: 1,
+          casePaymentStatus: 1,
+          follower: 1,
+          createdAt: 1,
+          status: 1,
+          customerName: "$customer.Name",
+          customerEmail: "$customer.email",
+          customerPhone: "$customer.phoneNumber",
+          customerProfile: "$customer.profilePhoto",
+          paymentAmount: "$payment.amount",
+          paymentCurrency: "$payment.paidCurrency"
+        }
+      },
+      {
+        $sort: { createdAt: -1 }
+      }
+    ]);
 
-    if (!getdocs || !getdocs.Documents) {
-      return res.status(404).json({ message: "No documents found for this case" });
-    }
+    courtCases = courtCases.map(courtCase => ({
+      ...courtCase,
+      createdAt: formatDate(courtCase.createdAt)
+    }));
 
-    return res.status(200).json({message : "Documents retrieved successfully", Documents: getdocs.Documents });
+    res.status(200).json({
+      message: "Court case fetched successfully",
+      courtCases
+    });
   } catch (error) {
     next(error);
   }

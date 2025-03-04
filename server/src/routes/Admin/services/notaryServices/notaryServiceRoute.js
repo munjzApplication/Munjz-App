@@ -31,7 +31,7 @@ router.put("/update-pricing/:serviceId", updateNotaryServicePricing);
 router.delete("/delete-pricing/:id", deleteNotaryServicePricing);
 
 router.get("/get-cases", getAllNotaryCases);
-router.get("/customer-cases/:caseId",getNotaryCaseById)
+router.get("/customer-cases/:customerId",getNotaryCaseById)
 router.get("/get-docs/:caseId",getCaseDocs)
 
 

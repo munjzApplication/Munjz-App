@@ -33,7 +33,7 @@ router.put("/updated-service-pricing/:serviceId", updateCourtServicePricing);
 router.delete("/delete-service-pricing/:id", deleteCourtServicePricing);
 
 router.get("/get-cases", getAllCourtCases);
-router.get("/customer-cases/:caseId",getCourtCaseById);
+router.get("/customer-cases/:customerId",getCourtCaseById);
 router.get("/get-docs/:caseId",getCaseDocs)
 
 

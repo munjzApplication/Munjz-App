@@ -15,7 +15,7 @@ router.post('/payments/request/:caseId', protectAdmin,requestAdditionalPayment);
 router.post('/admin-submittedDocument/:caseId',upload.array('file',5),protectAdmin,adminSubmittedDoc)
 
 router.get("/get-cases", getAllTranslations);
-router.get("/customer-cases/:caseId",getTranslationCaseById)
+router.get("/customer-cases/:customerId",getTranslationCaseById)
 router.get("/get-docs/:caseId",getCaseDocs)
 
 

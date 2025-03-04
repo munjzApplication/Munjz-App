@@ -100,21 +100,80 @@ export const getCaseDocs  = async (req, res, next) => {
 };
 
 
-
-export const getTranslationCaseById  = async (req, res, next) => {
+export const getTranslationCaseById = async (req, res, next) => {
   try {
-    const { caseId } = req.params;
+    const { customerId } = req.params;
 
-    // Fetch documents where courtServiceCase matches the provided caseId
-    const getdocs = await translationDocument.findOne({ translationCase: caseId });
-
-    if (!getdocs || !getdocs.Documents) {
-      return res.status(404).json({ message: "No documents found for this case" });
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+      return res.status(400).json({ message: "Invalid customerId" });
     }
 
+    console.log("customerId:", customerId);
 
-    return res.status(200).json({ message : "Documents retrieved successfully",Documents: getdocs.Documents});
+    let translationCase = await translationDetails.aggregate([
+      {
+        $match: { customerId: new mongoose.Types.ObjectId(customerId) }
+      },
+      {
+        $lookup: {
+          from: "customer_profiles",
+          localField: "customerId",
+          foreignField: "_id",
+          as: "customer"
+        }
+      },
+      {
+        $unwind: "$customer"
+      },
+      {
+        $lookup: {
+          from: "translation_payments",
+          localField: "_id",
+          foreignField: "translationCase",
+          as: "payment"
+        }
+      },
+      {
+        $unwind: {
+          path: "$payment",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          customerId: 1,
+          translationServiceID: 1,
+          documentLanguage: 1,
+          translationLanguage: 1,
+          PaymentStatus: 1,
+          follower: 1,
+          createdAt: 1,
+          status: 1,
+          customerName: "$customer.Name",
+          customerEmail: "$customer.email",
+          customerPhone: "$customer.phoneNumber",
+          customerProfile: "$customer.profilePhoto",
+          paymentAmount: "$payment.amount",
+          paymentCurrency: "$payment.paidCurrency"
+        }
+      }
+    ]);
+
+    if (!translationCase.length) {
+      return res.status(404).json({ message: "Translation case not found" });
+    }
+
+    translationCase = translationCase.map(caseItem => ({
+      ...caseItem,
+      createdAt: formatDate(caseItem.createdAt)
+    }));
+
+    res.status(200).json({
+      message: "Translation case fetched successfully",
+      translationCase
+    });
   } catch (error) {
-    next(error); // Pass error to global error handler
+    next(error);
   }
 };
