@@ -1,4 +1,5 @@
 import customerProfile from "../../../models/Customer/customerModels/customerModel.js";
+import { notificationService } from "../../../service/sendPushNotification.js";
 
 export const blockUnblockCustomer = async (req, res) => {
   const { customerId } = req.params; 
@@ -19,8 +20,10 @@ export const blockUnblockCustomer = async (req, res) => {
       // Determine the new isBlocked status based on the action
       if (action === "block") {
         customer.isBlocked = true; // Set to blocked
+        await notificationService.sendToCustomer(customerId, "Account Blocked", "Your account has been blocked.");
       } else if (action === "unblock") {
         customer.isBlocked = false; // Set to unblocked
+        await notificationService.sendToCustomer(customerId, "Account Unblocked", "Your account has been unblocked.");
       } else {
         // Handle invalid action
         return res.status(400).json({
