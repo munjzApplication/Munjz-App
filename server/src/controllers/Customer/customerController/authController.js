@@ -235,6 +235,11 @@ export const Login = async (req, res, next) => {
       "You have logged in successfully. If this wasn't you, please reset your password immediately."
     );
 
+    await notificationService.sendToAdmin(
+      "User Login Alert",
+      `Customer ${user.Name} (${user.email}) just logged in.`
+    );
+
     res.status(200).json({
       message: "Login successful.",
       token,
