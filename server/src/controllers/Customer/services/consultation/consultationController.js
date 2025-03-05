@@ -8,6 +8,7 @@ import ConsultationActivity from "../../../../models/Consultant/consultationActi
 import PersonalDetails from "../../../../models/Consultant/personalDetails.js";
 import { sendNotificationToConsultant } from "../../../../helper/consultant/notificationHelper.js";
 import { sendNotificationToCustomer } from "../../../../helper/customer/notificationHelper.js";
+import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 import {
   getCurrencyFromCountryCode,

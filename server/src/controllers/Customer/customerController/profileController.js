@@ -44,9 +44,14 @@ export const profileSetup = async (req, res, next) => {
     // Send notification (handle errors internally)
     try {
       await notificationService.sendToCustomer(
-        userId,
-        "Welcome!",
-        "Your registration and profile setup are fully completed. You can now start exploring the platform."
+        userProfile._id,
+        "Welcome to Munjz-App!",
+        "Your registration is successful. Explore our services and get started today!"
+      );
+
+      await notificationService.sendToAdmin(
+        "New Customer Registration",
+        `A new customer has registered: ${userProfile.Name} (${userProfile.email}).`
       );
     } catch (pushError) {
       console.error("Error sending profile setup notification:", pushError);
@@ -103,7 +108,16 @@ export const countrySetup = async (req, res, next) => {
     );
 
     console.log("Updated Profile:", customerProfile);
-
+    // Notify on registration
+    await notificationService.sendToCustomer(
+      customerProfile._id,
+      "Welcome to MUNJZ",
+      "Your registration was successful. Welcome aboard!"
+    );
+    await notificationService.sendToAdmin(
+      "New Customer Registration",
+      `A new customer ${customerProfile.Name} (${customerProfile.email}) has registered `
+    );
     res.status(200).json({
       message: "Country updated successfully."
     });
@@ -160,8 +174,7 @@ export const updateProfile = async (req, res, next) => {
       await notificationService.sendToCustomer(
         userId,
         "Profile Updated",
-        "Your profile has been updated successfully.",
-        { updatedFields: updates }
+        "Your profile has been updated successfully."
       );
     } catch (pushError) {
       console.error("Error sending profile update notification:", pushError);
@@ -208,7 +221,6 @@ export const updateProfilePicture = async (req, res, next) => {
         userId,
         "Profile Picture Updated",
         "Your profile picture has been successfully updated. You can view the changes in your profile.",
-        { profilePhoto: profilePhotoUrl }
       );
     } catch (notificationError) {
       console.error(
@@ -254,11 +266,17 @@ export const changePassword = async (req, res, next) => {
 
     // Push Notification
     try {
+      // Notify customer
       await notificationService.sendToCustomer(
         userId,
-        "Password Changed",
-        "Your password has been changed successfully.",
-        {}
+        "Security Alert: Password Changed",
+        "Your password has been updated successfully. If you did not make this change, please contact support immediately."
+      );
+
+      // Notify admin
+      await notificationService.sendToAdmin(
+        "Customer Password Changed",
+        `Customer ${user.Name} (${user.email}) has changed their password.`
       );
     } catch (pushError) {
       console.error("Error sending password change notification:", pushError);
@@ -361,6 +379,23 @@ export const deleteProfile = async (req, res, next) => {
 
     await session.commitTransaction();
     session.endSession();
+    // Push Notifications
+    try {
+      // Notify customer
+      await notificationService.sendToCustomer(
+        userId,
+        "Account Deleted",
+        "Your account has been successfully deleted. If this was not you, please contact support immediately."
+      );
+
+      // Notify admin
+      await notificationService.sendToAdmin(
+        "Customer Profile Deleted",
+        `Customer ${user.Name} (${user.email}) has deleted their account.`
+      );
+    } catch (pushError) {
+      console.error("Error sending account deletion notification:", pushError);
+    }
 
     res.status(200).json({ message: "Profile deleted successfully." });
   } catch (error) {

@@ -22,6 +22,27 @@ class NotificationService {
     }
   }
 
+  async sendToAllCustomers(title, body, data = {}) {
+    try {
+      const message = {
+        notification: { title, body },
+        data: {
+          ...data,
+          timestamp: new Date().toISOString(),
+          targetType: "customer"
+        },
+        topic: "all_Customers"
+      };
+
+      const response = await admin.messaging().send(message);
+      console.log("Notification sent to all customers:", response);
+      return response;
+    } catch (error) {
+      console.error("Error sending notification to all customers:", error);
+      throw error;
+    }
+  }
+
   async sendToConsultant(consultantId, title, body, data = {}) {
     try {
       const message = {
@@ -39,6 +60,27 @@ class NotificationService {
       return response;
     } catch (error) {
       console.error("Error sending consultant notification:", error);
+      throw error;
+    }
+  }
+
+  async sendToAllConsultants(title, body, data = {}) {
+    try {
+      const message = {
+        notification: { title, body },
+        data: {
+          ...data,
+          timestamp: new Date().toISOString(),
+          targetType: "consultant"
+        },
+        topic: "all_Consultants"
+      };
+
+      const response = await admin.messaging().send(message);
+      console.log("Notification sent to all consultants:", response);
+      return response;
+    } catch (error) {
+      console.error("Error sending notification to all consultants:", error);
       throw error;
     }
   }

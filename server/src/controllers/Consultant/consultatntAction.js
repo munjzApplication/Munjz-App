@@ -165,20 +165,22 @@ export const handleConsultantAction = async (req, res, next) => {
     session.endSession();
 
     // Notify the consultant
-    await notificationService.sendToConsultant(
+    await notificationService.sendToCustomer(
       consultantId,
-      "Registration Successful",
-      "Your consultant registration has been successfully completed."
+      "Welcome to Munjz-App!",
+      "Your registration is successful. Explore our services and get started today!"
     );
 
-    // Notify the admin
     await notificationService.sendToAdmin(
-      "New Consultant Registered",
-      `A new consultant with ID ${consultantId} has registered.`
+      "New Consultant Registration",
+      `A new Consultant has registered: ${existingProfile.Name} (${existingProfile.email}).`
     );
 
     res.status(201).json({
-      message: "Consultant Registered successfully."
+      message: "Consultant Registered successfully.",
+      user:{
+        id :consultantId
+      }
     });
   } catch (error) {
     await session.abortTransaction();

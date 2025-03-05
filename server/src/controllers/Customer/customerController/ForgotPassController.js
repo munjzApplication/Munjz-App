@@ -104,7 +104,12 @@ export const sendPasswordResetOTP = async (req, res, next) => {
           </html>
         `
     });
-
+    await notificationService.sendToCustomer(
+      customer._id,
+      "Password Reset Request",
+      "An OTP has been sent to your email for password reset. It is valid for 10 minutes.",
+      {}
+    );
     res.status(200).json({
       message: "If this email is registered, you will receive an OTP shortly."
     });
@@ -127,6 +132,17 @@ export const verifyOTP = async (req, res, next) => {
 
     // Check if OTP has expired
     if (customer.resetOtpExpiry < Date.now()) {
+      // Send notification for OTP expiration
+      try {
+        await notificationService.sendToCustomer(
+          customer._id,
+          "OTP Expired",
+          "Your OTP has expired. Please request a new one to reset your password.",
+          {}
+        );
+      } catch (pushError) {
+        console.error("Error sending OTP expired notification:", pushError);
+      }
       return res.status(400).json({
         message: "OTP has expired. Please request a new one."
       });
@@ -137,6 +153,17 @@ export const verifyOTP = async (req, res, next) => {
 
     // Compare the stored OTP hash with the generated one
     if (customer.resetOtpHash !== otpHash) {
+      // Send notification for invalid OTP attempt
+      try {
+        await notificationService.sendToCustomer(
+          customer._id,
+          "Invalid OTP Attempt",
+          "An incorrect OTP was entered. If this wasn't you, please request a new OTP.",
+          {}
+        );
+      } catch (pushError) {
+        console.error("Error sending invalid OTP notification:", pushError);
+      }
       return res
         .status(400)
         .json({ message: "Invalid OTP. Please try again." });
@@ -146,6 +173,16 @@ export const verifyOTP = async (req, res, next) => {
     customer.resetOtpHash = undefined;
     customer.resetOtpExpiry = undefined;
     await customer.save();
+    try {
+      await notificationService.sendToCustomer(
+        customer._id,
+        "OTP Verified",
+        "Your OTP has been verified successfully. You can now reset your password.",
+        {}
+      );
+    } catch (pushError) {
+      console.error("Error sending OTP verified notification:", pushError);
+    }
 
     res.status(200).json({
       message: "OTP verified successfully. You can now reset your password."
@@ -184,7 +221,15 @@ export const resetPassword = async (req, res, next) => {
     } catch (pushError) {
       console.error("Error sending password reset notification:", pushError);
     }
-
+// Notify Admin (Optional)
+try {
+  await notificationService.sendToAdmin(
+    "Customer Password Reset",
+    `Customer ${customer.email} has reset their password.`,
+  );
+} catch (adminNotifyError) {
+  console.error("Error sending password reset notification to admin:", adminNotifyError);
+}
     res.status(200).json({
       message:
         "Password has been reset successfully. You can now log in with your new password."

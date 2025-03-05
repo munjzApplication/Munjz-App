@@ -133,11 +133,6 @@ export const Register = async (req, res, next) => {
     await newUser.save();
     await TempConsultantData.deleteOne({ email });
 
-    await notificationService.sendToConsultant(
-      newUser._id,
-      "Registration Successful",
-      "Welcome to our platform! Your registration is complete."
-    );
     // Send notification for new consultant registration
     const notification = new Notification({
       notificationDetails: {
@@ -199,11 +194,16 @@ export const Login = async (req, res, next) => {
     }
 
     const token = generateToken(user._id, user.emailVerified);
-
-    await notificationService.sendToConsultant(
+    await notificationService.sendToCustomer(
       user._id,
-      "Successful Login",
-      "You have logged in successfully. If this wasn't you, please reset your password immediately."
+      "Login Successful",
+      "You have successfully logged in. If this wasn't you, secure your account by resetting your password immediately."
+    );
+
+
+    await notificationService.sendToAdmin(
+      "Customer Login Alert",
+      `Customer ${user.Name} (${user.email}) has logged in.`
     );
 
     res.status(200).json({
@@ -266,6 +266,11 @@ export const googleAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful";
+        // Notify on registration
+        await notificationService.sendToAdmin(
+          "New Customer Registration",
+          `A new customer ${existingUser.Name} (${existingUser.email}) has registered using Google.`
+        );
     } else {
       existingUser.googleId = googleId;
       existingUser.emailVerified = true;
@@ -274,6 +279,17 @@ export const googleAuthWithToken = async (req, res, next) => {
       await existingUser.save();
 
       message = "Login successful";
+      // Notify on login
+      await notificationService.sendToCustomer(
+        existingUser._id,
+        "Welcome back",
+        "You have successfully logged in using Google."
+      );
+      await notificationService.sendToAdmin(
+        "Customer Login Alert",
+        `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
+      );
+    
     }
 
     // Generate JWT
@@ -377,6 +393,16 @@ export const facebookAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful";
+        // Notify on registration
+        await notificationService.sendToCustomer(
+          existingUser._id,
+          "Welcome to MUNJZ",
+          "Your registration was successful. Welcome aboard!"
+        );
+        await notificationService.sendToAdmin(
+          "New Customer Registration",
+          `A new customer ${existingUser.Name} (${existingUser.email}) has registered using Apple.`
+        );
     } else {
       // If the user exists, update their profile
       existingUser.facebookId = facebookId;
@@ -385,6 +411,17 @@ export const facebookAuthWithToken = async (req, res, next) => {
 
       await existingUser.save();
       message = "Login successful";
+      // Notify on login
+      await notificationService.sendToCustomer(
+        existingUser._id,
+        "Welcome back",
+        "You have successfully logged in using Facebook."
+      );
+      await notificationService.sendToAdmin(
+        "Customer Login Alert",
+        `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Facebook.`
+      );
+    
     }
 
     // Generate JWT
@@ -465,6 +502,16 @@ export const appleAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful";
+        // Notify on registration
+        await notificationService.sendToCustomer(
+          existingUser._id,
+          "Welcome to MUNJZ",
+          "Your registration was successful. Welcome aboard!"
+        );
+        await notificationService.sendToAdmin(
+          "New Customer Registration",
+          `A new customer ${existingUser.Name} (${existingUser.email}) has registered using Apple.`
+        );
     } else {
       // If the user exists, update their profile
       existingUser.appleId = appleId;
@@ -478,6 +525,17 @@ export const appleAuthWithToken = async (req, res, next) => {
 
       await existingUser.save();
       message = "Login successful";
+      // Notify on login
+      await notificationService.sendToCustomer(
+        existingUser._id,
+        "Welcome back",
+        "You have successfully logged in using Apple."
+      );
+      await notificationService.sendToAdmin(
+        "Customer Login Alert",
+        `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Apple.`
+      );
+    
     }
 
     // Generate JWT

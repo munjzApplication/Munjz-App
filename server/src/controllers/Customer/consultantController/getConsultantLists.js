@@ -18,6 +18,11 @@ export const getConsultantLists = async (req, res, next) => {
     // Step 3: Aggregate consultant data with average ratings in a single query
     const consultants = await ConsultantProfile.aggregate([
       {
+        $match: {
+          Name: { $ne: "Deleted_User" }, // Exclude deleted users
+        },
+      },
+      {
         $lookup: {
           from: "consultant_personaldetails",
           localField: "_id",
