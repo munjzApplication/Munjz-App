@@ -336,7 +336,10 @@ export const googleAuthWithToken = async (req, res, next) => {
       "Google Authentication Successful",
       "You have successfully signed in using Google."
     );
-
+    await notificationService.sendToAdmin(
+      "Google Authentication Alert",
+      `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
+    );
     return res.status(200).json({
       message,
       token,
