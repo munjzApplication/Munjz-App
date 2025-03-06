@@ -4,7 +4,6 @@ import AdminNotification from "../../../models/Admin/notificationModels/AdminNot
 export const getAdminNotifications = async (req, res) => {
   try {
     const groupedNotifications = await AdminNotification.aggregate([
-  
       {
         $sort: { timestamp: -1 }
       },
@@ -32,13 +31,13 @@ export const getAdminNotifications = async (req, res) => {
       }
     ]);
 
-    // Convert array to object format for better client-side consumption
-    const result = groupedNotifications.reduce((acc, { date, notifications }) => {
-      acc[date] = notifications;
-      return acc;
-    }, {});
+    // Restructure into array format
+    const result = groupedNotifications.map(({ date, notifications }) => ({
+      date,
+      notifications
+    }));
 
-    res.status(200).json(result);
+    res.status(200).json({message: "Admin notifications fetched successfully",result});
   } catch (error) {
     console.error("Error fetching admin notifications:", error);
     res.status(500).json({ message: "Failed to fetch notifications" });

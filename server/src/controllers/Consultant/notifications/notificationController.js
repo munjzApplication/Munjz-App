@@ -35,16 +35,15 @@ export const getConsultantNotifications = async (req, res) => {
         $sort: { date: -1 }
       }
     ]);
-console.log("grpnotify",groupedNotifications);
-    // Convert array to object format for better client-side consumption
-    const result = groupedNotifications.reduce((acc, { date, notifications }) => {
-      acc[date] = notifications;
-      return acc;
-    }, {});
-console.log("resultant",result);
-    res.status(200).json(result);
+    // Restructure into array format
+    const result = groupedNotifications.map(({ date, notifications }) => ({
+      date,
+      notifications
+    }));
+
+    res.status(200).json({message: "Consultant notifications fetched successfully",result});
   } catch (error) {
-    console.error("Error fetching customer notifications:", error);
+    console.error("Error fetching consultant notifications:", error);
     res.status(500).json({ message: "Failed to fetch notifications" });
   }
 };
