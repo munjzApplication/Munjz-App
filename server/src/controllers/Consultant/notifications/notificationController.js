@@ -1,5 +1,5 @@
 import ConsultantNotification from "../../../models/Consultant/notificationModel/ConsultantNotification.js";
-
+import { formatTime } from "../../../helper/dateFormatter.js";
 // Get all notifications grouped by date using aggregation pipeline
 export const getConsultantNotifications = async (req, res) => {
   try {
@@ -44,10 +44,10 @@ export const getConsultantNotifications = async (req, res) => {
     }, {});
     
 
-    res.status(200).json({message: "Consultant notifications fetched successfully",result});
+    res.status(200).json({message: "Consultant notifications fetched successfully",result});;
   } catch (error) {
-    console.error("Error fetching consultant notifications:", error);
-    res.status(500).json({ message: "Failed to fetch notifications" });
+    console.error("Error fetching consultant notifications:", error.message, error.stack);
+    res.status(500).json({ message: "Failed to fetch notifications", error: error.message });
   }
 };
 
