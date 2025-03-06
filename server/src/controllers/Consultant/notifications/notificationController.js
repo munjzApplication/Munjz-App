@@ -1,12 +1,13 @@
-import CustomerNotification from "../../../models/Customer/notificationModel/CustomerNotification.js";
+import ConsultantNotification from "../../../models/Consultant/notificationModel/ConsultantNotification.js";
 
 // Get all notifications grouped by date using aggregation pipeline
 export const getConsultantNotifications = async (req, res) => {
   try {
-    const customerId = req.user._id;
-    const groupedNotifications = await CustomerNotification.aggregate([
+    const consultantId = req.user._id;
+
+    const groupedNotifications = await ConsultantNotification.aggregate([
       {
-        $match: { customerId }
+        $match: { consultantId }
       },
       {
         $sort: { timestamp: -1 }
@@ -15,7 +16,7 @@ export const getConsultantNotifications = async (req, res) => {
         $group: {
           _id: {
             $dateToString: {
-              format: "%Y-%m-%d",
+              format: "%B %d", // Fixed format: Month day (e.g., December 03)
               date: "$timestamp",
               timezone: "Asia/Dubai" // UAE timezone
             }
@@ -34,13 +35,13 @@ export const getConsultantNotifications = async (req, res) => {
         $sort: { date: -1 }
       }
     ]);
-
+console.log("grpnotify",groupedNotifications);
     // Convert array to object format for better client-side consumption
     const result = groupedNotifications.reduce((acc, { date, notifications }) => {
       acc[date] = notifications;
       return acc;
     }, {});
-
+console.log("resultant",result);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching customer notifications:", error);
@@ -52,7 +53,7 @@ export const getConsultantNotifications = async (req, res) => {
 export const markConsultantNotificationRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
-    const updatedNotification = await CustomerNotification.findByIdAndUpdate(
+    const updatedNotification = await ConsultantNotification.findByIdAndUpdate(
       notificationId,
       { isRead: true },
       { new: true, runValidators: true }

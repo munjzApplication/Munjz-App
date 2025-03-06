@@ -15,7 +15,7 @@ export const getCustomerNotifications = async (req, res) => {
         $group: {
           _id: {
             $dateToString: {
-              format: "%Y-%m-%d",
+              format: "%B %d", // Fixed format: Month day (e.g., December 03)
               date: "$timestamp",
               timezone: "Asia/Dubai" // UAE timezone
             }
@@ -43,8 +43,8 @@ export const getCustomerNotifications = async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error fetching customer notifications:", error);
-    res.status(500).json({ message: "Failed to fetch notifications" });
+    console.error("Error fetching customer notifications:", error.message, error.stack);
+    res.status(500).json({ message: "Failed to fetch notifications", error: error.message });
   }
 };
 

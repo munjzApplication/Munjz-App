@@ -4,6 +4,7 @@ import AdminNotification from "../../../models/Admin/notificationModels/AdminNot
 export const getAdminNotifications = async (req, res) => {
   try {
     const groupedNotifications = await AdminNotification.aggregate([
+  
       {
         $sort: { timestamp: -1 }
       },
@@ -11,7 +12,7 @@ export const getAdminNotifications = async (req, res) => {
         $group: {
           _id: {
             $dateToString: {
-              format: "%Y-%m-%d",
+              format: "%B %d", // Fixed format: Month day (e.g., December 03)
               date: "$timestamp",
               timezone: "Asia/Dubai" // UAE timezone
             }
