@@ -19,8 +19,12 @@ export const getWithdrawalDatas = async (req, res, next) => {
     });
 
     if (!withdrawals || withdrawals.length === 0) {
-      return res.status(404).json({ message: "No withdrawal requests found" });
+      return res.status(200).json({
+        message: "Withdrawal requests retrieved successfully",
+        withdrawals: []
+      });
     }
+
 
     res.status(200).json({
       message: "Withdrawal requests retrieved successfully",
