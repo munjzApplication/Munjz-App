@@ -4,10 +4,11 @@ import {
   saveNotaryPayment
 } from "../../../../helper/notaryService/notaryCaseHelper.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
-import Notification from "../../../../models/Admin/notificationModels/notificationModel.js";
+
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import notaryServicePayment from "../../../../models/Customer/notaryServiceModel/notaryServicePayment.js";
 import { formatDatewithmonth } from "../../../../helper/dateFormatter.js";
+import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 
 export const saveNotaryServiceDetails = async (req, res, next) => {
@@ -79,6 +80,18 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
     session.endSession();
     console.log("Transaction Committed!");
 
+    // Notify Customer
+    await notificationService.sendToCustomer(
+      customerId,
+      "Notary Case Registered",
+      `Your notary case for ${serviceName} in ${selectedServiceCountry} has been registered successfully.`
+    );
+
+    // Notify Admin
+    await notificationService.sendToAdmin(
+      "New Notary Case Submitted",
+      `A new notary case (${serviceName}) has been registered by ${customer.Name} in ${selectedServiceCountry}.`
+    );
     return res.status(201).json({
       message: "Notary case registered successfully"
     });

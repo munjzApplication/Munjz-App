@@ -1,13 +1,12 @@
-import ConsultantProfile from "../../models/Consultant/User.js";
+import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
 import bcrypt from "bcrypt";
 import passport from "passport";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { sendVerificationEmail } from "../../utils/email.js";
 import { generateConsultantUniqueId } from "../../helper/consultant/consultantHelper.js";
-import Notification from "../../models/Admin/notificationModels/notificationModel.js";
 import { notificationService } from "../../service/sendPushNotification.js";
-import TempConsultant from "../../models/Consultant/tempUser.js";
+import TempConsultant from "../../models/Consultant/consultantModel/tempUser.js";
 import { OAuth2Client } from "google-auth-library";
 import axios from "axios";
 
@@ -132,22 +131,6 @@ export const Register = async (req, res, next) => {
     });
     await newUser.save();
     await TempConsultantData.deleteOne({ email });
-
-    // Send notification for new consultant registration
-    const notification = new Notification({
-      notificationDetails: {
-        type: "Registration",
-        title: "New Consultant Registration",
-        message: `${Name} has successfully registered as a consultant.`,
-        additionalDetails: {
-          consultantId: newUser._id,
-          email: newUser.email,
-          phoneNumber: newUser.phoneNumber,
-          registrationDate: new Date()
-        }
-      }
-    });
-    await notification.save();
 
     const token = generateToken(newUser._id, newUser.emailVerified);
 

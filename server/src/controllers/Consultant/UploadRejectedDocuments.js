@@ -1,6 +1,7 @@
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
-import IDProof from "../../models/Consultant/idProof.js";
-import ConsultantProfile from "../../models/Consultant/User.js";
+import IDProof from "../../models/Consultant/ProfileModel/idProof.js";
+import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
+import { notificationService } from "../../service/sendPushNotification.js";
 
 export const UploadRejectedDocuments = async (req, res, next) => {
   try {
@@ -63,6 +64,12 @@ export const UploadRejectedDocuments = async (req, res, next) => {
 
     // Save the updated IDProof details
     await idProofDetails.save();
+
+    // Notify Admin
+    await notificationService.sendToAdmin(
+      "Rejected Documents Re-uploaded",
+      `${consultant.Name} has re-uploaded the rejected ID Proof documents. Please review them.`
+    );
 
     res.json({ message: "Your documents have been updated successfully." });
   } catch (error) {

@@ -4,9 +4,9 @@ import {
   saveTranslationPayment
 } from "../../../../helper/translation/translationHelper.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
-import Notification from "../../../../models/Admin/notificationModels/notificationModel.js";
 import TranslationCase from "../../../../models/Customer/translationModel/translationDetails.js";
 import mongoose from "mongoose";
+import { notificationService } from "../../../../service/sendPushNotification.js";
 import { formatDatewithmonth } from "../../../../helper/dateFormatter.js";
 
 export const submitTranslationRequest = async (req, res, next) => {
@@ -76,8 +76,32 @@ export const submitTranslationRequest = async (req, res, next) => {
     }
 
     await session.commitTransaction();
-    session.endSession();
-
+    
+    if (paymentAmount) {
+      // **Paid Case**
+      await notificationService.sendToCustomer(
+        customerId,
+        "Translation Request Submitted - Paid",
+        `Your translation request (${documentLanguage} → ${translationLanguage}) has been submitted successfully. Payment received.`
+      );
+    
+      await notificationService.sendToAdmin(
+        "New Translation Request - Paid",
+        `A new PAID translation request (${documentLanguage} → ${translationLanguage}) has been submitted by ${customerName}.`
+      );
+    } else {
+      // **Unpaid Case**
+      await notificationService.sendToCustomer(
+        customerId,
+        "Translation Request Submitted - Unpaid",
+        `Your translation request (${documentLanguage} → ${translationLanguage}) has been submitted successfully. Payment is pending.`
+      );
+    
+      await notificationService.sendToAdmin(
+        "New Translation Request - Unpaid",
+        `A new UNPAID translation request (${documentLanguage} → ${translationLanguage}) has been submitted by ${customerName}.`
+      );
+    }
     return res.status(201).json({
       message: "Translation request submitted successfully",
     });

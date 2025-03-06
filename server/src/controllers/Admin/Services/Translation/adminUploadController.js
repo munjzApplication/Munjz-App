@@ -3,7 +3,7 @@ import TranslationDetails from "../../../../models/Customer/translationModel/tra
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import TranslationCase from "../../../../models/Customer/translationModel/translationDetails.js";
-import { sendNotificationToCustomer } from "../../../../helper/customer/notificationHelper.js";
+
 
 export const adminSubmittedDoc = async (req, res, next) => {
   try {
@@ -65,18 +65,7 @@ export const adminSubmittedDoc = async (req, res, next) => {
         }).save()
       )
     );
-    await sendNotificationToCustomer(
-      customer._id,
-       `Admin has uploaded new documents for Case ID: ${caseId}.`,
-       "Notary Service Update",
-       { 
-        caseId,
-        documentUrl: doc.documentUrl,
-        description,
-        documentType: doc.documentType,
-        uploadedAt: new Date()
-      }
-      );
+   
 
     res.status(201).json({
       message: "Documents uploaded successfully.",

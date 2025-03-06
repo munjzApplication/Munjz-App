@@ -2,7 +2,6 @@ import Transaction from "../../../../models/Customer/customerModels/transactionM
 import Wallet from "../../../../models/Customer/customerModels/walletModel.js";
 import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import CustomerProfile from "../../../../models/Customer/customerModels/customerModel.js";
-import Notification from "../../../../models/Admin/notificationModels/notificationModel.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 
 
@@ -105,25 +104,6 @@ export const createTransaction = async (req, res, next) => {
     });
 
     await earnings.save();
-
-    // Create notification
-    const notification = new Notification({
-      notificationDetails: {
-        type: "Payment",
-        title: "Payment Successfully Processed",
-        message: `Your payment of ${paidAmount} ${paymentCurrency} has been successfully completed. You have received ${purchasedMinutes} minutes.`,
-        additionalDetails: {
-          customerName,
-          paymentId: newTransaction._id,
-          amount: paidAmount,
-          currency: paymentCurrency,
-          paymentStatus,
-          purchasedMinutes
-        }
-      }
-    });
-
-    await notification.save();
 
     // Send push notification
     try {

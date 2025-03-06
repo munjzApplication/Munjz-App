@@ -1,8 +1,8 @@
-import WithdrawalRequest from "../../models/Consultant/WithdrawRequest.js";
-import ConsultantProfile from "../../models/Consultant/User.js";
-import PersonalDetails from "../../models/Consultant/personalDetails.js";
-import Earnings from "../../models/Consultant/consultantEarnings.js";
-import Notification from "../../models/Admin/notificationModels/notificationModel.js";
+import WithdrawalRequest from "../../models/Consultant/consultantModel/WithdrawRequest.js";
+import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
+import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetails.js";
+import Earnings from "../../models/Consultant/consultantModel/consultantEarnings.js";
+import { notificationService } from "../../service/sendPushNotification.js";
 
 export const getWithdrawalDatas = async (req, res, next) => {
   try {
@@ -78,22 +78,18 @@ export const requestWithdrawal = async (req, res, next) => {
 
     await withdrawal.save();
 
-    // Notify admin
-    const notification = new Notification({
-      notificationDetails: {
-        type: "Withdrawal Request",
-        title: "New Withdrawal Request",
-        message: `${consultant.Name} has requested a withdrawal of ${amount} AED.`,
-        additionalDetails: {
-          consultantId: consultant._id,
-          amount,
-          status: "pending",
-          requestDate: new Date()
-        }
-      }
-    });
+    // Notify Consultant
+    await notificationService.sendToConsultant(
+      consultantId,
+      "Withdrawal Request Submitted",
+      `Your withdrawal request of ${amount} AED has been submitted successfully and is currently pending approval.`
+    );
 
-    await notification.save();
+    // Notify Admin
+    await notificationService.sendToAdmin(
+      "New Withdrawal Request",
+      `${consultant.Name} has requested a withdrawal of ${amount} AED. Please review and process the request.`
+    );
 
     res
       .status(201)

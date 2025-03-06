@@ -59,7 +59,7 @@ router.use("/invoices", protectAdmin, invoiceRoute);
 // Admin-related Routes
 router.use("/get-data",protectAdmin,getAdminEarningsRoutes)
 router.use("/admin/follower-update", protectAdmin, adminFollowerUpdateRoute);
-router.use("/admin", protectAdmin, adminNotificationRoutes);
+router.use("/notifications", protectAdmin, adminNotificationRoutes);
 router.use("/news", protectAdmin, adminNewsRoutes);
 router.use("/get-datas",protectAdmin,getConsultationRoute)
 

@@ -1,5 +1,5 @@
 import AdminEarnings from "../../../models/Admin/adminModels/earningsModel.js";
-import ConsultantProfile from "../../../models/Consultant/User.js";
+import ConsultantProfile from "../../../models/Consultant/ProfileModel/User.js";
 import { formatDate } from "../../../helper/dateFormatter.js";
 
 const calculateTotalEarnings = earnings => {

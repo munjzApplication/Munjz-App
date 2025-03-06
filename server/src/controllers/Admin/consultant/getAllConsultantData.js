@@ -1,7 +1,7 @@
-import PersonalDetails from "../../../models/Consultant/personalDetails.js";
-import IdProof from "../../../models/Consultant/idProof.js";
-import BankDetails from "../../../models/Consultant/bankDetails.js";
-import consultantProfile from "../../../models/Consultant/User.js";
+import PersonalDetails from "../../../models/Consultant/ProfileModel/personalDetails.js";
+import IdProof from "../../../models/Consultant/ProfileModel/idProof.js";
+import BankDetails from "../../../models/Consultant/ProfileModel/bankDetails.js";
+import consultantProfile from "../../../models/Consultant/ProfileModel/User.js";
 import { formatDate } from "../../../helper/dateFormatter.js";
 
 export const getAllConsultantData = async (req, res , next) => {

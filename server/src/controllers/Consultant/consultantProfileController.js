@@ -1,7 +1,7 @@
-import ConsultantProfile from "../../models/Consultant/User.js";
-import PersonalDetails from "../../models/Consultant/personalDetails.js";
-import IDProof from "../../models/Consultant/idProof.js";
-import BankDetails from "../../models/Consultant/bankDetails.js";
+import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
+import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetails.js";
+import IDProof from "../../models/Consultant/ProfileModel/idProof.js";
+import BankDetails from "../../models/Consultant/ProfileModel/bankDetails.js";
 import bcrypt from "bcrypt";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import { notificationService } from "../../service/sendPushNotification.js";
@@ -113,18 +113,22 @@ export const changePassword = async (req, res, next) => {
     consultant.password = hashedPassword;
     await consultant.save();
 
-    // Optional: Send notification
+    // Push Notification
     try {
+      // Notify customer
       await notificationService.sendToConsultant(
         consultantId,
-        "Password Changed",
-        "Your password has been updated successfully."
+        "Security Alert: Password Changed",
+        "Your password has been updated successfully. If you did not make this change, please contact support immediately."
       );
-    } catch (notificationError) {
-      console.error(
-        "Error sending password change notification:",
-        notificationError
+
+      // Notify admin
+      await notificationService.sendToAdmin(
+        "Consultant Password Changed",
+        `Consultant ${consultant.Name} (${consultant.email}) has changed their password.`
       );
+    } catch (pushError) {
+      console.error("Error sending password change notification:", pushError);
     }
 
     res.status(200).json({ message: "Password updated successfully." });
@@ -183,7 +187,7 @@ export const updateProfilePicture = async (req, res, next) => {
         consultantId,
         "Profile Picture Updated",
         "Your profile picture has been updated successfully. You can view the changes in your profile.",
-        { profilePicture: profilePicture }
+    
       );
     } catch (pushError) {
       console.error(
@@ -241,6 +245,24 @@ export const deleteProfile = async (req, res, next) => {
     await session.commitTransaction();
     session.endSession();
 
+
+    // Push Notifications
+    try {
+      // Notify Consultant
+      await notificationService.sendToConsultant(
+        userId,
+        "Account Deleted",
+        "Your account has been successfully deleted. If this was not you, please contact support immediately."
+      );
+
+      // Notify admin
+      await notificationService.sendToAdmin(
+        "Consultant Profile Deleted",
+        `Consultant ${user.Name} (${user.email}) has deleted their account.`
+      );
+    } catch (pushError) {
+      console.error("Error sending account deletion notification:", pushError);
+    }
     res.status(200).json({ message: "Profile deleted successfully." });
   } catch (error) {
     await session.abortTransaction();

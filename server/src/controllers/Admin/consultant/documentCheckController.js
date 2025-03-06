@@ -1,7 +1,7 @@
-import IDProof from "../../../models/Consultant/idProof.js";
-import Consultant from "../../../models/Consultant/User.js";
-import { sendNotificationToConsultant } from "../../../helper/consultant/notificationHelper.js";
+import IDProof from "../../../models/Consultant/ProfileModel/idProof.js";
+import Consultant from "../../../models/Consultant/ProfileModel/User.js";
 import mongoose from "mongoose";
+import { notificationService } from "../../../service/sendPushNotification.js";
 
 export const handleDocumentStatus = async (req, res, next) => {
   const { documentType, action } = req.body;
@@ -72,25 +72,19 @@ export const handleDocumentStatus = async (req, res, next) => {
     // Save changes
     await idProof.save();
 
-    // Prepare notification and response messages
-    const notificationMessage =
-      action === "approve"
-        ? `Your ${documentType} document has been approved successfully.`
-        : `Your ${documentType} document has been rejected. Please re-upload the document.`;
-
+    // Prepare response message
     const responseMessage =
       action === "approve"
         ? `The document '${documentType}' has been approved successfully.`
-        : `The document '${documentType}' has been rejected.`;
+        : `The document '${documentType}' has been rejected. Please re-upload the document.`;
 
-    // Send notification to the consultant
-    await sendNotificationToConsultant(
+    await notificationService.sendToConsultant(
       consultantId,
-      notificationMessage,
-      "Document Verification Status"
+      "Document Verification Update",
+      responseMessage
     );
 
-    // Send response
+
     return res.status(200).json({
       message: responseMessage,
       status: newStatus,

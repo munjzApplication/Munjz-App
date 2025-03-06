@@ -5,7 +5,7 @@ import consultantProfileRoute from "./consultantRoutes/consultantProfileRoute.js
 import consultantForgotRoute from "./consultantRoutes/consultantForgotRoute.js";
 import consultantGetRoute from "./consultantRoutes/getDatasRoute.js";
 import withdraw from "./consultantRoutes/withdrawRoute.js";
-import notificationRoute from "./consultantRoutes/notificationRoute.js";
+import notificationRoute from "./consultantRoutes/notification/notificationRoute.js"
 import consultantreuploadRoute from "./consultantRoutes/reUploadDocumentsRoute.js";
 import consultationDurationRoute from "./consultantRoutes/consultantationDurationRoute.js";
 import getCustomerWalletRoute from "./consultantRoutes/getCustomerWalletRoute.js"
@@ -24,7 +24,7 @@ router.use("/consulatntForgot", consultantForgotRoute);
 router.use("/reupload", protect, consultantreuploadRoute);
 
 router.use("/withdrawal", protect, withdraw);
-router.use("/notification",protect,notificationRoute)
+router.use("/notifications",protect,notificationRoute)
 router.use("/get-Datas",protect,consultantGetRoute)
 router.use("/call-manage",consultationDurationRoute)
 router.use("/get-datass",getCustomerWalletRoute);

@@ -1,7 +1,7 @@
 import CustomerProfile from "../../../../models/Customer/customerModels/customerModel.js";
 import CustomerFavorites from "../../../../models/Customer/customerModels/customerFavorites.js";
-import ConsultantProfile from "../../../../models/Consultant/User.js";
-import PersonalDetails from "../../../../models/Consultant/personalDetails.js";
+import ConsultantProfile from "../../../../models/Consultant/ProfileModel/User.js";
+import PersonalDetails from "../../../../models/Consultant/ProfileModel/personalDetails.js";
 import { formatDate } from "../../../../helper/dateFormatter.js";
 export const updateFavoriteConsultant = async (req, res, next) => {
   try {

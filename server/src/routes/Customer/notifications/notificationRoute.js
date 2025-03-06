@@ -1,12 +1,12 @@
 import express from "express";
 import {
-  getAdminNotifications,
+    getCustomerNotifications,
     markNotificationAsRead,
-} from "../../../controllers/Admin/notification/notificationController.js";
+} from "../../../controllers/Customer/notification/notificationController.js";
 
 const router = express.Router();
 
-router.post("/get", getAdminNotifications);
+router.post("/get", getCustomerNotifications);
 router.post("/mark-read/:id", markNotificationAsRead);
 
 export default router;

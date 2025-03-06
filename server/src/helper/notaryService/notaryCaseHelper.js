@@ -4,7 +4,7 @@ import DocumentModel from "../../models/Customer/notaryServiceModel/notaryServic
 import Payment from "../../models/Customer/notaryServiceModel/notaryServicePayment.js";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import { generateUniqueServiceID } from "../../helper/uniqueIDHelper.js";
-import Notification from "../../models/Admin/notificationModels/notificationModel.js";
+
 
 /**
  * Save Notary Case Details
@@ -110,29 +110,6 @@ export const saveNotaryPayment = async (
       ],
       { session }
     );
-
-    await Notification.create(
-      [
-        {
-          notificationDetails: {  // ✅ Wrap details inside `notificationDetails`
-            recipientType: "customer",
-            recipientId: customerId,
-            message: `A payment of ${paymentAmount} ${paidCurrency} for your notary service has been successfully completed.`,
-            type: "Payment",
-            additionalDetails: {
-              customerName,
-              serviceName,
-              country: selectedServiceCountry,
-              paymentStatus: "paid",
-            },
-          },
-          status: "unread",  // ✅ Status remains the same
-          createdAt: new Date(),
-        },
-      ],
-      { session }
-    );
-    
 
     return payment;
   } catch (error) {

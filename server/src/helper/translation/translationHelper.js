@@ -3,7 +3,7 @@ import TranslationDocument from "../../models/Customer/translationModel/translat
 import TranslationPayment from "../../models/Customer/translationModel/translationPayment.js";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import { generateUniqueServiceID } from "../../helper/uniqueIDHelper.js";
-import Notification from "../../models/Admin/notificationModels/notificationModel.js";
+
 
 /**
  * Save Translation Case Details
@@ -118,26 +118,7 @@ export const saveTranslationPayment = async ({
       { session }
     );
 
-    // Create payment success notification
-    await Notification.create(
-      [
-        {
-          notificationDetails: {
-            type: "Payment",
-            title: "Translation Service Payment Successfully Processed",
-            message: `Your payment of ${paymentAmount} ${paidCurrency} has been successfully processed.`,
-            additionalDetails: {
-              customerName,
-              paymentStatus: "paid"
-            }
-          },
-          status: "unread",
-          createdAt: new Date()
-        }
-      ],
-      { session }
-    );
-
+    
     return translationPayment;
   } catch (error) {
     console.error("Error saving Translation Payment:", error);

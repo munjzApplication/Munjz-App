@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import ConsultantProfile from "../models/Consultant/User.js";
+import ConsultantProfile from "../models/Consultant/ProfileModel/User.js";
 
 export const protect = async (req, res, next) => {
   let token;

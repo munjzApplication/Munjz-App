@@ -1,5 +1,5 @@
-import ConsultantProfile from "../../../models/Consultant/User.js";
-import PersonalDetails from "../../../models/Consultant/personalDetails.js";
+import ConsultantProfile from "../../../models/Consultant/ProfileModel/User.js";
+import PersonalDetails from "../../../models/Consultant/ProfileModel/personalDetails.js";
 import ConsultationDetails from "../../../models/Customer/consultationModel/consultationModel.js";
 import Favorite from "../../../models/Customer/customerModels/customerFavorites.js";
 import { formatDate } from "../../../helper/dateFormatter.js";

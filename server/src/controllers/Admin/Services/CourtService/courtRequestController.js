@@ -6,7 +6,6 @@ import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import AdminUploadedDocument from "../../../../models/Admin/courtServiceModels/adminUploadedDocument.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
-import { sendNotificationToCustomer } from "../../../../helper/customer/notificationHelper.js";
 
 
 
@@ -47,19 +46,6 @@ export const requestDocument = async (req, res) => {
 
     await additionalDocument.save();
 
-    await sendNotificationToCustomer(
-      courtCase.customer,
-      `A document request has been made for Case ID: ${document.courtServiceID}.`,
-      "Court Service Update",
-      {
-        caseId,
-        courtServiceID: document.courtServiceID,
-        requestReason: reason,
-        requestStatus: "pending",
-        requestUpdatedAt: new Date()
-      }
-    );
-
     res.status(200).json({
       message: "Document request created successfully.",
       additionalDocument
@@ -98,18 +84,6 @@ export const reviewDocument = async (req, res, next) => {
     document.requestUpdatedAt = new Date();
 
     await document.save();
-    const notificationMessage = status === "approved" 
-      ? `The document for Case ID: ${document.caseId} has been approved.` 
-      : `The document for Case ID: ${document.caseId} has been rejected.`;
-
-    
-   
-    await sendNotificationToCustomer(
-      customer._id,
-      notificationMessage,
-      "Court Service Update",
-      { documentId, caseId: document.caseId, status }
-    );
 
     res.status(200).json({
       message: `Document marked as ${status} successfully.`,
@@ -167,21 +141,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
     // Save the additional payment record
     await newAdditionalPayment.save();
 
-    // Notify the customer about the additional payment request
-    await sendNotificationToCustomer(
-      customer._id,
-      `An additional payment request has been made for Case ID: ${courtServiceID}.`,
-      "Court Service Update",
-      { 
-        caseId,
-        courtServiceID,
-        serviceName,
-        amount,
-        dueDate,
-        paymentStatus: "pending",
-        requestedAt: new Date()
-      }
-    );
 
     // Respond with the created additional payment record
     res.status(201).json({
@@ -230,14 +189,7 @@ export const adminSubmittedDoc = async (req, res) => {
       )
     );
 
-    // Send notification to the customer instead of consultant
-    await sendNotificationToCustomer(
-      customer._id,
-      `Admin has uploaded new documents for Case ID: ${caseId}.`,
-      "Court Service Update",
-      { caseId, uploadedFiles, description,uploadedAt: new Date() }
-    );
-    
+
     res.status(201).json({
       message: "Documents uploaded successfully.",
       uploadedDocuments: savedDocuments

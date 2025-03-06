@@ -1,4 +1,4 @@
-import ConsultationDuration from "../../models/Consultant/consultationDurationModel.js";
+import ConsultationDuration from "../../models/Consultant/consultantModel/consultationDurationModel.js";
 
 
 export const consultationDuration = async (req, res, next) => {

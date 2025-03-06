@@ -8,6 +8,7 @@ import Customer from "../../../../models/Customer/customerModels/customerModel.j
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import mongoose from "mongoose";
 import { formatDatewithmonth } from "../../../../helper/dateFormatter.js";
+import { notificationService } from "../../../../service/sendPushNotification.js";
 
 export const saveCourtServiceDetails = async (req, res, next) => {
     const session = await mongoose.startSession();
@@ -46,7 +47,18 @@ export const saveCourtServiceDetails = async (req, res, next) => {
 
         await session.commitTransaction();
         session.endSession();
+         // Notify Customer
+         await notificationService.sendToCustomer(
+            customerId,
+            "Court Case Registered",
+            `Your court case for ${serviceName} in ${selectedServiceCountry} has been registered successfully.`
+        );
 
+        // Notify Admin
+        await notificationService.sendToAdmin(
+            "New Court Case Submitted",
+            `A new court case (${serviceName}) has been registered by ${customer.Name} in ${selectedServiceCountry} .`
+        );
         return res.status(201).json({ message: "Court case registered successfully" });
     } catch (error) {
         console.error("Error in saveCourtServiceDetails:", error);

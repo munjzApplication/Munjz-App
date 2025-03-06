@@ -1,4 +1,4 @@
-import ConsultantProfile from '../../models/Consultant/User.js';
+import ConsultantProfile from '../../models/Consultant/ProfileModel/User.js';
 
 export const generateConsultantUniqueId = async () => {
   const latestConsultant = await ConsultantProfile.findOne().sort({ creationDate: -1 });

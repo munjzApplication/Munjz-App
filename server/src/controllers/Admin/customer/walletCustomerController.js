@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import customerProfile from "../../../models/Customer/customerModels/customerModel.js";
-import consultantProfile from "../../../models/Consultant/User.js";
+import consultantProfile from "../../../models/Consultant/ProfileModel/User.js";
 import consultationDetails from "../../../models/Customer/consultationModel/consultationModel.js";
 import walletDetails from "../../../models/Customer/customerModels/walletModel.js";
 import notaryService from "../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";

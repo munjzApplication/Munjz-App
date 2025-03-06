@@ -6,7 +6,6 @@ import crypto from "crypto";
 import { sendVerificationEmail } from "../../../utils/email.js";
 import { generateCustomerUniqueId } from "../../../helper/customer/customerHelper.js";
 import Wallet from "../../../models/Customer/customerModels/walletModel.js";
-import Notification from "../../../models/Admin/notificationModels/notificationModel.js";
 import { notificationService } from "../../../service/sendPushNotification.js";
 import TempCustomer from "../../../models/Customer/customerModels/TempCustomerModel.js";
 import { OAuth2Client } from "google-auth-library";
@@ -156,20 +155,6 @@ export const Register = async (req, res, next) => {
     const newWallet = new Wallet({ customerId: newUser._id, balance: 0 });
     await newWallet.save();
 
-    const adminNotification = new Notification({
-      notificationDetails: {
-        type: "Registration",
-        title: "New Customer Registration",
-        message: `${Name} has successfully registered as a Customer.`,
-        additionalDetails: {
-          customerId: newUser._id,
-          email: newUser.email,
-          phoneNumber: newUser.phoneNumber,
-          registrationDate: new Date()
-        }
-      }
-    });
-    await adminNotification.save();
 
     const token = generateToken(newUser._id, newUser.emailVerified);
 

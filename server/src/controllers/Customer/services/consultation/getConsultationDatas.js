@@ -1,6 +1,6 @@
 import consultationDetails from "../../../../models/Customer/consultationModel/consultationModel.js";
-import ConsultantProfile from "../../../../models/Consultant/User.js";
-import PersonalDetails from "../../../../models/Consultant/personalDetails.js";
+import ConsultantProfile from "../../../../models/Consultant/ProfileModel/User.js";
+import PersonalDetails from "../../../../models/Consultant/ProfileModel/personalDetails.js";
 import customerProfile from "../../../../models/Customer/customerModels/customerModel.js";
 import mongoose from "mongoose";
 import {

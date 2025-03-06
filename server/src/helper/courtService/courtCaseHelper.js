@@ -3,7 +3,6 @@ import DocumentModel from "../../models/Customer/courtServiceModel/courtServiceD
 import Payment from "../../models/Customer/courtServiceModel/courtServicePayment.js";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import { generateUniqueServiceID } from "../../helper/uniqueIDHelper.js";
-import Notification from "../../models/Admin/notificationModels/notificationModel.js";
 import mongoose from "mongoose";
 
 /**
@@ -57,19 +56,6 @@ export const saveCourtPayment = async ({ courtCaseId, paymentAmount, paidCurrenc
   try {
     const payment = await Payment.create([{ courtServiceCase: courtCaseId, amount: paymentAmount, paidCurrency, serviceName, serviceCountry: selectedServiceCountry, paymentDate: paymentDate || new Date(), paymentStatus: "paid" }], { session });
 
-    // Send Notification
-    await Notification.create([
-      {
-        notificationDetails: {
-          type: "Case Registration",
-          title: "Court Service Registered With Payment",
-          message: `A payment of ${paymentAmount} ${paidCurrency} for your court service has been successfully completed.`,
-          additionalDetails: { customerName, serviceName, country: selectedServiceCountry, paymentStatus: "paid" }
-        },
-        status: "unread",
-        createdAt: new Date()
-      }
-    ], { session });
 
     return payment;
   } catch (error) {

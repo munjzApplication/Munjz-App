@@ -1,9 +1,9 @@
-import WithdrawalRequest from "../../../models/Consultant/WithdrawRequest.js";
-import Earnings from "../../../models/Consultant/consultantEarnings.js";
-import Notification from "../../../models/Admin/notificationModels/notificationModel.js";
-import PersonalDetails from "../../../models/Consultant/personalDetails.js";
-import breakDetails from "../../../models/Consultant/bankDetails.js";
-import WithhdrawalActivity from "../../../models/Consultant/withdrawalActivity .js";
+import WithdrawalRequest from "../../../models/Consultant/consultantModel/WithdrawRequest.js";
+import Earnings from "../../../models/Consultant/consultantModel/consultantEarnings.js";
+import PersonalDetails from "../../../models/Consultant/ProfileModel/personalDetails.js";
+import breakDetails from "../../../models/Consultant/ProfileModel/bankDetails.js";
+import WithhdrawalActivity from "../../../models/Consultant/consultantModel/withdrawalActivity .js";
+import { notificationService } from "../../../service/sendPushNotification.js";
 import { formatDate } from "../../../helper/dateFormatter.js";
 export const getWithdrawalDatas = async (req, res, next) => {
   try {
@@ -144,24 +144,14 @@ export const updateWithdrawalStatus = async (req, res, next) => {
 
     await withdrawalActivity.save();
 
-    // Send notification to consultant
-    const notification = new Notification({
-      notificationDetails: {
-        type: "Withdrawal Update",
-        title: `Withdrawal ${status}`,
-        message: `Your withdrawal request of ${withdrawal.amount} AED has been marked as ${status}.`,
-        additionalDetails: {
-          consultantId: withdrawal.consultantId,
-          amount: withdrawal.amount,
-          status,
-          approvalDate: withdrawal.approvalDate || null,
-          paymentMethod: paymentMethod || null,
-          transferId: transferId || null,
-        },
-      },
-    });
-
-    await notification.save();
+       // Send notification to consultant
+       const notificationMessage = `Your withdrawal request of ${withdrawal.amount} AED has been marked as ${status}.`;
+       await notificationService.sendToConsultant(
+         withdrawal.consultantId,
+         "Withdrawal Update",
+         notificationMessage
+       );
+   
 
     res.status(200).json({
       message: `Withdrawal request updated to ${status}`,

@@ -12,7 +12,7 @@ import notaryServiceReqRoute from './services/notaryServices/notaryServiceReqRou
 import translationRoute from './services/translation/translationRoute.js';
 import adminreqinvoiceRoute from './invoice/getAllAdminReq.js';
 import customerPendingsRoute from './customerRoutes/customerPendings.js';
-import notificationRoutes from "./notification/notificationRoute.js";
+import notificationRoute from "./notifications/notificationRoute.js";
 import getConsultantListRoutes from "./consultantRoutes/getConsultantListRoute.js";
 import getPricingRoutes from "./customerRoutes/getPricingRoute.js";
 import getDataRoutes from "./customerRoutes/getDataRoute.js";
@@ -37,7 +37,7 @@ router.use('/adminNotary-req-submit',authenticateUser,notaryServiceReqRoute);
 router.use('/translation',authenticateUser,translationRoute);
 router.use('/adminreqinvoice',authenticateUser,adminreqinvoiceRoute);
 router.use('/pendings',authenticateUser,customerPendingsRoute);
-router.use('/customer-notify',authenticateUser,notificationRoutes);
+router.use("/notifications",authenticateUser,notificationRoute)
 router.use('/consultant-list',authenticateUser,getConsultantListRoutes);
 router.use('/pricing',authenticateUser,getPricingRoutes); 
 router.use('/get-datas',authenticateUser,getDataRoutes);

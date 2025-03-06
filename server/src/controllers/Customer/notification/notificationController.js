@@ -1,43 +1,26 @@
-import Notification from "../../../models/Customer/notificationModel/notification.js";
 
+import CustomerNotification from "../../../models/Customer/notificationModel/CustomerNotification.js";
+
+// Get all notifications for a consultant
 export const getCustomerNotifications = async (req, res) => {
   try {
-    const { customerId } = req.params;
-
-    const notifications = await Notification.find({ customerId })
-      .sort({ createdAt: -1 })
-      .limit(50);
-
-    res.status(200).json({
-      message: "Notifications fetched successfully.",
-      notifications
-    });
+    const customerId = req.user._id;
+    const notifications = await CustomerNotification.find({ customerId }).sort({ timestamp: -1 });
+    res.status(200).json(notifications);
   } catch (error) {
-    res.status(500).json({
-      message: "Failed to fetch notifications.",
-      error: error.message
-    });
+    console.error("Error fetching consultant notifications:", error);
+    res.status(500).json({ message: "Failed to fetch notifications" });
   }
 };
 
-export const markNotificationAsRead = async (req, res, next) => {
+// Mark a notification as read
+export const markNotificationAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
-
-    const notification = await Notification.findByIdAndDelete(notificationId);
-
-    if (!notification) {
-      return res.status(404).json({
-        success: false,
-        message: "Notification not found."
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Notification marked as read and removed."
-    });
+    await CustomerNotification.findByIdAndUpdate(notificationId, { isRead: true });
+    res.status(200).json({ message: "Notification marked as read" });
   } catch (error) {
-    next(error);
+    console.error("Error marking notification as read:", error);
+    res.status(500).json({ message: "Failed to mark notification" });
   }
 };

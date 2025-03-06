@@ -1,5 +1,4 @@
 import CallActivity from "../../../models/Customer/customerModels/callActivity.js";
-import Notification from "../../../models/Admin/notificationModels/notificationModel.js";
 import { notificationService } from "../../../service/sendPushNotification.js";
 export const createCallActivity = async (req, res, next) => {
   try {
@@ -36,25 +35,6 @@ export const createCallActivity = async (req, res, next) => {
 
     const savedActivity = await callActivity.save();
 
-    // Create a notification
-    const notification = new Notification({
-      notificationDetails: {
-        type: "Call Activity",
-        title: "New Call Activity Logged",
-        message: `A new call activity has been logged for ${serviceName} with call ID ${callID}. Activity: ${activity}`,
-        additionalDetails: {
-          consultantID,
-          customerID,
-          serviceName,
-          callID,
-          activity,
-          tapedAmount,
-          status: "unread"
-        }
-      }
-    });
-
-    await notification.save();
 
     try {
       await notificationService.sendToConsultant(

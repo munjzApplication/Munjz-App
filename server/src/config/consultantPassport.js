@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as FacebookStrategy } from "passport-facebook"; 
 import dotenv from "dotenv";
-import ConsultantProfile from "../models/Consultant/User.js";
+import ConsultantProfile from "../models/Consultant/ProfileModel/User.js";
 import { generateConsultantUniqueId } from "../helper/consultant/consultantHelper.js";
 
 dotenv.config();

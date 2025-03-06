@@ -4,8 +4,6 @@ import Payment from "../../../../models/Customer/translationModel/translationPay
 import AdditionalPayment from "../../../../models/Customer/translationModel/translationAdditionalPayments.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import TranslationCase from "../../../../models/Customer/translationModel/translationDetails.js";
-import { sendNotificationToCustomer } from "../../../../helper/customer/notificationHelper.js";
-
 
 
 export const requestDocuments = async (req, res, next) => {
@@ -51,18 +49,7 @@ export const requestDocuments = async (req, res, next) => {
     });
 
     await additionalDocument.save();
-    await sendNotificationToCustomer(
-      customer._id, 
-      `A document request has been made for Case ID: ${document.translationServiceID}.`,
-      "Translation Service Update",
-      { 
-        translationCase: caseId,
-        translationServiceID: document.translationServiceID,
-        requestReason: reason,
-        requestStatus: "pending",
-        requestUpdatedAt: new Date()
-       }
-    );
+    
 
     res.status(200).json({
       message: "Document request created successfully.",
@@ -117,23 +104,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
 
     // Save the additional payment record
     await newAdditionalPayment.save();
-
-    // Send notification to the customer
-    await sendNotificationToCustomer(
-      customer._id,
-      `An additional payment request has been made for Case ID: ${translationServiceID}.`,
-      "Translation Service Update",
-      {
-        TranslationcaseId: caseId,
-        translationServiceID,
-        amount,
-        paidCurrency,
-        requestReason,
-        dueDate,
-        paymentStatus: "pending",
-        requestedAt: new Date()
-      }
-    );
 
     // Respond with the created additional payment record
     res.status(201).json({

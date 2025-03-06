@@ -3,7 +3,6 @@ import AdditionalDocument from "../../../../models/Customer/notaryServiceModel/n
 import Payment from "../../../../models/Customer/notaryServiceModel/notaryServicePayment.js";
 import AdditionalPayment from "../../../../models/Customer/notaryServiceModel/notaryServiceAdditionalPayment.js";
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
-import Notification from "../../../../models/Admin/notificationModels/notificationModel.js";
 
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
@@ -61,22 +60,6 @@ export const uploadAdminRequestedDocument = async (req, res, next) => {
       const notaryServiceID = existingDocument.notaryServiceID;
       const serviceName = notaryCase.serviceName;
       const customerName = customer.Name || "Unknown Customer";
-
-      const notification = new Notification({
-        notificationDetails: {
-          type: "Document Update",
-          title: "Admin Requested Document Updated",
-          message: `The requested documents for notary Case ID: ${notaryServiceID}, have been successfully uploaded by ${customerName}.`,
-          additionalDetails: {
-            caseId,
-            notaryServiceID,
-            serviceName,
-            documentCount: uploadedDocuments.length,
-            customerName
-          }
-        }
-      });
-      await notification.save();
 
       return res.status(200).json({
         message: "Documents uploaded and request status updated to 'updated'.",
@@ -191,24 +174,6 @@ export const submitAdditionalPayment = async (req, res, next) => {
     const notaryServiceID = notaryCase.notaryServiceID;
     const serviceName = notaryCase.serviceName;
     const customerName = customer.Name || "Unknown Customer";
-
-    const notification = new Notification({
-      notificationDetails: {
-        type: "Payment",
-        title: "Additional Payment Received",
-        message: `An additional payment of ${payment.amount} has been successfully received for case ID ${notaryServiceID}, Payment made by ${customerName}.`,
-        additionalDetails: {
-          caseId: payment.caseId,
-          transactionId,
-          amount: payment.amount,
-          serviceName,
-          customerName,
-          paymentStatus: "paid"
-        }
-      }
-    });
-
-    await notification.save();
 
     res.status(200).json({
       message: "Additional payment submitted successfully.",

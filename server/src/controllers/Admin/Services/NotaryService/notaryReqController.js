@@ -6,12 +6,11 @@ import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import AdminUploadedDocument from "../../../../models/Admin/notaryServiceModels/adminUploadedDocument.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
-import { sendNotificationToCustomer } from "../../../../helper/customer/notificationHelper.js";
 
 
 export const requestDocument = async (req, res, next) => {
 
-  
+
   try {
     const { caseId } = req.params;
     const { reason } = req.body;
@@ -45,26 +44,14 @@ export const requestDocument = async (req, res, next) => {
     await document.save();
 
     const additionalDocument = new AdditionalDocument({
-      notaryServiceCase: caseId, 
+      notaryServiceCase: caseId,
       notaryServiceID: document.notaryServiceID,
-      documents: [], 
+      documents: [],
       requestReason: reason,
       requestStatus: "pending",
       requestUpdatedAt: new Date()
     });
     await additionalDocument.save();
-    await sendNotificationToCustomer(
-      customer._id,
-      `A document request has been made for Case ID: ${document.notaryServiceID}.`,
-      "Notary Service Update",
-      { 
-        notaryServiceCase: caseId, 
-        notaryServiceID: document.notaryServiceID, 
-        requestReason: reason,
-        requestStatus: "pending",
-        requestUpdatedAt: new Date()
-       }
-    );
 
     res.status(200).json({
       message: "Document request created successfully.",
@@ -101,16 +88,7 @@ export const reviewDocument = async (req, res, next) => {
     document.requestUpdatedAt = new Date();
 
     await document.save();
-    const notificationMessage = status === "approved" 
-      ? `The document for Case ID: ${document.notaryServiceCase} has been approved.` 
-      : `The document for Case ID: ${document.notaryServiceCase} has been rejected.`;
 
-    await sendNotificationToCustomer(
-      customer._id, 
-      notificationMessage,
-      "Notary Service Update",
-      { documentId, caseId: document.caseId, status }
-    );
 
     res.status(200).json({
       message: `Document marked as ${status} successfully.`,
@@ -124,7 +102,7 @@ export const reviewDocument = async (req, res, next) => {
 export const requestAdditionalPayment = async (req, res, next) => {
   try {
     const { caseId } = req.params;
-   
+
     const notaryCase = await NotaryCase.findOne({ _id: caseId });
     if (!notaryCase) {
       return res.status(404).json({ message: "Notary case not found." });
@@ -146,7 +124,7 @@ export const requestAdditionalPayment = async (req, res, next) => {
     // Determine courtServiceID and serviceName
     const notaryServiceID = mainPayment
       ? mainPayment.notaryServiceID
-      : notaryCase.notaryServiceID; 
+      : notaryCase.notaryServiceID;
     const serviceName = mainPayment
       ? mainPayment.serviceName
       : notaryCase.serviceName;
@@ -164,21 +142,7 @@ export const requestAdditionalPayment = async (req, res, next) => {
     });
 
     await newAdditionalPayment.save();
-    await sendNotificationToCustomer(
-      customer._id,
-      `An additional payment request has been made for Case ID: ${notaryServiceID}.`,
-      "Notary Service Update",
-      { 
-        caseId,
-        notaryServiceID,
-        serviceName,
-        amount, 
-        dueDate,
-        status: "pending",
-        requestedAt: new Date()
-      }
-    );
-    
+
     res.status(201).json({
       message: "Additional payment requested successfully.",
       additionalPayment: newAdditionalPayment
@@ -223,12 +187,7 @@ export const adminSubmittedDoc = async (req, res, next) => {
         }).save()
       )
     );
-    await sendNotificationToCustomer(
-      customer._id,
-       `Admin has uploaded new documents for Case ID: ${caseId}.`,
-       "Notary Service Update",
-       { caseId, uploadedFiles, description,uploadedAt: new Date() }
-      );
+
     res.status(201).json({
       message: "Documents uploaded successfully.",
       uploadedDocuments: savedDocuments

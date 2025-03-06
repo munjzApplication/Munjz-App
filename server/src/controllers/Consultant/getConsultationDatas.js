@@ -1,5 +1,5 @@
 import consultationDetails from "../../models/Customer/consultationModel/consultationModel.js";
-import ConsultantProfile from "../../models/Consultant/User.js";
+import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
 import customerProfile from "../../models/Customer/customerModels/customerModel.js";
 import mongoose from "mongoose";
 import { formatDate, formatMinutesToMMSS } from "../../helper/dateFormatter.js";

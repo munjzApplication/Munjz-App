@@ -1,13 +1,11 @@
 import consultationDetails from "../../../../models/Customer/consultationModel/consultationModel.js";
-import Consultant from "../../../../models/Consultant/User.js";
+import Consultant from "../../../../models/Consultant/ProfileModel/User.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import Wallet from "../../../../models/Customer/customerModels/walletModel.js";
 import Dividend from "../../../../models/Admin/adminModels/dividendModel.js";
-import Earnings from "../../../../models/Consultant/consultantEarnings.js";
-import ConsultationActivity from "../../../../models/Consultant/consultationActivity.js";
-import PersonalDetails from "../../../../models/Consultant/personalDetails.js";
-import { sendNotificationToConsultant } from "../../../../helper/consultant/notificationHelper.js";
-import { sendNotificationToCustomer } from "../../../../helper/customer/notificationHelper.js";
+import Earnings from "../../../../models/Consultant/consultantModel/consultantEarnings.js";
+import ConsultationActivity from "../../../../models/Consultant/consultantModel/consultationActivity.js";
+import PersonalDetails from "../../../../models/Consultant/ProfileModel/personalDetails.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 import {
@@ -170,17 +168,22 @@ export const handleConsultationDetails = async (req, res, next) => {
     // Send notifications
     const consultantNotificationMessage = `Your consultation with ${customer.email} has been completed. You have earned ${consultantShare} AED.`;
     const customerNotificationMessage = `Your consultation with ${consultant.email} has been completed successfully. Thank you for your feedback.`;
+    const adminNotificationMessage = `A consultation between ${consultant.email} (Consultant) and ${customer.email} (Customer) has been completed.`;
 
     await Promise.all([
-      sendNotificationToConsultant(
+      notificationService.sendToConsultant(
         consultantID,
-        consultantNotificationMessage,
-        "Consultation Completed"
+        "Consultation Completed",
+        consultantNotificationMessage
       ),
-      sendNotificationToCustomer(
+      notificationService.sendToCustomer(
         customerID,
-        customerNotificationMessage,
-        "Consultation Completed"
+        "Consultation Completed",
+        customerNotificationMessage
+      ),
+      notificationService.sendToAdmin(
+        "Consultation Completed",
+        adminNotificationMessage
       )
     ]);
 

@@ -1,5 +1,5 @@
-import ConsultantProfile from "../../../models/Consultant/User.js";
-
+import ConsultantProfile from "../../../models/Consultant/ProfileModel/User.js";
+import { notificationService } from "../../../service/sendPushNotification.js";
 export const blockUnblockConsultant = async (req, res) => {
   const { consultantId } = req.params; 
   const { action } = req.body; 
@@ -19,8 +19,18 @@ export const blockUnblockConsultant = async (req, res) => {
       // Determine the new isBlocked status based on the action
       if (action === "block") {
         consultant.isBlocked = true; // Set to blocked
+        await notificationService.sendToConsultant(
+          consultantId,
+          "Account Blocked",
+          "Your account has been blocked. Please contact support for assistance."
+        );
       } else if (action === "unblock") {
         consultant.isBlocked = false; // Set to unblocked
+        await notificationService.sendToConsultant(
+          consultantId,
+         "Account Unblocked",
+          "Your account has been unblocked. You can now access your account."
+        );
       } else {
         // Handle invalid action
         return res.status(400).json({

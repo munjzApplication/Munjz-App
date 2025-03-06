@@ -1,8 +1,8 @@
-import Earnings from "../../models/Consultant/consultantEarnings.js";
-import ConsultationActivity from "../../models/Consultant/consultationActivity.js";
-import ConsultantProfile from "../../models/Consultant/User.js";
+import Earnings from "../../models/Consultant/consultantModel/consultantEarnings.js";
+import ConsultationActivity from "../../models/Consultant/consultantModel/consultationActivity.js";
+import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
 import CustomerProfile from "../../models/Customer/customerModels/customerModel.js";
-import WithdrawalActivity from "../../models/Consultant/withdrawalActivity .js";
+import WithdrawalActivity from "../../models/Consultant/consultantModel/withdrawalActivity .js";
 import {
   getCurrencyFromCountryCode,
   getExchangeRate

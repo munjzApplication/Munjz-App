@@ -1,10 +1,10 @@
-
-import AdminNotification from "../../../models/Admin/notificationModels/AdminNotification.js";
+import ConsultantNotification from "../../../models/Consultant/notificationModel/ConsultantNotification.js";
 
 // Get all notifications for a consultant
-export const getAdminNotifications = async (req, res) => {
+export const getConsultantNotifications = async (req, res) => {
   try {
-    const notifications = await AdminNotification.find().sort({ timestamp: -1 });
+    const consultantId = req.user._id;
+    const notifications = await ConsultantNotification.find({ consultantId }).sort({ timestamp: -1 });
     res.status(200).json(notifications);
   } catch (error) {
     console.error("Error fetching consultant notifications:", error);
@@ -13,10 +13,10 @@ export const getAdminNotifications = async (req, res) => {
 };
 
 // Mark a notification as read
-export const markNotificationAsRead = async (req, res) => {
+export const markConsultantNotificationRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
-    await AdminNotification.findByIdAndUpdate(notificationId, { isRead: true });
+    await ConsultantNotification.findByIdAndUpdate(notificationId, { isRead: true });
     res.status(200).json({ message: "Notification marked as read" });
   } catch (error) {
     console.error("Error marking notification as read:", error);
