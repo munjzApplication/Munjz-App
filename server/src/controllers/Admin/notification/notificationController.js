@@ -1,5 +1,5 @@
 import AdminNotification from "../../../models/Admin/notificationModels/AdminNotification.js";
-
+import { formatTime } from "../../../helper/dateFormatter.js"
 // Get all notifications grouped by date using aggregation pipeline
 export const getAdminNotifications = async (req, res) => {
   try {
@@ -30,12 +30,15 @@ export const getAdminNotifications = async (req, res) => {
         $sort: { date: -1 }
       }
     ]);
+    const result = groupedNotifications.reduce((acc, { date, notifications }) => {
+      acc[date] = notifications.map((notification) => ({
+        ...notification,
+        timestamp: formatTime(notification.timestamp) // Replacing timestamp with formatted time
+      }));
+      return acc;
+    }, {});
+    
 
-    // Restructure into array format
-    const result = groupedNotifications.map(({ date, notifications }) => ({
-      date,
-      notifications
-    }));
 
     res.status(200).json({message: "Admin notifications fetched successfully",result});
   } catch (error) {

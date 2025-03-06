@@ -36,3 +36,18 @@ export const formatDates = (date) => {
   const options = { year: 'numeric', month: 'long', day: '2-digit' };
   return new Date(date).toLocaleDateString("en-US", options);
 };
+
+
+export const formatTime = (timestamp) => {
+  const date = new Date(timestamp);
+  let time = date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Dubai'
+  });
+
+  // Convert "AM"/"PM" to lowercase
+  return time.replace(/AM|PM/, (match) => match.toLowerCase());
+};
+

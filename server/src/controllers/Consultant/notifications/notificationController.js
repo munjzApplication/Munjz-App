@@ -35,11 +35,14 @@ export const getConsultantNotifications = async (req, res) => {
         $sort: { date: -1 }
       }
     ]);
-    // Restructure into array format
-    const result = groupedNotifications.map(({ date, notifications }) => ({
-      date,
-      notifications
-    }));
+    const result = groupedNotifications.reduce((acc, { date, notifications }) => {
+      acc[date] = notifications.map((notification) => ({
+        ...notification,
+        timestamp: formatTime(notification.timestamp) // Replacing timestamp with formatted time
+      }));
+      return acc;
+    }, {});
+    
 
     res.status(200).json({message: "Consultant notifications fetched successfully",result});
   } catch (error) {

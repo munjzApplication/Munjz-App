@@ -1,5 +1,5 @@
 import CustomerNotification from "../../../models/Customer/notificationModel/CustomerNotification.js";
-
+import { formatTime } from "../../../helper/dateFormatter.js";
 // Get all notifications grouped by date using aggregation pipeline
 export const getCustomerNotifications = async (req, res) => {
   try {
@@ -36,11 +36,14 @@ export const getCustomerNotifications = async (req, res) => {
     ]);
     
 
-     // Restructure into array format
-     const result = groupedNotifications.map(({ date, notifications }) => ({
-      date,
-      notifications
-    }));
+    const result = groupedNotifications.reduce((acc, { date, notifications }) => {
+      acc[date] = notifications.map((notification) => ({
+        ...notification,
+        timestamp: formatTime(notification.timestamp) // Replacing timestamp with formatted time
+      }));
+      return acc;
+    }, {});
+    
 
     res.status(200).json({message: "Customer notifications fetched successfully",result});;
   } catch (error) {
