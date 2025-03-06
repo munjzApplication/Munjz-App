@@ -6,7 +6,7 @@ import {
 
 const router = express.Router();
 
-router.post("/get", getConsultantNotifications);
-router.post("/mark-read/:id", markConsultantNotificationRead);
+router.get("/get", getConsultantNotifications);
+router.get("/mark-read/:id", markConsultantNotificationRead);
 
 export default router;
