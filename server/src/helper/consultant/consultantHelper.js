@@ -5,7 +5,7 @@ export const generateConsultantUniqueId = async () => {
   let newId = 1;
 
   if (latestConsultant && latestConsultant.consultantUniqueId) {
-    const lastIdNumber = parseInt(latestConsultant.consultantUniqueId.replace('MCnslt', ''), 10);
+    const lastIdNumber = parseInt(latestConsultant.consultantUniqueId.replace('MCnslt', ""), 10);
     newId = lastIdNumber + 1;
   }
 

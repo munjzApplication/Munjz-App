@@ -185,8 +185,8 @@ export const Login = async (req, res, next) => {
 
 
     await notificationService.sendToAdmin(
-      "Customer Login Alert",
-      `Customer ${user.Name} (${user.email}) has logged in.`
+      "Consultant Login Alert",
+      `Consultant ${user.Name} (${user.email}) has logged in.`
     );
 
     res.status(200).json({
@@ -251,8 +251,8 @@ export const googleAuthWithToken = async (req, res, next) => {
       message = "Registration successful";
         // Notify on registration
         await notificationService.sendToAdmin(
-          "New Customer Registration",
-          `A new customer ${existingUser.Name} (${existingUser.email}) has registered using Google.`
+          "New Consultant Registration",
+          `A new Consultant ${existingUser.Name} (${existingUser.email}) has registered using Google.`
         );
     } else {
       existingUser.googleId = googleId;
@@ -263,14 +263,14 @@ export const googleAuthWithToken = async (req, res, next) => {
 
       message = "Login successful";
       // Notify on login
-      await notificationService.sendToCustomer(
+      await notificationService.sendToConsultant(
         existingUser._id,
         "Welcome back",
         "You have successfully logged in using Google."
       );
       await notificationService.sendToAdmin(
-        "Customer Login Alert",
-        `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
+        "Consultant Login Alert",
+        `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
       );
     
     }
@@ -383,8 +383,8 @@ export const facebookAuthWithToken = async (req, res, next) => {
           "Your registration was successful. Welcome aboard!"
         );
         await notificationService.sendToAdmin(
-          "New Customer Registration",
-          `A new customer ${existingUser.Name} (${existingUser.email}) has registered using Apple.`
+          "New Consultant Registration",
+          `A new Consultant ${existingUser.Name} (${existingUser.email}) has registered using Apple.`
         );
     } else {
       // If the user exists, update their profile
@@ -395,14 +395,14 @@ export const facebookAuthWithToken = async (req, res, next) => {
       await existingUser.save();
       message = "Login successful";
       // Notify on login
-      await notificationService.sendToCustomer(
+      await notificationService.sendToConsultant(
         existingUser._id,
         "Welcome back",
         "You have successfully logged in using Facebook."
       );
       await notificationService.sendToAdmin(
-        "Customer Login Alert",
-        `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Facebook.`
+        "Consultant Login Alert",
+        `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Facebook.`
       );
     
     }
@@ -486,14 +486,14 @@ export const appleAuthWithToken = async (req, res, next) => {
 
       message = "Registration successful";
         // Notify on registration
-        await notificationService.sendToCustomer(
+        await notificationService.sendToConsultant(
           existingUser._id,
           "Welcome to MUNJZ",
           "Your registration was successful. Welcome aboard!"
         );
         await notificationService.sendToAdmin(
-          "New Customer Registration",
-          `A new customer ${existingUser.Name} (${existingUser.email}) has registered using Apple.`
+          "New Consultant Registration",
+          `A new Consultant ${existingUser.Name} (${existingUser.email}) has registered using Apple.`
         );
     } else {
       // If the user exists, update their profile
@@ -509,14 +509,14 @@ export const appleAuthWithToken = async (req, res, next) => {
       await existingUser.save();
       message = "Login successful";
       // Notify on login
-      await notificationService.sendToCustomer(
+      await notificationService.sendToConsultant(
         existingUser._id,
         "Welcome back",
         "You have successfully logged in using Apple."
       );
       await notificationService.sendToAdmin(
-        "Customer Login Alert",
-        `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Apple.`
+        "Consultant Login Alert",
+        `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Apple.`
       );
     
     }

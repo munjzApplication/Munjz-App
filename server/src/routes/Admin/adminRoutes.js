@@ -17,9 +17,10 @@ import blockConsultantRoute from "./adminRoutes/blockUnblockConsultantRoute.js";
 import adminNewsRoutes from "./adminRoutes/newsRoutes.js";
 import customerRoutes from "./adminRoutes/customerRoutes.js";
 import getAdminEarningsRoutes from "./adminRoutes/getAdminEarningsRoute.js";
-import getConsultationRoute from "./services/consultation/consultationRoute.js"
-
+import getConsultationRoute from "./services/consultation/consultationRoute.js";
+import uploadimage from "./adminRoutes/uploadimage.js";
 import { protectAdmin } from "../../middlewares/adminMiddleware.js";
+
 
 const router = express.Router();
 
@@ -62,5 +63,6 @@ router.use("/admin/follower-update", protectAdmin, adminFollowerUpdateRoute);
 router.use("/notifications", protectAdmin, adminNotificationRoutes);
 router.use("/news", protectAdmin, adminNewsRoutes);
 router.use("/get-datas",protectAdmin,getConsultationRoute)
+router.use("/upload-icon", uploadimage);
 
 export default router;
