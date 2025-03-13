@@ -10,7 +10,8 @@ import consultantreuploadRoute from "./consultantRoutes/reUploadDocumentsRoute.j
 import consultationDurationRoute from "./consultantRoutes/consultantationDurationRoute.js";
 import getCustomerWalletRoute from "./consultantRoutes/getCustomerWalletRoute.js"
 import consultationRoute from "./consultantRoutes/consultationRoute.js";
-import consultationEarnings from "./consultantRoutes/consultationEarningsRoute.js"
+import consultationEarnings from "./consultantRoutes/consultationEarningsRoute.js";
+import dividendRoute from "./consultantRoutes/dividendRoute.js";
 
 import { protect } from "../../middlewares/authMiddleware.js";
 
@@ -30,5 +31,6 @@ router.use("/call-manage",consultationDurationRoute)
 router.use("/get-datass",getCustomerWalletRoute);
 router.use("/consultation",protect,consultationRoute);
 router.use("/earnings",protect,consultationEarnings)
+router.use("/dividend",protect,dividendRoute)
 
 export default router;
