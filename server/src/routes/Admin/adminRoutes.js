@@ -19,6 +19,7 @@ import customerRoutes from "./adminRoutes/customerRoutes.js";
 import getAdminEarningsRoutes from "./adminRoutes/getAdminEarningsRoute.js";
 import getConsultationRoute from "./services/consultation/consultationRoute.js";
 import uploadimage from "./adminRoutes/uploadimage.js";
+import notifyAdminOnCustomerChatRoute from "./notification/admin-notifyRoute.js";
 import { protectAdmin } from "../../middlewares/adminMiddleware.js";
 
 
@@ -64,5 +65,6 @@ router.use("/notifications", protectAdmin, adminNotificationRoutes);
 router.use("/news", protectAdmin, adminNewsRoutes);
 router.use("/get-datas",protectAdmin,getConsultationRoute)
 router.use("/upload-icon", uploadimage);
+router.use("/notify-admin", notifyAdminOnCustomerChatRoute);
 
 export default router;
