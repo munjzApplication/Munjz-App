@@ -37,7 +37,7 @@ const consultantProfileSchema = new mongoose.Schema({
   password: {
     type: String,
     required: function() {
-      return !this.googleId && !this.facebookId;
+      return !this.googleId && !this.facebookId  && !this.appleId;;
     }
   },
   googleId: {
@@ -46,6 +46,11 @@ const consultantProfileSchema = new mongoose.Schema({
     sparse: true
   },
   facebookId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  appleId: {
     type: String,
     unique: true,
     sparse: true

@@ -11,7 +11,7 @@ router.post('/upload-icon', upload.single('icon'), async (req, res) => {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
-        const fileUrl = await uploadFileToS3(req.file, 'frontsideId');
+        const fileUrl = await uploadFileToS3(req.file, 'experienceCertificate');
         res.status(200).json({ imageUrl: fileUrl });
     } catch (error) {
         res.status(500).json({ message: error.message });

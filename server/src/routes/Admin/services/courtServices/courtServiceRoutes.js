@@ -32,6 +32,7 @@ router.get("/get-service-pricing/:serviceId", getCourtServicePricing);
 router.put("/updated-service-pricing/:serviceId", updateCourtServicePricing);
 router.delete("/delete-service-pricing/:id", deleteCourtServicePricing);
 
+// Court Service Cas Routes
 router.get("/get-cases", getAllCourtCases);
 router.get("/customer-cases/:customerId",getCourtCaseById);
 router.get("/get-docs/:caseId",getCaseDocs)
