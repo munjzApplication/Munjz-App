@@ -170,3 +170,6 @@ export const getCourtCaseById = async (req, res, next) => {
     next(error);
   }
 };
+
+
+

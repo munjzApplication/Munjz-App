@@ -5,11 +5,14 @@ import dividendRoute from "../Admin/services/consultation/dividendRoute.js";
 import documentCheckRoute from "../Admin/adminRoutes/documentCheckRoute.js";
 import withdrawRequestRoute from "../../routes/Admin/adminRoutes/withdrawRoute.js";
 import courtServiceRoute from "./services/courtServices/courtServiceRoutes.js";
+import courtCaseRoute from "../Admin/services/courtServices/courtCaseRoutes.js";
 import notaryServiceRoute from "../Admin/services/notaryServices/notaryServiceRoute.js";
+import notaryCaseRoute from "../Admin/services/notaryServices/notaryCaseRoutes.js";
 import courtServiceRequestRoute from "../Admin/services/courtServices/courtServiceRequestRoutes.js";
 import adminFollowerUpdateRoute from "../Admin/adminRoutes/adminFollowerUpdateRoute.js";
 import notaryServiceRequestRoute from "../Admin/services/notaryServices/notaryServiceReqRoutes.js";
 import translationRoute from "../Admin/services/Translation/translationReqRoute.js";
+import translationCaseRoute from "../Admin/services/Translation/translationRoutes.js";
 import getAllConsultantDatasRoute from "./adminRoutes/getAllConsultantDatasRoute.js";
 import invoiceRoute from "../Admin/invoice/invoiceRoute.js";
 import adminNotificationRoutes from "./notification/notificationRoute.js";
@@ -46,13 +49,16 @@ router.use("/withdrawals", protectAdmin, withdrawRequestRoute);
 // Court Services Routes
 router.use("/court-services", protectAdmin, courtServiceRoute);
 router.use("/court-service-requests", courtServiceRequestRoute);
+router.use("/court-case", protectAdmin, courtCaseRoute);
 
 // Notary Services Routes
 router.use("/notary-services", protectAdmin, notaryServiceRoute);
 router.use("/notary-service-requests", notaryServiceRequestRoute);
+router.use("/notary-case", protectAdmin, notaryCaseRoute);
 
 // Translation Routes
 router.use("/translations", protectAdmin, translationRoute);
+router.use("/translation", protectAdmin, translationCaseRoute);
 
 // Payment and Invoice Routes
 router.use("/getDatas", protectAdmin, getAllConsultantDatasRoute);

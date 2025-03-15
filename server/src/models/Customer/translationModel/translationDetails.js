@@ -30,7 +30,7 @@ const TranslationDetailsSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['submitted', 'working', 'completed', 'rejected'],
+    enum: ['submitted', 'pending', 'working', 'cancelled', 'completed', 'rejected','transfer'],
 
   },
 
