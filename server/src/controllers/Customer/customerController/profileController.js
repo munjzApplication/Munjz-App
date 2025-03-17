@@ -45,13 +45,13 @@ export const profileSetup = async (req, res, next) => {
     try {
       await notificationService.sendToCustomer(
         userProfile._id,
-        "Welcome to Munjz-App!",
-        "Your registration is successful. Explore our services and get started today!"
+        "Welcome to MUNJZ",
+      "Your registration was successful. Welcome aboard!"
       );
 
       await notificationService.sendToAdmin(
         "New Customer Registration",
-        `A new customer has registered: ${userProfile.Name} (${userProfile.email}).`
+        `A new customer ${userProfile.Name} (${userProfile.email})has registered.`
       );
     } catch (pushError) {
       console.error("Error sending profile setup notification:", pushError);

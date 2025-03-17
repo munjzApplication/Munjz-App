@@ -445,34 +445,51 @@ export const facebookAuthWithToken = async (req, res, next) => {
       message = "Registration successful.";
 
     } else {
+      // Check if the user has been soft-deleted
       if (existingUser.deletedAt) {
         return res.status(403).json({
           message: "This account has been deleted. Please contact support."
         });
       }
-      // If the user exists, update their profile
-      existingUser.facebookId = facebookId;
-      existingUser.emailVerified = true;
-      existingUser.isLoggedIn = true;
 
-      // Update profile photo if it's missing
-      if (!existingUser.profilePhoto) {
-        existingUser.profilePhoto = profilePhoto?.data?.url;
+      // Check if phone, country, and countryCode exist
+      if (!existingUser.phoneNumber || !existingUser.country || !existingUser.countryCode) {
+        // Re-registration (because important fields are missing)
+        existingUser.facebookId = facebookId;
+        existingUser.emailVerified = true;
+        existingUser.isLoggedIn = true;
+
+        if (!existingUser.profilePhoto) {
+          existingUser.profilePhoto = profilePhoto;
+        }
+
+        await existingUser.save();
+        message = "Registration successful.";
+
+      } else {
+        // Full login (phone, country, and countryCode exist)
+        existingUser.facebookId = facebookId;
+        existingUser.emailVerified = true;
+        existingUser.isLoggedIn = true;
+
+        if (!existingUser.profilePhoto) {
+          existingUser.profilePhoto = profilePhoto;
+        }
+
+        await existingUser.save();
+        message = "Login successful.";
+
+        // Notify on login
+        await notificationService.sendToCustomer(
+          existingUser._id,
+          "Welcome back!",
+          "You have successfully logged in using Facebook."
+        );
+        await notificationService.sendToAdmin(
+          "Customer Login Alert",
+          `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Facebook.`
+        );
       }
-
-      await existingUser.save();
-      message = "Login successful.";
-      // Notify on login
-      await notificationService.sendToCustomer(
-        existingUser._id,
-        "Welcome back",
-        "You have successfully logged in using Facebook."
-      );
-      await notificationService.sendToAdmin(
-        "Customer Login Alert",
-        `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Facebook.`
-      );
-
     }
 
     // Generate JWT
@@ -561,38 +578,53 @@ export const appleAuthWithToken = async (req, res, next) => {
       message = "Registration successful.";
 
     } else {
-      // If the user exists, update their profile
+      // Check if the user has been soft-deleted
       if (existingUser.deletedAt) {
         return res.status(403).json({
           message: "This account has been deleted. Please contact support."
         });
       }
-      existingUser.appleId = appleId;
-      existingUser.emailVerified = true;
-      existingUser.isLoggedIn = true;
 
-      // Update name only if it's the first login (name isn't saved yet)
-      if (!existingUser.Name || existingUser.Name === "null") {
-        existingUser.Name = Name;
+      // Check if phone, country, and countryCode exist
+      if (!existingUser.phoneNumber || !existingUser.country || !existingUser.countryCode) {
+        // Re-registration (because important fields are missing)
+        existingUser.appleId = appleId;
+        existingUser.emailVerified = true;
+        existingUser.isLoggedIn = true;
+
+        if (!existingUser.profilePhoto) {
+          existingUser.profilePhoto = profilePhoto;
+        }
+
+        await existingUser.save();
+        message = "Registration successful.";
+
+      } else {
+        // Full login (phone, country, and countryCode exist)
+        existingUser.appleId = appleId;
+        existingUser.emailVerified = true;
+        existingUser.isLoggedIn = true;
+
+        if (!existingUser.profilePhoto) {
+          existingUser.profilePhoto = profilePhoto;
+        }
+
+        await existingUser.save();
+        message = "Login successful.";
+
+        // Notify on login
+        await notificationService.sendToCustomer(
+          existingUser._id,
+          "Welcome back!",
+          "You have successfully logged in using Apple."
+        );
+        await notificationService.sendToAdmin(
+          "Customer Login Alert",
+          `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Apple.`
+        );
       }
-      // Set default profile picture if it doesn't exist
-      //  if (!existingUser.profilePhoto) {
-      //   existingUser.profilePhoto = defaultProfilePic;
-      // }
-      await existingUser.save();
-      message = "Login successful.";
-      // Notify on login
-      await notificationService.sendToCustomer(
-        existingUser._id,
-        "Welcome back",
-        "You have successfully logged in using Apple."
-      );
-      await notificationService.sendToAdmin(
-        "Customer Login Alert",
-        `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Apple.`
-      );
-
     }
+
 
     // Generate JWT
     const token = generateToken(existingUser._id, existingUser.emailVerified);
