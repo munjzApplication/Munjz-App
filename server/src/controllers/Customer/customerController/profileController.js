@@ -367,11 +367,13 @@ export const deleteProfile = async (req, res, next) => {
       email: null,
       phoneNumber: null,
       password: null,
-      googleId: null, 
-      facebookId: null,
-      appleId: null,
       deletedAt: new Date() // ✅ Mark as deleted
     };
+
+    // **Remove only the authentication method used**
+    if (user.googleId) updateFields.googleId = null;
+    if (user.facebookId) updateFields.facebookId = null;
+    if (user.appleId) updateFields.appleId = null;
 
     // Update user
     await CustomerProfile.findByIdAndUpdate(userId, { $set: updateFields }, { new: true, session });
