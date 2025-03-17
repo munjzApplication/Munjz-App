@@ -204,6 +204,13 @@ export const Login = async (req, res, next) => {
       });
     }
 
+    // Check if the user has a country
+    if (!user.country) {
+      return res.status(403).json({
+        message: "Registration successful."
+      });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Incorrect email or password." });
