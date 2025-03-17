@@ -245,7 +245,6 @@ export const Login = async (req, res, next) => {
     next(error);
   }
 };
-
 export const googleAuthWithToken = async (req, res, next) => {
   const { access_token } = req.body;
 
@@ -254,28 +253,22 @@ export const googleAuthWithToken = async (req, res, next) => {
   }
 
   try {
-    // Get token info (email and other basic details)
     const tokenInfoResponse = await client.getTokenInfo(access_token);
     const { email, sub: googleId } = tokenInfoResponse;
 
-    // Fetch additional user profile data from Google
     const userInfoResponse = await axios.get(
       `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`
     );
     const { name: Name, picture: profilePhoto } = userInfoResponse.data;
 
-    // Check if the user already exists by googleId or email
     let existingUser = await CustomerProfile.findOne({
       $or: [{ googleId }, { email }]
     });
 
-    let message;
-
     if (!existingUser) {
-      // Generate the customerUniqueId for new user
+      // 🛑 **User is registering for the first time**
       const customerUniqueId = await generateCustomerUniqueId();
 
-      // Create a new user if they don't exist
       existingUser = await CustomerProfile.create({
         Name: Name || "Google User",
         email,
@@ -284,51 +277,13 @@ export const googleAuthWithToken = async (req, res, next) => {
         profilePhoto,
         emailVerified: true,
         isBlocked: false,
-        isLoggedIn: true,
+        isLoggedIn: false, // ❌ User cannot log in yet
+        isProfileComplete: false, // ❌ Mark as incomplete
         creationDate: new Date()
       });
 
-      message = "Registration successful.";
-
-    } else {
-      // ✅ **Check if the user was soft-deleted**
-      if (existingUser.deletedAt) {
-        return res.status(403).json({
-          message: "This account has been deleted. Please contact support for assistance."
-        });
-      }
-      existingUser.googleId = googleId;
-      existingUser.emailVerified = true;
-      existingUser.isLoggedIn = true;
-
-      // Update profile photo if it's missing
-      if (!existingUser.profilePhoto) {
-        existingUser.profilePhoto = profilePhoto;
-      }
-
-      await existingUser.save();
-
-      message = "Login successful.";
-      // Notify on login
-      await notificationService.sendToCustomer(
-        existingUser._id,
-        "Welcome back",
-        "You have successfully logged in using Google."
-      );
-      await notificationService.sendToAdmin(
-        "Customer Login Alert",
-        `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
-      );
-
-    }
-
-    // Generate JWT
-    const token = generateToken(existingUser._id, existingUser.emailVerified);
-    // **Check if country & countryCode are missing**
-    if (!existingUser.country || !existingUser.countryCode) {
       return res.status(200).json({
-        message: "Registration successful.",
-        token,
+        message: "Registration started. Please complete your profile.",
         user: {
           id: existingUser._id,
           Name: existingUser.Name,
@@ -336,8 +291,42 @@ export const googleAuthWithToken = async (req, res, next) => {
         }
       });
     }
+
+    // ✅ If profile is incomplete, block login
+    if (!existingUser.isProfileComplete) {
+      return res.status(403).json({
+        message: "Please complete your profile before logging in.",
+        user: {
+          id: existingUser._id,
+          Name: existingUser.Name,
+          profilePhoto: existingUser.profilePhoto
+        }
+      });
+    }
+
+    // ✅ If profile is complete, proceed with login
+    existingUser.googleId = googleId;
+    existingUser.emailVerified = true;
+    existingUser.isLoggedIn = true;
+
+    if (!existingUser.profilePhoto) {
+      existingUser.profilePhoto = profilePhoto;
+    }
+
+    await existingUser.save();
+
+    const token = generateToken(existingUser._id, existingUser.emailVerified);
+  await notificationService.sendToCustomer(
+      existingUser._id,
+      "Welcome back",
+      "You have successfully logged in using Google."
+    );
+    await notificationService.sendToAdmin(
+      "Customer Login Alert",
+      `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
+    );
     return res.status(200).json({
-      message,
+      message: "Login successful.",
       token,
       user: {
         id: existingUser._id,
@@ -350,6 +339,8 @@ export const googleAuthWithToken = async (req, res, next) => {
     next(error);
   }
 };
+
+
 
 export const facebookAuthWithToken = async (req, res, next) => {
   const { access_token } = req.body;
