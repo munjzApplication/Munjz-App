@@ -9,6 +9,10 @@ import { notificationService } from "../../service/sendPushNotification.js";
 import TempConsultant from "../../models/Consultant/consultantModel/tempUser.js";
 import { OAuth2Client } from "google-auth-library";
 import axios from "axios";
+import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetails.js";
+import IDProof from "../../models/Consultant/ProfileModel/idProof.js";
+import BankDetails from "../../models/Consultant/ProfileModel/bankDetails.js";
+
 
 const client = new OAuth2Client(process.env.CONSULTANT_GOOGLE_CLIENT_ID);
 
@@ -176,6 +180,24 @@ export const Login = async (req, res, next) => {
       return res.status(401).json({ message: "Incorrect password." });
     }
 
+    // Check if all profile sections are completed
+    const [personalDetails, bankDetails, idProof] = await Promise.all([
+      PersonalDetails.findOne({ consultantId: user._id }),
+      BankDetails.findOne({ consultantId: user._id }),
+      IDProof.findOne({ consultantId: user._id }),
+    ]);
+
+    if (!personalDetails || !bankDetails || !idProof) {
+      return res.status(403).json({
+        message: "Registration successful",
+        missing: {
+          personalDetails: !personalDetails,
+          bankDetails: !bankDetails,
+          idProof: !idProof,
+        },
+      });
+    }
+
     const token = generateToken(user._id, user.emailVerified);
     await notificationService.sendToCustomer(
       user._id,
@@ -249,11 +271,6 @@ export const googleAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful";
-        // Notify on registration
-        await notificationService.sendToAdmin(
-          "New Consultant Registration",
-          `A new Consultant ${existingUser.Name} (${existingUser.email}) has registered using Google.`
-        );
     } else {
       existingUser.googleId = googleId;
       existingUser.emailVerified = true;
@@ -262,17 +279,27 @@ export const googleAuthWithToken = async (req, res, next) => {
       await existingUser.save();
 
       message = "Login successful";
-      // Notify on login
-      await notificationService.sendToConsultant(
-        existingUser._id,
-        "Welcome back",
-        "You have successfully logged in using Google."
-      );
-      await notificationService.sendToAdmin(
-        "Consultant Login Alert",
-        `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
-      );
+   
     
+    }
+
+    // Check if all profile sections are completed
+    const [personalDetails, bankDetails, idProof] = await Promise.all([
+      PersonalDetails.findOne({ consultantId: existingUser._id }),
+      BankDetails.findOne({ consultantId: existingUser._id }),
+      IDProof.findOne({ consultantId: existingUser._id }),
+    ]);
+
+    // If any section is missing, override the message to "Registration successful" and include missing details
+    if (!personalDetails || !bankDetails || !idProof) {
+      return res.status(200).json({
+        message: "Registration successful",
+        missing: {
+          personalDetails: !personalDetails,
+          bankDetails: !bankDetails,
+          idProof: !idProof,
+        },
+      });
     }
 
     // Generate JWT
@@ -282,6 +309,10 @@ export const googleAuthWithToken = async (req, res, next) => {
       existingUser._id,
       "Google Authentication Successful",
       "You have successfully signed in using Google."
+    );
+    await notificationService.sendToAdmin(
+      "Consultant Login Alert",
+      `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
     );
 
     return res.status(200).json({
