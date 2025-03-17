@@ -7,9 +7,6 @@ import AdminUploadedDocument from "../../../../models/Admin/courtServiceModels/a
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 
-
-
-
 export const requestDocument = async (req, res) => {
   try {
     const { caseId } = req.params;
@@ -26,7 +23,9 @@ export const requestDocument = async (req, res) => {
     }
 
     if (document.requestStatus === "pending") {
-      return res.status(400).json({ message: "A document request is already pending." });
+      return res
+        .status(400)
+        .json({ message: "A document request is already pending." });
     }
 
     document.requestReason = reason;
@@ -57,7 +56,6 @@ export const requestDocument = async (req, res) => {
     });
   }
 };
-
 
 export const reviewDocument = async (req, res, next) => {
   try {
@@ -98,7 +96,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-
     const courtCase = await CourtCase.findOne({ _id: caseId });
     if (!courtCase) {
       return res.status(404).json({ message: "Court case not found." });
@@ -113,7 +110,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
     if (!amount || !paidCurrency || !requestReason || !dueDate) {
       return res.status(400).json({ message: "All fields are required." });
     }
-
 
     const mainPayment = await Payment.findOne({ courtServiceCase: caseId });
 
@@ -141,7 +137,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
     // Save the additional payment record
     await newAdditionalPayment.save();
 
-
     // Respond with the created additional payment record
     res.status(201).json({
       message: "Additional payment requested successfully.",
@@ -151,7 +146,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const adminSubmittedDoc = async (req, res) => {
   try {
@@ -188,7 +182,6 @@ export const adminSubmittedDoc = async (req, res) => {
         }).save()
       )
     );
-
 
     res.status(201).json({
       message: "Documents uploaded successfully.",

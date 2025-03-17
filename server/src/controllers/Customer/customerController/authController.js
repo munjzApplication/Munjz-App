@@ -192,6 +192,13 @@ export const Login = async (req, res, next) => {
       return res.status(401).json({ message: "Incorrect email or password." });
     }
 
+      // Check if the account is deleted
+      if (user.Name === "Deleted_User" || !user.email || !user.password) {
+        return res.status(403).json({
+          message: "This account has been deleted. Please contact support for assistance."
+        });
+      }
+
     if (!user.emailVerified) {
       return res.status(403).json({
         message: "Email not verified. Please verify your email to log in."
@@ -284,6 +291,12 @@ export const googleAuthWithToken = async (req, res, next) => {
       message = "Registration successful.";
      
     } else {
+      // **Check if the user is deleted**
+      if (existingUser.Name === "Deleted_User" || !existingUser.email) {
+        return res.status(403).json({
+          message: "This account has been deleted. Please contact support for assistance."
+        });
+      }
       existingUser.googleId = googleId;
       existingUser.emailVerified = true;
       existingUser.isLoggedIn = true;
@@ -417,6 +430,12 @@ export const facebookAuthWithToken = async (req, res, next) => {
       message = "Registration successful.";
   
     } else {
+      // **Check if the user is deleted**
+      if (existingUser.Name === "Deleted_User" || !existingUser.email) {
+        return res.status(403).json({
+          message: "This account has been deleted. Please contact support for assistance."
+        });
+      }
       // If the user exists, update their profile
       existingUser.facebookId = facebookId;
       existingUser.emailVerified = true;
@@ -528,6 +547,12 @@ export const appleAuthWithToken = async (req, res, next) => {
       message = "Registration successful.";
     
     } else {
+      // **Check if the user is deleted**
+      if (existingUser.Name === "Deleted_User" || !existingUser.email) {
+        return res.status(403).json({
+          message: "This account has been deleted. Please contact support for assistance."
+        });
+      }
       // If the user exists, update their profile
       existingUser.appleId = appleId;
       existingUser.emailVerified = true;
