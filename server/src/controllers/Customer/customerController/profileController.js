@@ -96,17 +96,13 @@ export const countrySetup = async (req, res, next) => {
       }
     }
 
-    // Determine if profile is complete
-    const isProfileComplete = !!(country && countryCode && phoneNumber);
-
     // Update or create customer profile
     const customerProfile = await CustomerProfile.findOneAndUpdate(
       { _id: userId },
       {
         country,
         countryCode,
-        phoneNumber: phoneNumber || null, // Ensure null if empty
-        isProfileComplete
+        phoneNumber: phoneNumber || null // Ensure null if empty
       },
       { new: true, upsert: true, runValidators: true } // Creates if not exists
     );

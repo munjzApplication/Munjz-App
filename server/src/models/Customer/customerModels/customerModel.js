@@ -78,10 +78,9 @@ const customerProfileSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  isProfileComplete: { type: Boolean, default: false },
 
   isLoggedIn: { type: Boolean, default: false },
-
+  
   // ✅ Soft Delete Field
   deletedAt: {
     type: Date,
