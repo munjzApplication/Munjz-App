@@ -192,12 +192,12 @@ export const Login = async (req, res, next) => {
       return res.status(401).json({ message: "Incorrect email or password." });
     }
 
-      // Check if the account is deleted
-      if (user.Name === "Deleted_User" || !user.email || !user.password) {
-        return res.status(403).json({
-          message: "This account has been deleted. Please contact support for assistance."
-        });
-      }
+    // Check if the account is deleted
+    if (user.Name === "Deleted_User" || !user.email || !user.password) {
+      return res.status(403).json({
+        message: "This account has been deleted. Please contact support for assistance."
+      });
+    }
 
     if (!user.emailVerified) {
       return res.status(403).json({
@@ -289,10 +289,10 @@ export const googleAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful.";
-     
+
     } else {
-      // **Check if the user is deleted**
-      if (existingUser.Name === "Deleted_User" || !existingUser.email) {
+      // ✅ **Check if the user was soft-deleted**
+      if (existingUser.deletedAt) {
         return res.status(403).json({
           message: "This account has been deleted. Please contact support for assistance."
         });
@@ -428,7 +428,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful.";
-  
+
     } else {
       // **Check if the user is deleted**
       if (existingUser.Name === "Deleted_User" || !existingUser.email) {
@@ -545,7 +545,7 @@ export const appleAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful.";
-    
+
     } else {
       // **Check if the user is deleted**
       if (existingUser.Name === "Deleted_User" || !existingUser.email) {

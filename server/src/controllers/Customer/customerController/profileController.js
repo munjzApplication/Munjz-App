@@ -353,45 +353,42 @@ export const deleteProfile = async (req, res, next) => {
     const user = await CustomerProfile.findById(userId).session(session);
     if (!user) {
       await session.abortTransaction();
-      session.endSession();
       return res.status(404).json({ message: "Profile not found." });
     }
 
-    // Prepare update fields (conditionally remove social logins)
+    // Save original name and email before deletion
+    const originalName = user.Name;
+    const originalEmail = user.email;
+
+    // Prepare update fields (soft delete)
     const updateFields = {
       Name: "Deleted_User",
       profilePhoto: null,
       email: null,
       phoneNumber: null,
-      password: null
+      password: null,
+      googleId: null, 
+      facebookId: null,
+      appleId: null,
+      deletedAt: new Date() // ✅ Mark as deleted
     };
 
-    if (user.googleId) updateFields.googleId = null;
-    if (user.facebookId) updateFields.facebookId = null;
-    if (user.appleId) updateFields.appleId = null;
-
-    // Update user with the soft delete fields
-    const updatedProfile = await CustomerProfile.findByIdAndUpdate(
-      userId,
-      { $set: updateFields },
-      { new: true, session }
-    );
+    // Update user
+    await CustomerProfile.findByIdAndUpdate(userId, { $set: updateFields }, { new: true, session });
 
     await session.commitTransaction();
-    session.endSession();
+
     // Push Notifications
     try {
-      // Notify customer
       await notificationService.sendToCustomer(
         userId,
         "Account Deleted",
         "Your account has been successfully deleted. If this was not you, please contact support immediately."
       );
 
-      // Notify admin
       await notificationService.sendToAdmin(
         "Customer Profile Deleted",
-        `Customer ${user.Name} (${user.email}) has deleted their account.`
+        `Customer ${originalName} (${originalEmail}) has deleted their account.`
       );
     } catch (pushError) {
       console.error("Error sending account deletion notification:", pushError);
@@ -400,7 +397,9 @@ export const deleteProfile = async (req, res, next) => {
     res.status(200).json({ message: "Profile deleted successfully." });
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
     next(error);
+  } finally {
+    session.endSession(); // ✅ Always ensure session cleanup
   }
 };
+

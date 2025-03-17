@@ -80,7 +80,11 @@ const customerProfileSchema = new mongoose.Schema({
   },
 
   isLoggedIn: { type: Boolean, default: false },
-
+  // ✅ Soft Delete Field
+  deletedAt: {
+    type: Date,
+    default: null // NULL means the account is active
+  }
 
 });
 
