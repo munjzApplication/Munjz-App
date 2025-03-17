@@ -191,12 +191,12 @@ export const Login = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({ message: "Incorrect email or password." });
     }
-        // Check if the user has been soft-deleted
-        if (user.deletedAt) {
-          return res.status(403).json({
-            message: "This account has been deleted. Please contact support."
-          });
-        }
+    // Check if the user has been soft-deleted
+    if (user.deletedAt) {
+      return res.status(403).json({
+        message: "This account has been deleted. Please contact support."
+      });
+    }
 
     if (!user.emailVerified) {
       return res.status(403).json({
@@ -288,37 +288,53 @@ export const googleAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful.";
-     
-    } else {
-        // Check if the user has been soft-deleted
-        if (existingUser.deletedAt) {
-          return res.status(403).json({
-            message: "This account has been deleted. Please contact support."
-          });
-        }
-      existingUser.googleId = googleId;
-      existingUser.emailVerified = true;
-      existingUser.isLoggedIn = true;
 
-      // Update profile photo if it's missing
-      if (!existingUser.profilePhoto) {
-        existingUser.profilePhoto = profilePhoto;
+    } else {
+      // Check if the user has been soft-deleted
+      if (existingUser.deletedAt) {
+        return res.status(403).json({
+          message: "This account has been deleted. Please contact support."
+        });
       }
 
-      await existingUser.save();
+      // Check if phone, country, and countryCode exist
+      if (!existingUser.phoneNumber || !existingUser.country || !existingUser.countryCode) {
+        // Re-registration (because important fields are missing)
+        existingUser.googleId = googleId;
+        existingUser.emailVerified = true;
+        existingUser.isLoggedIn = true;
 
-      message = "Login successful.";
-      // Notify on login
-      await notificationService.sendToCustomer(
-        existingUser._id,
-        "Welcome back",
-        "You have successfully logged in using Google."
-      );
-      await notificationService.sendToAdmin(
-        "Customer Login Alert",
-        `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
-      );
+        if (!existingUser.profilePhoto) {
+          existingUser.profilePhoto = profilePhoto;
+        }
 
+        await existingUser.save();
+        message = "Registration successful.";
+
+      } else {
+        // Full login (phone, country, and countryCode exist)
+        existingUser.googleId = googleId;
+        existingUser.emailVerified = true;
+        existingUser.isLoggedIn = true;
+
+        if (!existingUser.profilePhoto) {
+          existingUser.profilePhoto = profilePhoto;
+        }
+
+        await existingUser.save();
+        message = "Login successful.";
+
+        // Notify on login
+        await notificationService.sendToCustomer(
+          existingUser._id,
+          "Welcome back!",
+          "You have successfully logged in using Google."
+        );
+        await notificationService.sendToAdmin(
+          "Customer Login Alert",
+          `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
+        );
+      }
     }
 
     // Generate JWT
@@ -427,7 +443,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful.";
-  
+
     } else {
       if (existingUser.deletedAt) {
         return res.status(403).json({
@@ -543,7 +559,7 @@ export const appleAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful.";
-    
+
     } else {
       // If the user exists, update their profile
       if (existingUser.deletedAt) {
