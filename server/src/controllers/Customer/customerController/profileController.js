@@ -363,7 +363,8 @@ export const deleteProfile = async (req, res, next) => {
       profilePhoto: null,
       email: null,
       phoneNumber: null,
-      password: null
+      password: null,
+      deletedAt: new Date()
     };
 
     if (user.googleId) updateFields.googleId = null;

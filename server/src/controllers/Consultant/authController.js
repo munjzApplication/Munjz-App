@@ -9,6 +9,9 @@ import { notificationService } from "../../service/sendPushNotification.js";
 import TempConsultant from "../../models/Consultant/consultantModel/tempUser.js";
 import { OAuth2Client } from "google-auth-library";
 import axios from "axios";
+import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetails.js";
+import IDProof from "../../models/Consultant/ProfileModel/idProof.js";
+import BankDetails from "../../models/Consultant/ProfileModel/bankDetails.js";
 
 const client = new OAuth2Client(process.env.CONSULTANT_GOOGLE_CLIENT_ID);
 
@@ -165,6 +168,13 @@ export const Login = async (req, res, next) => {
       return res.status(401).json({ message: "Incorrect email." });
     }
 
+    // Check if the user has been soft-deleted
+    if (user.deletedAt) {
+      return res.status(403).json({
+        message: "This account has been deleted. Please contact support."
+      });
+    }
+
     if (!user.emailVerified) {
       return res
         .status(403)
@@ -249,55 +259,69 @@ export const googleAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful";
-        // Notify on registration
-        await notificationService.sendToAdmin(
-          "New Consultant Registration",
-          `A new Consultant ${existingUser.Name} (${existingUser.email}) has registered using Google.`
-        );
     } else {
-      existingUser.googleId = googleId;
-      existingUser.emailVerified = true;
-      existingUser.isLoggedIn = true;
-
-      await existingUser.save();
-
-      message = "Login successful";
-      // Notify on login
-      await notificationService.sendToConsultant(
-        existingUser._id,
-        "Welcome back",
-        "You have successfully logged in using Google."
-      );
-      await notificationService.sendToAdmin(
-        "Consultant Login Alert",
-        `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
-      );
+      
+          // **Check if the user has been soft-deleted**
+          if (existingUser.deletedAt) {
+            return res.status(403).json({
+              message: "This account has been deleted. Please contact support."
+            });
+          }
     
-    }
-
-    // Generate JWT
-    const token = generateToken(existingUser._id, existingUser.emailVerified);
-
-    await notificationService.sendToConsultant(
-      existingUser._id,
-      "Google Authentication Successful",
-      "You have successfully signed in using Google."
-    );
-
-    return res.status(200).json({
-      message,
-      token,
-      user: {
-        id: existingUser._id,
-        Name: existingUser.Name,
-        email: existingUser.email,
+          // **Check if all required details exist**
+          const [personalDetails, bankDetails, idProof] = await Promise.all([
+            PersonalDetails.findOne({ consultantId: existingUser._id }),
+            BankDetails.findOne({ consultantId: existingUser._id }),
+            IDProof.findOne({ consultantId: existingUser._id })
+          ]);
+    
+          if (!personalDetails || !bankDetails || !idProof) {
+            message = "Registration successful";
+          } else {
+            message = "Login successful";
+    
+            // **Notify on login**
+            await notificationService.sendToConsultant(
+              existingUser._id,
+              "Welcome back!",
+              "You have successfully logged in using Google."
+            );
+            await notificationService.sendToAdmin(
+              "Consultant Login Alert",
+              `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
+            );
+          }
+    
+          // **Update Google ID and login status**
+          existingUser.googleId = googleId;
+          existingUser.emailVerified = true;
+          existingUser.isLoggedIn = true;
+    
+          if (!existingUser.profilePhoto) {
+            existingUser.profilePhoto = profilePhoto;
+          }
+    
+          await existingUser.save();
+        }
+    
+        // **Generate JWT**
+        const token = generateToken(existingUser._id, existingUser.emailVerified);
+    
+        return res.status(200).json({
+          message,
+          token,
+          user: {
+            id: existingUser._id,
+            Name: existingUser.Name,
+            email: existingUser.email,
+          }
+        });
+      } catch (error) {
+        console.error("Google authentication error:", error);
+        next(error);
       }
-    });
-  } catch (error) {
-    console.error("Google authentication error:", error);
-    next(error);
-  }
-};
+    };
+
 
 export const facebookAuthWithToken = async (req, res, next) => {
   const { access_token } = req.body;
@@ -376,16 +400,16 @@ export const facebookAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful";
-        // Notify on registration
-        await notificationService.sendToCustomer(
-          existingUser._id,
-          "Welcome to MUNJZ",
-          "Your registration was successful. Welcome aboard!"
-        );
-        await notificationService.sendToAdmin(
-          "New Consultant Registration",
-          `A new Consultant ${existingUser.Name} (${existingUser.email}) has registered using Apple.`
-        );
+      // Notify on registration
+      await notificationService.sendToCustomer(
+        existingUser._id,
+        "Welcome to MUNJZ",
+        "Your registration was successful. Welcome aboard!"
+      );
+      await notificationService.sendToAdmin(
+        "New Consultant Registration",
+        `A new Consultant ${existingUser.Name} (${existingUser.email}) has registered using Apple.`
+      );
     } else {
       // If the user exists, update their profile
       existingUser.facebookId = facebookId;
@@ -404,7 +428,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
         "Consultant Login Alert",
         `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Facebook.`
       );
-    
+
     }
 
     // Generate JWT
@@ -485,16 +509,16 @@ export const appleAuthWithToken = async (req, res, next) => {
       });
 
       message = "Registration successful";
-        // Notify on registration
-        await notificationService.sendToConsultant(
-          existingUser._id,
-          "Welcome to MUNJZ",
-          "Your registration was successful. Welcome aboard!"
-        );
-        await notificationService.sendToAdmin(
-          "New Consultant Registration",
-          `A new Consultant ${existingUser.Name} (${existingUser.email}) has registered using Apple.`
-        );
+      // Notify on registration
+      await notificationService.sendToConsultant(
+        existingUser._id,
+        "Welcome to MUNJZ",
+        "Your registration was successful. Welcome aboard!"
+      );
+      await notificationService.sendToAdmin(
+        "New Consultant Registration",
+        `A new Consultant ${existingUser.Name} (${existingUser.email}) has registered using Apple.`
+      );
     } else {
       // If the user exists, update their profile
       existingUser.appleId = appleId;
@@ -518,7 +542,7 @@ export const appleAuthWithToken = async (req, res, next) => {
         "Consultant Login Alert",
         `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Apple.`
       );
-    
+
     }
 
     // Generate JWT
