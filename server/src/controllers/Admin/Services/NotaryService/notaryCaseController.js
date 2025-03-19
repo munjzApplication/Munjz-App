@@ -19,14 +19,10 @@ export const editNotaryCase = async (req, res, next) => {
     // Allowed status values
     const allowedStatuses = [
       "submitted",
-      "pending",
       "working",
-      "cancelled",
       "completed",
       "rejected",
-      "transfer"
     ];
-
     // Validate the status
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid status value" });

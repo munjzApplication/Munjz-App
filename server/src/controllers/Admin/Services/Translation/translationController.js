@@ -19,12 +19,9 @@ export const editTranslation = async (req, res, next) => {
     // Allowed status values
     const allowedStatuses = [
       "submitted",
-      "pending",
       "working",
-      "cancelled",
       "completed",
       "rejected",
-      "transfer"
     ];
 
     // Validate the status

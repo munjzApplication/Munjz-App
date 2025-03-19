@@ -12,7 +12,7 @@ export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCo
   try {
     const courtServiceID = await generateUniqueServiceID("court");
     console.log("Court Service ID:", courtServiceID);
-    
+
 
     const courtCase = await CourtCase.create([{ customerId, courtServiceID, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus, status }], { session });
 
@@ -27,18 +27,32 @@ export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCo
  * Save Court Documents
  */
 export const saveCourtDocuments = async (files, courtCaseId, session) => {
-  console.log("files",files);
-  console.log("courtcaseid",courtCaseId);
-  
-  
+  console.log("files", files);
+  console.log("courtcaseid", courtCaseId);
+
+
   if (!files?.length) throw new Error("No files provided for document upload.");
 
   try {
     const documentUploads = await Promise.all(files.map(file => uploadFileToS3(file, "CourtCaseDocs")));
 
-    const documentData = documentUploads.map(url => ({ documentUrl: url, uploadedAt: new Date() }));
+    // Prepare document data array
+    const documentData = documentUploads.map(url => ({
+      documentUrl: url
+    }));
 
-    const document = await DocumentModel.create([{ courtServiceCase: courtCaseId, Documents: documentData, requestStatus: "unread" }], { session });
+    // Create a new document entry
+    const document = await DocumentModel.create(
+      [{
+        courtServiceCase: courtCaseId,
+        documents: documentData,  // Store all documents inside the array
+        uploadedBy: "customer",
+        documentType: "initial",
+        status: "submitted",
+        uploadedAt: new Date()
+      }],
+      { session }
+    );
 
     return document;
   } catch (error) {

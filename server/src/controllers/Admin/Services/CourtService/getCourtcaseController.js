@@ -77,22 +77,41 @@ export const getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    const [courtCase, courtCaseDoc] = await Promise.all([
-      courtCaseModel.findById(caseId),
-      courtCaseeDocument.findOne({ courtServiceCase: caseId })
+    // Step 1: Fetch all documents for the given caseId
+    const caseDocuments = await courtCaseeDocument.aggregate([
+      { $match: { courtServiceCase: new mongoose.Types.ObjectId(caseId) } },
+      { $sort: { createdAt: -1 } }, // Sort by newest documents first
+      {
+        $project: {
+          _id: 1,
+          documentType: 1,
+          documents: 1,
+          uploadedBy: 1,
+          status: 1,
+          // requestedAt: 1,
+          // fulfilledAt: 1,
+          createdAt: 1
+        }
+      }
     ]);
 
-    if (!courtCase) {
-      return res.status(404).json({ message: "Court case not found" });
+    // If no documents are found
+    if (caseDocuments.length === 0) {
+      return res.status(404).json({ message: "No documents found for this case." });
     }
 
-    const formattedCase = courtCaseDoc
-      ? { ...courtCaseDoc.toObject(), createdAt: formatDate(courtCaseDoc.createdAt) }
-      : {};
+    // Format dates
+    const formattedDocs = caseDocuments.map(doc => ({
+      ...doc,
+      // requestedAt: doc.requestedAt ? formatDate(doc.requestedAt) : null,
+      // fulfilledAt: doc.fulfilledAt ? formatDate(doc.fulfilledAt) : null,
+      createdAt: formatDate(doc.createdAt)
+    }));
 
     res.status(200).json({
-      message: "Court case fetched successfully",
-      courtCase: formattedCase
+      message: "Documents fetched successfully",
+      courtServiceCase: caseId,
+      documents: formattedDocs
     });
   } catch (error) {
     next(error);

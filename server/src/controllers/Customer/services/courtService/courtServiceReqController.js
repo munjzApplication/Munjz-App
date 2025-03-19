@@ -5,89 +5,126 @@ import AdditionalPayment from "../../../../models/Customer/courtServiceModel/cou
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
+import mongoose from "mongoose";
 
-export const uploadAdminRequestedDocument = async (req, res) => {
+export const uploadCustomerAdditionalDocument = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { caseId } = req.params;
     const files = req.files;
 
     if (!files || files.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ message: "No files uploaded." });
     }
 
-    const currentTime = new Date();
-    const uploadedDocuments = [];
-
-    // Upload the documents to S3 and gather the URLs
+    // Step 1: Upload files to S3 and get URLs
+    const documentUrls = [];
     for (const file of files) {
-      try {
-        const documentUrl = await uploadFileToS3(file, "courtcaseDocs");
-        uploadedDocuments.push({
-          documentUrl,
-          uploadedAt: currentTime
-        });
-      } catch (uploadError) {
-        console.error("Error uploading file:", uploadError);
-        return res.status(500).json({
-          message: `Error uploading file: ${file.originalname}`,
-          error: uploadError.message
-        });
-      }
+      const documentUrl = await uploadFileToS3(file, "CourtCaseDocs");
+      documentUrls.push({ documentUrl });
     }
 
-    // Find the CourtCase by caseId (or courtServiceID)
-    const courtCase = await CourtCase.findOne({ _id: caseId });
-    if (!courtCase) {
-      return res.status(404).json({ message: "Court case not found." });
-    }
+    // Step 2: Create a new additional document entry
+    const newDocument = await DocumentModel.create(
+      [
+        {
+          courtServiceCase: caseId,
+          documents: documentUrls,
+          uploadedBy: "customer",
+          documentType: "additional",
+          status: "submitted",
+          uploadedAt: new Date(),
+        },
+      ],
+      { session }
+    );
 
-    // Get the customer details using the customerID from the courtCase
-    const customer = await Customer.findById(courtCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
-    }
+    await session.commitTransaction();
+    session.endSession();
 
-    let existingDocument = await AdditionalDocument.findOne({ caseId: caseId });
-
-    if (existingDocument) {
-      existingDocument.documents = uploadedDocuments;
-      existingDocument.requestStatus = "updated";
-      existingDocument.requestUpdatedAt = currentTime;
-
-      await existingDocument.save();
-
-      const courtServiceID = existingDocument.courtServiceID;
-      const serviceName = courtCase.serviceName;
-      const customerName = customer.Name || "Unknown Customer";
-
-      return res.status(200).json({
-        message: "Documents uploaded and request status updated to 'updated'.",
-        additionalDocument: existingDocument
-      });
-    } else {
-      // Step 3: If no existing document is found, create a new entry with 'pending' status
-      const newAdditionalDocument = new AdditionalDocument({
-        caseId,
-        courtServiceID,
-        documents: [],
-        requestReason: req.body.requestReason || "No reason provided",
-        requestStatus: "pending",
-        requestUpdatedAt: currentTime
-      });
-
-      await newAdditionalDocument.save();
-
-      return res.status(201).json({
-        message:
-          "Document entry created with 'pending' status. Please wait for customer upload.",
-        additionalDocument: newAdditionalDocument
-      });
-    }
+    res.status(201).json({
+      message: "Additional document uploaded successfully.",
+      document: newDocument[0], // Since `create` returns an array
+    });
   } catch (error) {
-    console.error("Error uploading documents:", error);
+    await session.abortTransaction();
+    session.endSession();
+
     res.status(500).json({
-      message: "Error uploading documents.",
-      error: error.message
+      message: "Failed to upload additional document.",
+      error: error.message,
+    });
+  }
+};
+
+export const uploadAdminRequestedDocument = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { caseId } = req.params;
+    const files = req.files;
+
+    if (!files || files.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "No files uploaded." });
+    }
+
+     // Step 1: Check if an admin requested a document for this case
+     const requestedDocument = await DocumentModel.findOne({
+      courtServiceCase: caseId,
+      documentType: "admin-request",
+      status: "pending", // Ensure it's an open request
+    }).session(session);
+console.log("requestedDocument",requestedDocument);
+
+    if (!requestedDocument) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({
+        message: "No pending admin-requested document found for this case.",
+      });
+    }
+
+    // Step 2: Upload files to S3 and get their URLs
+    const documentUrls = [];
+    for (const file of files) {
+      const documentUrl = await uploadFileToS3(file, "CourtCaseDocs");
+      documentUrls.push({ documentUrl });
+    }
+
+    // Step 3: Update the existing requested document
+    const updatedDocument = await DocumentModel.findByIdAndUpdate(
+      requestedDocument._id,
+      {
+        $set: {
+          documents: documentUrls, // Add uploaded documents
+          status: "submitted", // Mark as fulfilled
+          fulfilledAt: new Date(),
+        },
+      },
+      { new: true, session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      message: "Admin-requested document uploaded successfully.",
+      document: updatedDocument,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    
+    res.status(500).json({
+      message: "Failed to upload requested document.",
+      error: error.message,
     });
   }
 };

@@ -40,15 +40,15 @@ export const saveCourtServiceDetails = async (req, res, next) => {
             paidCurrency,
             serviceName,
             selectedServiceCountry,
-            paymentDate : new Date(),
+            paymentDate: new Date(),
             customerName: customer.Name,
             customerId
         }, session);
 
         await session.commitTransaction();
         session.endSession();
-         // Notify Customer
-         await notificationService.sendToCustomer(
+        // Notify Customer
+        await notificationService.sendToCustomer(
             customerId,
             "Court Case Registered",
             `Your court case for ${serviceName} in ${selectedServiceCountry} has been registered successfully.`
@@ -77,7 +77,7 @@ export const getAllCourtCases = async (req, res, next) => {
             { $sort: { createdAt: -1 } },
             {
                 $lookup: {
-                    from: "courtservice_payments",  // Ensure correct collection name
+                    from: "courtservice_payments",  
                     localField: "_id",
                     foreignField: "courtServiceCase",
                     as: "paymentDetails"
@@ -99,13 +99,13 @@ export const getAllCourtCases = async (req, res, next) => {
                 }
             }
         ]);
-        
+
         const formattedCases = courtCases.map(caseItem => ({
             ...caseItem,
             createdAt: formatDatewithmonth(caseItem.createdAt)
         }));
         console.log("Court Cases:", formattedCases);
-        
+
 
         return res.status(200).json({ message: "Court cases fetched successfully", formattedCases });
     } catch (error) {
