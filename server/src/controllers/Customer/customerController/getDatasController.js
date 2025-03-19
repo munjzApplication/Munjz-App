@@ -51,7 +51,7 @@ export const getWalletDetails = async (req, res, next) => {
   try {
     const customerId = req.user._id;
 
-    // Find the customer and wallet details in one optimized query
+    // Find wallet details
     const walletData = await Wallet.aggregate([
       { $match: { customerId } }, 
       {
@@ -59,23 +59,32 @@ export const getWalletDetails = async (req, res, next) => {
           customerId: 1,
           balance: 1,
           walletActivity: {
-            $sortArray: { input: "$walletActivity", sortBy: { time: -1 } }
+            $ifNull: [
+              { $sortArray: { input: "$walletActivity", sortBy: { time: -1 } } },
+              []
+            ]
           }
         }
       }
     ]);
 
-     // If no wallet exists, set default values
-     let wallet = walletData.length ? walletData[0] : { customerId, balance: 0, walletActivity: [] };
+    // If no wallet exists, return empty response
+    if (walletData.length === 0) {
+      return res.status(200).json({
+        message: "Wallet details not found.",
+        data: {}
+      });
+    }
 
+    const wallet = walletData[0];
 
-    // Format wallet details
+    // Format balance
     const formattedBalance = wallet.balance > 0 ? formatMinutesToMMSS(wallet.balance) : "0:00";
     const balanceInSec = wallet.balance > 0 ? parseFloat((wallet.balance * 60).toFixed(2)) : 0;
 
     const formattedWalletActivity = wallet.walletActivity.map(activity => ({
       ...activity,
-      minute: formatMinutesToMMSS(activity.minute), // Use the new helper function
+      minute: formatMinutesToMMSS(activity.minute),
       time: formatDate(activity.time)
     }));
 
@@ -83,7 +92,7 @@ export const getWalletDetails = async (req, res, next) => {
       message: "Wallet details fetched successfully.",
       data: {
         customerId: wallet.customerId,
-        balance: formattedBalance, // Now in MM:SS format
+        balance: formattedBalance,
         balanceInSec: balanceInSec,
         walletActivity: formattedWalletActivity
       }
@@ -93,3 +102,4 @@ export const getWalletDetails = async (req, res, next) => {
     next(error);
   }
 };
+

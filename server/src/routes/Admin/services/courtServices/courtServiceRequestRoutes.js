@@ -1,6 +1,6 @@
 import express from 'express';
 import { requestDocument, reviewDocument, requestAdditionalPayment } from '../../../../controllers/Admin/Services/CourtService/courtRequestController.js';
-import upload from '../../../../middlewares/fileUpload.js';
+
 const router = express.Router();
 
 
