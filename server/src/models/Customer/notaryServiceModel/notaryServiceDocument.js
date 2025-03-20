@@ -1,25 +1,29 @@
 import mongoose from "mongoose";
 
-const DocumentSchema = new mongoose.Schema({
+const NotaryServiceDocumentSchema = new mongoose.Schema({
   notaryServiceCase: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "NotaryService_Case",
     required: true
   },
-  Documents: {
-    type: [
-      {
-        documentUrl: { type: String, required: true },
-        uploadedAt: { type: Date, required: true }
-      }
-    ],
-    required: true,
-    default: []
+  documents: [
+    {
+      documentUrl: { type: String, required: true },
+    }
+  ],
+  uploadedAt: { type: Date, default: Date.now },
+  uploadedBy: { type: String, enum: ["customer", "admin"], required: true }, // Who uploaded
+  documentType: { 
+    type: String, 
+    enum: ["initial", "additional", "admin-request", "admin-upload"], 
+    required: true 
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+  status: { type: String, enum: ["pending", "submitted"], default: "submitted" },
+  requestedAt: { type: Date }, 
+  fulfilledAt: { type: Date }, 
+  requestReason: { type: String },
+
+  createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model("NotaryService_Document", DocumentSchema);
+export default mongoose.model("NotaryService_Document", NotaryServiceDocumentSchema);

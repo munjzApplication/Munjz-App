@@ -6,32 +6,28 @@ const TranslationDocumentSchema = new mongoose.Schema({
     ref: "Translation_Details",
     required: true
   },
-  Documents: {
-    type: [
-      {
-        documentUrl: { type: String, required: true },
-        uploadedAt: { type: Date, required: true }
-      }
-    ],
-    required: true,
-    default: []
-  },
-
+  documents: [
+    {
+      documentUrl: { type: String, required: true },
+    }
+  ],
   noOfPage: {
     type: Number,
     required: false
   },
-  SubmitionDate: {
-    type: String,
-    require: true
+  uploadedAt: { type: Date, default: Date.now },
+  uploadedBy: { type: String, enum: ["customer", "admin"], required: true }, // Who uploaded
+  documentType: { 
+    type: String, 
+    enum: ["initial", "additional", "admin-request", "admin-upload"], 
+    required: true 
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+  status: { type: String, enum: ["pending", "submitted"], default: "submitted" },
+  requestedAt: { type: Date }, 
+  fulfilledAt: { type: Date }, 
+  requestReason: { type: String },
+
+  createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model(
-  "Translation_Document",
-  TranslationDocumentSchema
-);
+export default mongoose.model("Translation_Document", TranslationDocumentSchema);

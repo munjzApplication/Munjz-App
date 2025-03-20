@@ -1,7 +1,6 @@
 import DocumentModel from "../../../../models/Customer/courtServiceModel/courtServiceDocument.js";
-import AdditionalDocument from "../../../../models/Customer/courtServiceModel/courtServiceAdditionalDocuments.js";
-import Payment from "../../../../models/Customer/courtServiceModel/courtServicePayment.js";
-import AdditionalPayment from "../../../../models/Customer/courtServiceModel/courtServiceAdditionalPayment.js";
+import Payment from "../../../../models/Customer/customerModels/transaction.js";
+import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
@@ -75,13 +74,13 @@ export const uploadAdminRequestedDocument = async (req, res) => {
       return res.status(400).json({ message: "No files uploaded." });
     }
 
-     // Step 1: Check if an admin requested a document for this case
-     const requestedDocument = await DocumentModel.findOne({
+    // Step 1: Check if an admin requested a document for this case
+    const requestedDocument = await DocumentModel.findOne({
       courtServiceCase: caseId,
       documentType: "admin-request",
       status: "pending", // Ensure it's an open request
     }).session(session);
-console.log("requestedDocument",requestedDocument);
+    console.log("requestedDocument", requestedDocument);
 
     if (!requestedDocument) {
       await session.abortTransaction();
@@ -121,7 +120,7 @@ console.log("requestedDocument",requestedDocument);
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    
+
     res.status(500).json({
       message: "Failed to upload requested document.",
       error: error.message,
@@ -155,89 +154,52 @@ export const getDocummentByCaseId = async (req, res, next) => {
 };
 
 export const submitAdditionalPayment = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction(); 
+
   try {
     const { caseId } = req.params;
-    const { transactionId, paymentMethod, paymentDate, amount } = req.body;
+    const { amount, paidCurrency } = req.body;
 
-    // Validate required fields
-    if (!transactionId || !paymentMethod || !paymentDate || !amount) {
-      return res.status(400).json({
-        message:
-          "All fields are required (transactionId, paymentMethod, paymentDate, amount)."
-      });
+    if (!amount || !paidCurrency) {
+      return res.status(400).json({ message: "Amount and currency are required." });
     }
 
-    // Find the additional payment record by caseId
-    const payment = await AdditionalPayment.findOne({ caseId });
-    if (!payment) {
-      return res
-        .status(404)
-        .json({ message: "Additional payment record not found for the given case ID." });
+    if (!mongoose.Types.ObjectId.isValid(caseId)) {
+      return res.status(400).json({ message: "Invalid case ID." });
     }
 
-    // Check if the payment is already marked as paid
-    if (payment.paymentStatus === "paid") {
-      return res.status(400).json({
-        message: "This additional payment has already been paid."
-      });
-    }
-
-    // Validate the amount
-    if (payment.amount !== amount) {
-      return res.status(400).json({
-        message: `Payment amount mismatch. Expected ${payment.amount}, but received ${amount}.`
-      });
-    }
-
-    // Update the payment status to 'paid'
-    const updatedPayment = await AdditionalPayment.updateOne(
-      { _id: payment._id },
-      {
-        $set: {
-          transactionId: transactionId,
-          paymentMethod: paymentMethod,
-          paymentDate: paymentDate,
-          paymentStatus: "paid",
-          paidAt: new Date()
-        }
-      }
+    // Find and update the pending payment
+    const additionalPayment = await AdditionalPayment.findOneAndUpdate(
+      { caseId, status: "pending" }, 
+      { 
+        $set: { 
+          amount, 
+          paidCurrency, 
+          status: "completed", 
+          paymentDate: new Date() 
+        } 
+      },
+      { new: true, session } 
     );
 
-    if (updatedPayment.modifiedCount === 0) {
-      return res
-        .status(500)
-        .json({ message: "Failed to update payment status." });
+    if (!additionalPayment) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "No pending additional payment request found for this case." });
     }
 
-    // Get Court Case and Customer details for the notification
-    const courtCase = await CourtCase.findOne({ _id: caseId });
-    if (!courtCase) {
-      return res.status(404).json({ message: "Court case not found." });
-    }
+    await session.commitTransaction();
+    session.endSession();
 
-    const customer = await Customer.findById(courtCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
-    }
-
-    const courtServiceID = courtCase.courtServiceID;
-    const serviceName = courtCase.serviceName;
-    const customerName = customer.Name || "Unknown Customer";
-
-
-    // Send response
     res.status(200).json({
       message: "Additional payment submitted successfully.",
-      additionalDetails: {
-        caseId,
-        transactionId,
-        paymentMethod,
-        paymentDate,
-        amount,
-        paymentStatus: "paid"
-      }
+      additionalPayment,
     });
+
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
@@ -247,7 +209,7 @@ export const getPaymentsByCaseId = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    const payments = await Payment.find({ courtServiceCase: caseId });
+    const payments = await Payment.find({ caseId: caseId });
     const additionalPayment = await AdditionalPayment.find({ caseId: caseId });
 
     console.log("payments", payments);

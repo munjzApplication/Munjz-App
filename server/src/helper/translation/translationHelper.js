@@ -1,6 +1,6 @@
 import TranslationCase from "../../models/Customer/translationModel/translationDetails.js";
 import TranslationDocument from "../../models/Customer/translationModel/translationDocument.js";
-import TranslationPayment from "../../models/Customer/translationModel/translationPayment.js";
+import Transaction from "../../models/Customer/customerModels/transaction.js";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import { generateUniqueServiceID } from "../../helper/uniqueIDHelper.js";
 
@@ -64,17 +64,18 @@ export const saveTranslationDocuments = async (
 
     const documentData = documentUploads.map(url => ({
       documentUrl: url, 
-      uploadedAt: new Date()
     }));
 
     const document = await TranslationDocument.create(
       [
         { 
           translationCase: translationCaseId, 
-          Documents: documentData, 
-          requestStatus: "unread",
           noOfPage,
-          submissionDate: new Date()
+          documents: documentData,  // Store all documents inside the array
+          uploadedBy: "customer",
+          documentType: "initial",
+          status: "submitted",
+          uploadedAt: new Date()
         }
       ],
       { session }
@@ -91,10 +92,10 @@ export const saveTranslationDocuments = async (
  * Save Translation Payment
  */
 export const saveTranslationPayment = async ({
+  customerId,
   translationCaseId,
   paymentAmount,
   paidCurrency,
-  customerName,
   session
 }) => {
   try {
@@ -105,14 +106,17 @@ export const saveTranslationPayment = async ({
     }
 
     // Save payment details
-    const translationPayment = await TranslationPayment.create(
+    const translationPayment = await Transaction.create(
       [
-        {
-          translationCase: translationCaseId,
-          amount: paymentAmount,
-          paidCurrency,
-          paymentDate: new Date(),
-          paymentStatus: "paid"
+        { 
+          customerId,
+          caseId: translationCaseId, 
+          caseType:"Translation_Details",
+          serviceType :"Translation",
+          amountPaid: paymentAmount, 
+          currency :paidCurrency, 
+          paymentDate: new Date(), 
+          status: "paid" 
         }
       ],
       { session }

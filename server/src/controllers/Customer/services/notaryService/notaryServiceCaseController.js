@@ -6,7 +6,6 @@ import {
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
-import notaryServicePayment from "../../../../models/Customer/notaryServiceModel/notaryServicePayment.js";
 import { formatDatewithmonth } from "../../../../helper/dateFormatter.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
@@ -26,7 +25,6 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
       caseDescription,
       paymentAmount,
       paidCurrency,
-      paymentDate
     } = req.body;
 
     // Validate customer
@@ -65,10 +63,7 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
         notaryCaseId: notaryCase._id,
         paymentAmount,
         paidCurrency,
-        serviceName,
-        selectedServiceCountry,
-        paymentDate,
-        customerName,
+        paymentDate: new Date(),
         customerId
       },
       session

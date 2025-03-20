@@ -68,7 +68,6 @@ export const submitTranslationRequest = async (req, res, next) => {
           translationCaseId: translationCase._id,
           paymentAmount,
           paidCurrency,
-          customerName,
           customerId
         },
         session

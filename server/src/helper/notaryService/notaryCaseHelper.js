@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import NotaryCase from "../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import DocumentModel from "../../models/Customer/notaryServiceModel/notaryServiceDocument.js";
-import Payment from "../../models/Customer/notaryServiceModel/notaryServicePayment.js";
+import Payment from "../../models/Customer/customerModels/transaction.js";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import { generateUniqueServiceID } from "../../helper/uniqueIDHelper.js";
 
@@ -43,54 +43,41 @@ console.log("notaryServiceID", notaryServiceID);
  * Save Notary Documents
  */
 export const saveNotaryDocuments = async (files, notaryCaseId, session) => {
-  if (!files?.length) throw new Error("No files provided for document upload.");
-
-  try {
-    console.log("Uploading files to S3...");
-    const documentUploads = await Promise.allSettled(
-      files.map((file) => uploadFileToS3(file, "NotaryCaseDocs"))
-    );
-
-    const successfulUploads = documentUploads.filter(res => res.status === "fulfilled").map(res => res.value);
-    const failedUploads = documentUploads.filter(res => res.status === "rejected");
-
-    if (failedUploads.length > 0) {
-      console.error("Some uploads failed:", failedUploads);
-      throw new Error("Some document uploads failed");
-    }
-
-    console.log("Document Upload Success:", successfulUploads);
-
-    const documentData = successfulUploads.map((url) => ({
-      documentUrl: url,
-      uploadedAt: new Date(),
-    }));
-
-    const [document] = await DocumentModel.create(
-      [
-        {
-          notaryServiceCase: notaryCaseId,
-          Documents: documentData,
-          requestStatus: "unread",
-        },
-      ],
-      { session }
-    );
-
-    console.log("Document Saved to DB:", document);
-    return document;
-  } catch (error) {
-    console.error("Error saving Notary Documents:", error);
-    throw new Error("Failed to save Notary Documents.");
-  }
-};
-
+ if (!files?.length) throw new Error("No files provided for document upload.");
+ 
+   try {
+     const documentUploads = await Promise.all(files.map(file => uploadFileToS3(file, "NotaryCaseDocs")));
+ 
+     // Prepare document data array
+     const documentData = documentUploads.map(url => ({
+       documentUrl: url
+     }));
+ 
+     // Create a new document entry
+     const document = await DocumentModel.create(
+       [{
+        notaryServiceCase: notaryCaseId,
+         documents: documentData,  // Store all documents inside the array
+         uploadedBy: "customer",
+         documentType: "initial",
+         status: "submitted",
+         uploadedAt: new Date()
+       }],
+       { session }
+     );
+ 
+     return document;
+   } catch (error) {
+     console.error("Error saving Court Documents:", error);
+     throw new Error("Failed to save Court Documents.");
+   }
+ };
 
 /**
  * Save Notary Payment
  */
 export const saveNotaryPayment = async (
-  { notaryCaseId, paymentAmount, paidCurrency, serviceName, selectedServiceCountry, paymentDate, customerName, customerId },
+  { customerId,notaryCaseId, paymentAmount, paidCurrency, paymentDate },
   session
 ) => {
   if (!paymentAmount || !paidCurrency) throw new Error("Missing required payment details.");
@@ -99,13 +86,14 @@ export const saveNotaryPayment = async (
     const [payment] = await Payment.create(
       [
         {
-          notaryServiceCase: notaryCaseId,
-          amount: paymentAmount,
-          paidCurrency,
-          serviceName,
-          serviceCountry: selectedServiceCountry,
+          customerId,
+          caseId: notaryCaseId,
+          caseType: "NotaryService_Case",
+          serviceType:"NotaryService",
+          amountPaid: paymentAmount,
+          currency:paidCurrency,
           paymentDate: paymentDate || new Date(),
-          paymentStatus: "paid",
+          status: "paid" 
         },
       ],
       { session }

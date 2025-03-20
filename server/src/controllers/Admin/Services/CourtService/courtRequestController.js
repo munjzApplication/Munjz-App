@@ -1,10 +1,5 @@
 import Document from "../../../../models/Customer/courtServiceModel/courtServiceDocument.js";
-import AdditionalDocument from "../../../../models/Customer/courtServiceModel/courtServiceAdditionalDocuments.js";
-import AdditionalPayment from "../../../../models/Customer/courtServiceModel/courtServiceAdditionalPayment.js";
-import Payment from "../../../../models/Customer/courtServiceModel/courtServicePayment.js";
-import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
-import AdminUploadedDocument from "../../../../models/Admin/courtServiceModels/adminUploadedDocument.js";
-import Customer from "../../../../models/Customer/customerModels/customerModel.js";
+import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import mongoose from "mongoose";
 
@@ -102,53 +97,57 @@ export const getReqDocumentDetails = async (req, res, next) => {
 export const requestAdditionalPayment = async (req, res, next) => {
   try {
     const { caseId } = req.params;
-
-    const courtCase = await CourtCase.findOne({ _id: caseId });
-    if (!courtCase) {
-      return res.status(404).json({ message: "Court case not found." });
-    }
-
     const { amount, paidCurrency, requestReason, dueDate } = req.body;
+
     if (!amount || !paidCurrency || !requestReason || !dueDate) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
-    const mainPayment = await Payment.findOne({ courtServiceCase: caseId });
 
-    // Determine courtServiceID and serviceName
-    const courtServiceID = mainPayment
-      ? mainPayment.courtServiceID
-      : courtCase.courtServiceID;
-    const serviceName = mainPayment
-      ? mainPayment.serviceName
-      : courtCase.serviceName;
+    if (!mongoose.Types.ObjectId.isValid(caseId)) {
+      return res.status(400).json({ message: "Invalid case ID." });
+    }
 
-    // Create a new additional payment request
-    const newAdditionalPayment = new AdditionalPayment({
+
+    const courtCase = await CourtCase.findOne({ _id: caseId })
+      .select("customerId")
+      .lean();
+
+    if (!courtCase) {
+      return res.status(404).json({ message: "Court case not found." });
+    }
+
+
+    const pendingRequestExists = await AdditionalPayment.exists({ caseId, status: "pending" });
+
+    if (pendingRequestExists) {
+      return res.status(400).json({
+        message: "An additional payment request is already pending for this case. Please wait until it's resolved.",
+      });
+    }
+
+    const newAdditionalPayment = await AdditionalPayment.create({
+      customerId: courtCase.customerId,
       caseId,
-      courtServiceID,
-      serviceName,
+      caseType: "CourtService_Case",
+      serviceType: "CourtService",
       amount,
       paidCurrency,
       requestReason,
       dueDate,
-      paymentStatus: "pending",
-      requestedAt: new Date()
+      status: "pending",
     });
 
-    // Save the additional payment record
-    await newAdditionalPayment.save();
 
-    // Respond with the created additional payment record
     res.status(201).json({
       message: "Additional payment requested successfully.",
-      additionalPayment: newAdditionalPayment
+      additionalPayment: newAdditionalPayment,
     });
+
   } catch (error) {
     next(error);
   }
 };
-
 export const adminSubmittedDoc = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();

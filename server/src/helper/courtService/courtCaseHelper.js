@@ -1,6 +1,5 @@
 import CourtCase from "../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import DocumentModel from "../../models/Customer/courtServiceModel/courtServiceDocument.js";
-import Payment from "../../models/Customer/courtServiceModel/courtServicePayment.js";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import { generateUniqueServiceID } from "../../helper/uniqueIDHelper.js";
 import Transaction from "../../models/Customer/customerModels/transaction.js";
