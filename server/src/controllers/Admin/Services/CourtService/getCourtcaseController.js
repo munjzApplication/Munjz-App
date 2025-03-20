@@ -77,66 +77,46 @@ export const getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    const result = await courtCaseeDocument.aggregate([
+    // Step 1: Fetch all documents for the given caseId
+    const caseDocuments = await courtCaseeDocument.aggregate([
       { $match: { courtServiceCase: new mongoose.Types.ObjectId(caseId) } },
-      { $sort: { createdAt: -1 } }, // Sort documents by latest first
+      { $sort: { createdAt: -1 } }, // Sort by newest documents first
       {
-        $facet: {
-          adminUploadedDocs: [
-            { $match: { documentType: "admin-upload" } },
-            {
-              $project: {
-                _id: 1,
-                documentType: 1,
-                documents: 1,
-                uploadedBy: 1,
-                status: 1,
-                createdAt: 1
-              }
-            }
-          ],
-          otherDocs: [
-            { $match: { documentType: { $ne: "admin-upload" } } },
-            {
-              $project: {
-                _id: 1,
-                documentType: 1,
-                documents: 1,
-                uploadedBy: 1,
-                status: 1,
-                createdAt: 1
-              }
-            }
-          ]
+        $project: {
+          _id: 1,
+          documentType: 1,
+          documents: 1,
+          uploadedBy: 1,
+          status: 1,
+          // requestedAt: 1,
+          // fulfilledAt: 1,
+          createdAt: 1
         }
       }
     ]);
 
-    // Ensure result is an array and has the expected structure
-    if (!result || result.length === 0 || !result[0]) {
+    // If no documents are found
+    if (caseDocuments.length === 0) {
       return res.status(404).json({ message: "No documents found for this case." });
     }
 
-    const { adminUploadedDocs = [], otherDocs = [] } = result[0]; // Handle potential undefined values
+    // Format dates
+    const formattedDocs = caseDocuments.map(doc => ({
+      ...doc,
+      // requestedAt: doc.requestedAt ? formatDate(doc.requestedAt) : null,
+      // fulfilledAt: doc.fulfilledAt ? formatDate(doc.fulfilledAt) : null,
+      createdAt: formatDate(doc.createdAt)
+    }));
 
     res.status(200).json({
       message: "Documents fetched successfully",
       courtServiceCase: caseId,
-      adminUploadedDocs: adminUploadedDocs.map(doc => ({
-        ...doc,
-        createdAt: formatDate(doc.createdAt)
-      })),
-      otherDocs: otherDocs.map(doc => ({
-        ...doc,
-        createdAt: formatDate(doc.createdAt)
-      }))
+      documents: formattedDocs
     });
   } catch (error) {
     next(error);
   }
 };
-
-
 
 export const getCourtCaseById = async (req, res, next) => {
   try {
@@ -159,7 +139,7 @@ export const getCourtCaseById = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "Customer_Transactions",
+          from: "courtservice_payments",
           localField: "_id",
           foreignField: "courtServiceCase",
           as: "payment"
