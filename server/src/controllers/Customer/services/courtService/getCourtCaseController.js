@@ -43,6 +43,7 @@ export const getCaseDetails = async (req, res, next) => {
         }));
 
         res.status(200).json({
+            message: "Case details fetched successfully",
             data: {
                 ...caseDetails,
                 documents,
