@@ -38,10 +38,7 @@ export const saveCourtServiceDetails = async (req, res, next) => {
             courtCaseId: courtCase._id,
             paymentAmount,
             paidCurrency,
-            serviceName,
-            selectedServiceCountry,
             paymentDate: new Date(),
-            customerName: customer.Name,
             customerId
         }, session);
 
@@ -77,7 +74,7 @@ export const getAllCourtCases = async (req, res, next) => {
             { $sort: { createdAt: -1 } },
             {
                 $lookup: {
-                    from: "courtservice_payments",  
+                    from: "courtservice_payments",  // Ensure correct collection name
                     localField: "_id",
                     foreignField: "courtServiceCase",
                     as: "paymentDetails"

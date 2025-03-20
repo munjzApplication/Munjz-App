@@ -1,13 +1,9 @@
 import mongoose from "mongoose";
 
 const additionalPaymentSchema = new mongoose.Schema({
-  caseId: {
+  courtServiceCase: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "CourtService_Case",
-    required: true
-  },
-  courtServiceID: {
-    type: String,
     required: true
   },
   serviceName: {

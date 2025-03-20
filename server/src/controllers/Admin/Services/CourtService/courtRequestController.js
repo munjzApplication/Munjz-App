@@ -23,6 +23,16 @@ export const requestDocument = async (req, res) => {
       session.endSession();
       return res.status(404).json({ message: "Court case not found." });
     }
+    const existingRequest = await Document.findOne({
+      courtServiceCase: caseId,
+      status: "pending",
+    }).session(session);
+
+    if (existingRequest) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "A pending document request already exists." });
+    }
 
     // Step 2: Create document request
     const documentRequest = await Document.create(
@@ -56,40 +66,38 @@ export const requestDocument = async (req, res) => {
     });
   }
 };
-export const reviewDocument = async (req, res, next) => {
+export const getReqDocumentDetails = async (req, res, next) => {
   try {
-    const { documentId } = req.params;
-    const { status } = req.body;
-    const courtCase = await CourtCase.findOne({ _id: caseId });
+    const { caseId } = req.params;
+
+    // Step 1: Validate if the case exists
+    const courtCase = await CourtCase.findById(caseId);
     if (!courtCase) {
       return res.status(404).json({ message: "Court case not found." });
     }
 
-    const customer = await Customer.findById(courtCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
+    // Step 2: Fetch only pending admin-requested documents
+    const requestedDocuments = await Document.find({
+      courtServiceCase: caseId,
+      uploadedBy: "admin",
+      documentType: "admin-request",
+      status: "pending", // Only fetch pending requests
+    });
+
+    if (!requestedDocuments.length) {
+      return res.status(404).json({ message: "No pending admin-requested documents found." });
     }
-    if (!["approved", "rejected"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status provided." });
-    }
-
-    const document = await Document.findById(documentId);
-    if (!document)
-      return res.status(404).json({ message: "Document not found." });
-
-    document.requestStatus = status;
-    document.requestUpdatedAt = new Date();
-
-    await document.save();
 
     res.status(200).json({
-      message: `Document marked as ${status} successfully.`,
-      document
+      message: "Pending admin-requested documents retrieved successfully.",
+      requestedDocuments,
     });
+
   } catch (error) {
     next(error);
   }
 };
+
 
 export const requestAdditionalPayment = async (req, res, next) => {
   try {
@@ -98,11 +106,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
     const courtCase = await CourtCase.findOne({ _id: caseId });
     if (!courtCase) {
       return res.status(404).json({ message: "Court case not found." });
-    }
-
-    const customer = await Customer.findById(courtCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
     }
 
     const { amount, paidCurrency, requestReason, dueDate } = req.body;
@@ -195,7 +198,7 @@ export const adminSubmittedDoc = async (req, res) => {
 
     res.status(201).json({
       message: "Admin document uploaded successfully.",
-      document: newAdminDocument[0], 
+      document: newAdminDocument[0],
     });
   } catch (error) {
     await session.abortTransaction();

@@ -1,5 +1,5 @@
 import express from 'express';
-import { requestDocument, reviewDocument, requestAdditionalPayment } from '../../../../controllers/Admin/Services/CourtService/courtRequestController.js';
+import { requestDocument, getReqDocumentDetails, requestAdditionalPayment } from '../../../../controllers/Admin/Services/CourtService/courtRequestController.js';
 
 const router = express.Router();
 
@@ -7,7 +7,7 @@ const router = express.Router();
 // Document Requests
 
 router.post('/documents/request/:caseId', requestDocument);
-router.patch('/documents/review/:documentId', reviewDocument);
+router.patch('/get-req-doc/:caseId', getReqDocumentDetails);
 
 // Payment Requests
 router.post('/payments/request/:caseId', requestAdditionalPayment);

@@ -3,6 +3,7 @@ import DocumentModel from "../../models/Customer/courtServiceModel/courtServiceD
 import Payment from "../../models/Customer/courtServiceModel/courtServicePayment.js";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import { generateUniqueServiceID } from "../../helper/uniqueIDHelper.js";
+import Transaction from "../../models/Customer/customerModels/transaction.js";
 import mongoose from "mongoose";
 
 /**
@@ -14,7 +15,17 @@ export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCo
     console.log("Court Service ID:", courtServiceID);
 
 
-    const courtCase = await CourtCase.create([{ customerId, courtServiceID, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus, status }], { session });
+    const courtCase = await CourtCase.create([
+      { 
+        customerId, 
+        courtServiceID, 
+        serviceName, 
+        selectedServiceCountry, 
+        caseDescription, 
+        casePaymentStatus, 
+        status 
+      }
+    ], { session });
 
     return { courtCase: courtCase[0], courtServiceID };
   } catch (error) {
@@ -64,11 +75,22 @@ export const saveCourtDocuments = async (files, courtCaseId, session) => {
 /**
  * Save Court Payment
  */
-export const saveCourtPayment = async ({ courtCaseId, paymentAmount, paidCurrency, serviceName, selectedServiceCountry, paymentDate, customerName, session }) => {
+export const saveCourtPayment = async ({ customerId,courtCaseId, paymentAmount, paidCurrency, paymentDate, session }) => {
   if (!paymentAmount || !paidCurrency) throw new Error("Missing required payment details.");
 
   try {
-    const payment = await Payment.create([{ courtServiceCase: courtCaseId, amount: paymentAmount, paidCurrency, serviceName, serviceCountry: selectedServiceCountry, paymentDate: paymentDate || new Date(), paymentStatus: "paid" }], { session });
+    const payment = await Transaction.create([
+      { 
+        customerId,
+        caseId: courtCaseId, 
+        caseType:"CourtService_Case",
+        serviceType :"CourtService",
+        amountPaid: paymentAmount, 
+        currency :paidCurrency, 
+        paymentDate: paymentDate || new Date(), 
+        status: "paid" 
+      }
+      ],{ session });
 
 
     return payment;
