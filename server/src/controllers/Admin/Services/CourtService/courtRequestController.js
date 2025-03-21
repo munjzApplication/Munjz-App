@@ -156,6 +156,7 @@ export const adminSubmittedDoc = async (req, res) => {
   try {
     const { caseId } = req.params;
     const files = req.files;
+    const { description } = req.body;
 
     if (!files || files.length === 0) {
       await session.abortTransaction();
@@ -184,6 +185,7 @@ export const adminSubmittedDoc = async (req, res) => {
         {
           courtServiceCase: caseId,
           documents: documentUrls,
+          description,
           uploadedBy: "admin",
           documentType: "admin-upload",
           status: "submitted",

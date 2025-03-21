@@ -86,8 +86,10 @@ export const getCaseDocs = async (req, res, next) => {
           _id: 1,
           documentType: 1,
           documents: 1,
+          description:1,
           uploadedBy: 1,
           status: 1,
+          requestReason:1,
           // requestedAt: 1,
           // fulfilledAt: 1,
           createdAt: 1
