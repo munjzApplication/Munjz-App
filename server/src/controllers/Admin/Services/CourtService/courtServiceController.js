@@ -62,7 +62,7 @@ export const updateCourtService = async (req, res, next) => {
 
     const existingService = await CourtService.findOne({
       $or: [{ ServiceNameEnglish }, { ServiceNameArabic }],
-      _id: { $ne: id } // Exclude the current service being updated
+      _id: { $ne: id }
     }).lean();
 
     if (existingService) {

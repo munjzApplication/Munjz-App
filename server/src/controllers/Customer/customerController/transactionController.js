@@ -5,14 +5,11 @@ import { formatDatewithmonth } from "../../../helper/dateFormatter.js";
 export const getCustomerTransactions = async (req, res) => {
   try {
     const customerId = req.user._id;
-
-    // Fetch transactions for the logged-in customer
     const transactions = await CustomerTransaction.find({ customerId }).sort({ paymentDate: -1 });
 
-    // Format the response to match the required structure
     const formattedTransactions = transactions.map((transaction) => ({
       _id: transaction._id,
-      amount: transaction.amountPaid, 
+      amount: transaction.amountPaid,
       currency: transaction.currency,
       paymentDate: formatDatewithmonth(transaction.paymentDate),
       status: transaction.status,

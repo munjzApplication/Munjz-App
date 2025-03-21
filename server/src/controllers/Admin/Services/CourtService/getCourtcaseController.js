@@ -1,6 +1,5 @@
 
 import courtCaseModel from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
-import courtCasePayment from "../../../../models/Customer/courtServiceModel/courtServicePayment.js";
 import courtCaseeDocument from "../../../../models/Customer/courtServiceModel/courtServiceDocument.js"
 import { formatDate } from "../../../../helper/dateFormatter.js";
 import mongoose from "mongoose";
@@ -77,27 +76,24 @@ export const getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    // Step 1: Fetch all documents for the given caseId
+
     const caseDocuments = await courtCaseeDocument.aggregate([
       { $match: { courtServiceCase: new mongoose.Types.ObjectId(caseId) } },
-      { $sort: { createdAt: -1 } }, // Sort by newest documents first
+      { $sort: { createdAt: -1 } },
       {
         $project: {
           _id: 1,
           documentType: 1,
           documents: 1,
-          description:1,
+          description: 1,
           uploadedBy: 1,
           status: 1,
-          requestReason:1,
-          // requestedAt: 1,
-          // fulfilledAt: 1,
+          requestReason: 1,
           createdAt: 1
         }
       }
     ]);
 
-    // If no documents are found
     if (caseDocuments.length === 0) {
       return res.status(404).json({ message: "No documents found for this case." });
     }
@@ -105,8 +101,6 @@ export const getCaseDocs = async (req, res, next) => {
     // Format dates
     const formattedDocs = caseDocuments.map(doc => ({
       ...doc,
-      // requestedAt: doc.requestedAt ? formatDate(doc.requestedAt) : null,
-      // fulfilledAt: doc.fulfilledAt ? formatDate(doc.fulfilledAt) : null,
       createdAt: formatDate(doc.createdAt)
     }));
 

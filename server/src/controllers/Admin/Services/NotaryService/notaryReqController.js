@@ -1,65 +1,64 @@
 import Document from "../../../../models/Customer/notaryServiceModel/notaryServiceDocument.js";
-import AdditionalDocument from "../../../../models/Customer/notaryServiceModel/notaryServiceAdditionalDocuments.js";
-import AdditionalPayment from "../../../../models/Customer/notaryServiceModel/notaryServiceAdditionalPayment.js";
-import Payment from "../../../../models/Customer/notaryServiceModel/notaryServicePayment.js";
+import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
+import Payment from "../../../../models/Customer/customerModels/transaction.js";
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
-import AdminUploadedDocument from "../../../../models/Admin/notaryServiceModels/adminUploadedDocument.js";
-import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
-
+import mongoose from "mongoose";
 
 export const requestDocument = async (req, res, next) => {
-
-
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { caseId } = req.params;
     const { reason } = req.body;
 
-    const notaryCase = await NotaryCase.findOne({ _id: caseId });
+    const notaryCase = await NotaryCase.findById(caseId).session(session);
     if (!notaryCase) {
-      return res.status(404).json({ message: "Court case not found." });
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "Notary case not found." });
     }
 
-    const customer = await Customer.findById(notaryCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
-    }
-    const document = await Document.findOne({ notaryServiceCase: caseId });
-
-    if (!document) {
-      return res.status(404).json({ message: "Document not found." });
-    }
-
-    if (document.requestStatus === "pending") {
-      return res
-        .status(400)
-        .json({ message: "A document request is already pending." });
-    }
-
-    document.requestReason = reason;
-    document.requestStatus = "pending";
-    document.customerId = customer._id;
-    document.requestUpdatedAt = new Date();
-
-    await document.save();
-
-    const additionalDocument = new AdditionalDocument({
+    const existingRequest = await Document.findOne({
       notaryServiceCase: caseId,
-      notaryServiceID: document.notaryServiceID,
-      documents: [],
-      requestReason: reason,
-      requestStatus: "pending",
-      requestUpdatedAt: new Date()
-    });
-    await additionalDocument.save();
+      status: "pending",
+    }).session(session);
 
-    res.status(200).json({
+    if (existingRequest) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "A pending document request already exists." });
+    }
+
+    const documentRequest = await Document.create(
+      [
+        {
+          notaryServiceCase: caseId,
+          uploadedBy: "admin",
+          documentType: "admin-request",
+          status: "pending",
+          requestedAt: new Date(),
+          requestReason: reason,
+        },
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({
       message: "Document request created successfully.",
-      document,
-      additionalDocument
+      documentRequest: documentRequest[0],
     });
   } catch (error) {
-    next(error);
+    await session.abortTransaction();
+    session.endSession();
+
+    res.status(500).json({
+      message: "Failed to create document request.",
+      error: error.message,
+    });
   }
 };
 
@@ -89,7 +88,6 @@ export const reviewDocument = async (req, res, next) => {
 
     await document.save();
 
-
     res.status(200).json({
       message: `Document marked as ${status} successfully.`,
       document
@@ -102,95 +100,108 @@ export const reviewDocument = async (req, res, next) => {
 export const requestAdditionalPayment = async (req, res, next) => {
   try {
     const { caseId } = req.params;
-
-    const notaryCase = await NotaryCase.findOne({ _id: caseId });
-    if (!notaryCase) {
-      return res.status(404).json({ message: "Notary case not found." });
-    }
-
-    const customer = await Customer.findById(notaryCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
-    }
     const { amount, paidCurrency, requestReason, dueDate } = req.body;
 
     if (!amount || !paidCurrency || !requestReason || !dueDate) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
-    const mainPayment = await Payment.findOne({ notaryServiceCase: caseId });
+    if (!mongoose.Types.ObjectId.isValid(caseId)) {
+      return res.status(400).json({ message: "Invalid case ID." });
+    }
+
+    const notaryCase = await NotaryCase.findOne({ _id: caseId })
+      .select("customerId")
+      .lean();
+    if (!notaryCase) {
+      return res.status(404).json({ message: "Notary case not found." });
+    }
+
+    const pendingRequestExists = await AdditionalPayment.exists({ caseId, status: "pending" });
+
+    if (pendingRequestExists) {
+      return res.status(400).json({
+        message: "An additional payment request is already pending for this case. Please wait until it's resolved.",
+      });
+    }
 
 
-    // Determine courtServiceID and serviceName
-    const notaryServiceID = mainPayment
-      ? mainPayment.notaryServiceID
-      : notaryCase.notaryServiceID;
-    const serviceName = mainPayment
-      ? mainPayment.serviceName
-      : notaryCase.serviceName;
-
-    const newAdditionalPayment = new AdditionalPayment({
+    const newAdditionalPayment = await AdditionalPayment.create({
+      customerId: notaryCase.customerId,
       caseId,
-      notaryServiceID,
-      serviceName,
+      caseType: "NotaryService_Case",
+      serviceType: "NotaryService",
       amount,
       paidCurrency,
       requestReason,
       dueDate,
       status: "pending",
-      requestedAt: new Date()
     });
 
-    await newAdditionalPayment.save();
 
     res.status(201).json({
       message: "Additional payment requested successfully.",
-      additionalPayment: newAdditionalPayment
+      additionalPayment: newAdditionalPayment,
     });
+
   } catch (error) {
     next(error);
   }
 };
 
+
 export const adminSubmittedDoc = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { caseId } = req.params;
+    const files = req.files;
     const { description } = req.body;
-    const notaryCase = await NotaryCase.findOne({ _id: caseId });
+
+    if (!files || files.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "No files uploaded." });
+    }
+
+
+    const notaryCase = await NotaryCase.findById(caseId).session(session);
     if (!notaryCase) {
-      return res.status(404).json({ message: "Court case not found." });
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "Notary case not found." });
     }
 
-    const customer = await Customer.findById(notaryCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
-    }
-    if (!req.files || req.files.length === 0 || !description) {
-      return res
-        .status(400)
-        .json({ message: "Files and description are required." });
+
+    const documentUrls = [];
+    for (const file of files) {
+      const documentUrl = await uploadFileToS3(file, "NotaryCaseDocs");
+      documentUrls.push({ documentUrl });
     }
 
-    const uploadedFiles = [];
-    for (const file of req.files) {
-      const documentUrl = await uploadFileToS3(file, "adminUploadedDocs");
-      uploadedFiles.push(documentUrl);
-    }
 
-    const savedDocuments = await Promise.all(
-      uploadedFiles.map(url =>
-        new AdminUploadedDocument({
-          caseId,
-          documentUrl: url,
+    const newAdminDocument = await Document.create(
+      [
+        {
+          notaryServiceCase: caseId,
+          documents: documentUrls,
           description,
-          uploadedAt: new Date()
-        }).save()
-      )
+          uploadedBy: "admin",
+          documentType: "admin-upload",
+          status: "submitted",
+          uploadedAt: new Date(),
+        },
+      ],
+      { session }
     );
 
+    await session.commitTransaction();
+    session.endSession();
+
     res.status(201).json({
-      message: "Documents uploaded successfully.",
-      uploadedDocuments: savedDocuments
+      message: "Admin document uploaded successfully.",
+      document: newAdminDocument[0],
     });
   } catch (error) {
     next(error);

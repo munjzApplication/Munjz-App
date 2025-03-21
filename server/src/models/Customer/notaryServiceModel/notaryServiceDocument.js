@@ -11,6 +11,7 @@ const NotaryServiceDocumentSchema = new mongoose.Schema({
       documentUrl: { type: String, required: true },
     }
   ],
+  description: { type: String },
   uploadedAt: { type: Date, default: Date.now },
   uploadedBy: { type: String, enum: ["customer", "admin"], required: true }, // Who uploaded
   documentType: { 

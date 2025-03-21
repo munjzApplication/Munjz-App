@@ -12,7 +12,6 @@ export const requestDocument = async (req, res) => {
     const { caseId } = req.params;
     const { reason } = req.body;
 
-    // Step 1: Validate if the case exists
     const courtCase = await CourtCase.findById(caseId).session(session);
     if (!courtCase) {
       await session.abortTransaction();
@@ -30,7 +29,6 @@ export const requestDocument = async (req, res) => {
       return res.status(400).json({ message: "A pending document request already exists." });
     }
 
-    // Step 2: Create document request
     const documentRequest = await Document.create(
       [
         {
@@ -50,7 +48,7 @@ export const requestDocument = async (req, res) => {
 
     res.status(201).json({
       message: "Document request created successfully.",
-      documentRequest: documentRequest[0], // Since `create` returns an array
+      documentRequest: documentRequest[0],
     });
   } catch (error) {
     await session.abortTransaction();
@@ -66,18 +64,16 @@ export const getReqDocumentDetails = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    // Step 1: Validate if the case exists
     const courtCase = await CourtCase.findById(caseId);
     if (!courtCase) {
       return res.status(404).json({ message: "Court case not found." });
     }
 
-    // Step 2: Fetch only pending admin-requested documents
     const requestedDocuments = await Document.find({
       courtServiceCase: caseId,
       uploadedBy: "admin",
       documentType: "admin-request",
-      status: "pending", // Only fetch pending requests
+      status: "pending",
     });
 
     if (!requestedDocuments.length) {
@@ -149,7 +145,7 @@ export const requestAdditionalPayment = async (req, res, next) => {
     next(error);
   }
 };
-export const adminSubmittedDoc = async (req, res) => {
+export const adminSubmittedDoc = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -164,7 +160,7 @@ export const adminSubmittedDoc = async (req, res) => {
       return res.status(400).json({ message: "No files uploaded." });
     }
 
-    // Step 1: Validate if the court case exists
+
     const courtCase = await CourtCase.findById(caseId).session(session);
     if (!courtCase) {
       await session.abortTransaction();
@@ -172,14 +168,14 @@ export const adminSubmittedDoc = async (req, res) => {
       return res.status(404).json({ message: "Court case not found." });
     }
 
-    // Step 2: Upload files to S3 and get their URLs
+
     const documentUrls = [];
     for (const file of files) {
       const documentUrl = await uploadFileToS3(file, "CourtCaseDocs");
       documentUrls.push({ documentUrl });
     }
 
-    // Step 3: Create an entry in CourtService_Document
+
     const newAdminDocument = await Document.create(
       [
         {
@@ -203,13 +199,7 @@ export const adminSubmittedDoc = async (req, res) => {
       document: newAdminDocument[0],
     });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-
-    res.status(500).json({
-      message: "Failed to upload admin document.",
-      error: error.message,
-    });
+    next(error);
   }
 };
 

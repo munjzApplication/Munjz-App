@@ -1,4 +1,4 @@
-import Transaction from "../../../../models/Customer/customerModels/transactionModel.js";
+import Transaction from "../../../../models/Customer/customerModels/transaction.js";
 import Wallet from "../../../../models/Customer/customerModels/walletModel.js";
 import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import CustomerProfile from "../../../../models/Customer/customerModels/customerModel.js";

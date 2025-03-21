@@ -11,6 +11,7 @@ const TranslationDocumentSchema = new mongoose.Schema({
       documentUrl: { type: String, required: true },
     }
   ],
+  description: { type: String },
   noOfPage: {
     type: Number,
     required: false
