@@ -74,13 +74,22 @@ export const getAllCourtCases = async (req, res, next) => {
             { $sort: { createdAt: -1 } },
             {
                 $lookup: {
-                    from: "courtservice_payments",  // Ensure correct collection name
-                    localField: "_id",
-                    foreignField: "courtServiceCase",
+                    from: "customer_transactions",  // Ensure correct collection name
+                    localField: "_id",  
+                    foreignField: "caseId",
                     as: "paymentDetails"
                 }
             },
-            { $unwind: { path: "$paymentDetails", preserveNullAndEmptyArrays: true } },
+            {
+                $addFields: {
+                    totalAmountPaid: { 
+                        $sum: "$paymentDetails.amountPaid" 
+                    },
+                    paidCurrency: { 
+                        $ifNull: [{ $arrayElemAt: ["$paymentDetails.currency", 0] }, "N/A"] 
+                    }
+                }
+            },
             {
                 $project: {
                     createdAt: 1,
@@ -91,8 +100,8 @@ export const getAllCourtCases = async (req, res, next) => {
                     casePaymentStatus: 1,
                     follower: 1,
                     status: 1,
-                    amount: { $ifNull: ["$paymentDetails.amount", 0] },  // Handle missing values
-                    paidCurrency: { $ifNull: ["$paymentDetails.paidCurrency", "N/A"] }
+                    amount: { $ifNull: ["$totalAmountPaid", 0] },  // Ensure default value if no transactions
+                    paidCurrency: 1
                 }
             }
         ]);
@@ -101,11 +110,12 @@ export const getAllCourtCases = async (req, res, next) => {
             ...caseItem,
             createdAt: formatDatewithmonth(caseItem.createdAt)
         }));
-        console.log("Court Cases:", formattedCases);
 
+        console.log("Court Cases:", formattedCases);
 
         return res.status(200).json({ message: "Court cases fetched successfully", formattedCases });
     } catch (error) {
         next(error);
     }
 };
+
