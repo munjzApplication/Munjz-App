@@ -1,6 +1,7 @@
 import Document from "../../../../models/Customer/courtServiceModel/courtServiceDocument.js";
 import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
+import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import mongoose from "mongoose";
 
 export const requestDocument = async (req, res) => {
