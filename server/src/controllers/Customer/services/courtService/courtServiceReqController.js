@@ -78,7 +78,7 @@ export const uploadAdminRequestedDocument = async (req, res) => {
     const requestedDocument = await DocumentModel.findOne({
       courtServiceCase: caseId,
       documentType: "admin-request",
-      status: "pending", // Ensure it's an open request
+      status: "submitted", // Ensure it's an open request
     }).session(session);
     console.log("requestedDocument", requestedDocument);
 

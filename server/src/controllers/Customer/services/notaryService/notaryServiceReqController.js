@@ -25,7 +25,7 @@ export const uploadAdminRequestedDocument = async (req, res, next) => {
        const requestedDocument = await DocumentModel.findOne({
         notaryServiceCase: caseId,
          documentType: "admin-request",
-         status: "pending", // Ensure it's an open request
+         status: "submitted", // Ensure it's an open request
        }).session(session);
        console.log("requestedDocument", requestedDocument);
    

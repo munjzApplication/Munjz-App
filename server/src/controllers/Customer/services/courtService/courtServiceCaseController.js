@@ -111,8 +111,6 @@ export const getAllCourtCases = async (req, res, next) => {
             createdAt: formatDatewithmonth(caseItem.createdAt)
         }));
 
-        console.log("Court Cases:", formattedCases);
-
         return res.status(200).json({ message: "Court cases fetched successfully", formattedCases });
     } catch (error) {
         next(error);
