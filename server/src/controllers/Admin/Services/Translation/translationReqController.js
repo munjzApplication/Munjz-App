@@ -1,63 +1,63 @@
 import Document from "../../../../models/Customer/translationModel/translationDocument.js";
-import AdditionalDocument from "../../../../models/Customer/translationModel/translationAdditionalDocuments.js";
-import Payment from "../../../../models/Customer/translationModel/translationPayment.js";
-import AdditionalPayment from "../../../../models/Customer/translationModel/translationAdditionalPayments.js";
-import Customer from "../../../../models/Customer/customerModels/customerModel.js";
+import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
 import TranslationCase from "../../../../models/Customer/translationModel/translationDetails.js";
+import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
+import mongoose from "mongoose";
 
+export const requestDocuments = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-export const requestDocuments = async (req, res, next) => {
   try {
     const { caseId } = req.params;
     const { reason } = req.body;
-    const translationCase = await TranslationCase.findOne({ _id: caseId });
+
+    const translationCase = await TranslationCase.findById(caseId).session(session);
     if (!translationCase) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ message: "Translation case not found." });
     }
-
-    const customer = await Customer.findById(translationCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
-    }
-    const document = await Document.findOne({ translationCase: caseId });
-
-    if (!document) {
-      return res.status(404).json({ message: "Document not fount." });
-    }
-
-    if (document.requestStatus === "pending") {
-      return res
-        .status(400)
-        .json({ message: "A document request is already pending" });
-    }
-
-    document.requestReason = reason;
-    document.requestStatus = "pending";
-    document.customerId = customer._id;
-    document.requestUpdatedAt = new Date();
-
-    await document.save();
-
-    // Save the requested document into the AdditionalDocument model
-    const additionalDocument = new AdditionalDocument({
+    const existingRequest = await Document.findOne({
       translationCase: caseId,
-      translationServiceID: document.translationServiceID,
-      documents: [], // No files uploaded yet
-      requestReason: reason,
-      requestStatus: "pending",
-      requestUpdatedAt: new Date()
-    });
+      status: "pending",
+    }).session(session);
 
-    await additionalDocument.save();
-    
+    if (existingRequest) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "A pending document request already exists." });
+    }
 
-    res.status(200).json({
+    const documentRequest = await Document.create(
+      [
+        {
+          translationCase: caseId,
+          uploadedBy: "admin",
+          documentType: "admin-request",
+          status: "pending",
+          requestedAt: new Date(),
+          requestReason: reason,
+        },
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({
       message: "Document request created successfully.",
-      document,
-      additionalDocument
+      documentRequest: documentRequest[0],
     });
   } catch (error) {
-    next(error);
+    await session.abortTransaction();
+    session.endSession();
+
+    res.status(500).json({
+      message: "Failed to create document request.",
+      error: error.message,
+    });
   }
 };
 export const requestAdditionalPayment = async (req, res, next) => {
@@ -65,53 +65,110 @@ export const requestAdditionalPayment = async (req, res, next) => {
     const { caseId } = req.params;  
     const { amount, paidCurrency, requestReason, dueDate } = req.body;
 
-    // Validate required fields
+
     if (!amount || !paidCurrency || !requestReason || !dueDate) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
-    // Check if the translation case exists
-    const translationCase = await TranslationCase.findOne({ _id: caseId });
+      if (!mongoose.Types.ObjectId.isValid(caseId)) {
+          return res.status(400).json({ message: "Invalid case ID." });
+        }
+    
+ 
+    const translationCase = await TranslationCase.findOne({ _id: caseId })
+    .select("customerId")
+    .lean();
+
     if (!translationCase) {
       return res.status(404).json({ message: "Translation case not found." });
     }
 
-    // Check if the customer exists
-    const customer = await Customer.findById(translationCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
+
+  const pendingRequestExists = await AdditionalPayment.exists({ caseId, status: "pending" });
+
+    if (pendingRequestExists) {
+      return res.status(400).json({
+        message: "An additional payment request is already pending for this case. Please wait until it's resolved.",
+      });
     }
 
-    // Check for the main payment record
-    const mainPayment = await Payment.findOne({ translationCase: caseId });
-
-    // Determine translationServiceID
-    const translationServiceID = mainPayment
-      ? mainPayment.translationServiceID
-      : translationCase.translationServiceID; 
-
-    // Create a new additional payment record
-    const newAdditionalPayment = new AdditionalPayment({
-      TranslationcaseId: caseId,
-      translationServiceID,
+    const newAdditionalPayment = await AdditionalPayment.create({
+      customerId: translationCase.customerId,
+      caseId,
+      caseType: "Translation_Case",
+      serviceType: "Translation",
       amount,
       paidCurrency,
       requestReason,
       dueDate,
-      paymentStatus: "pending", 
-      requestedAt: new Date()
+      status: "pending",
     });
 
-    // Save the additional payment record
-    await newAdditionalPayment.save();
 
-    // Respond with the created additional payment record
     res.status(201).json({
       message: "Additional payment requested successfully.",
-      additionalPayment: newAdditionalPayment
+      additionalPayment: newAdditionalPayment,
     });
+
   } catch (error) {
     next(error);
   }
 };
 
+export const adminSubmittedDoc = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { caseId } = req.params;
+    const files = req.files;
+    const { description } = req.body;
+
+    if (!files || files.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "No files uploaded." });
+    }
+
+
+    const translationCase = await TranslationCase.findById(caseId).session(session);
+    if (!translationCase) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "translation case not found." });
+    }
+
+
+    const documentUrls = [];
+    for (const file of files) {
+      const documentUrl = await uploadFileToS3(file, "TranslationCaseDocs");
+      documentUrls.push({ documentUrl });
+    }
+
+
+    const newAdminDocument = await Document.create(
+      [
+        {
+          translationCase: caseId,
+          documents: documentUrls,
+          description,
+          uploadedBy: "admin",
+          documentType: "admin-upload",
+          status: "submitted",
+          uploadedAt: new Date(),
+        },
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({
+      message: "Admin document uploaded successfully.",
+      document: newAdminDocument[0],
+    });
+  } catch (error) {
+    next(error);
+  }
+};

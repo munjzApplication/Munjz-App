@@ -1,6 +1,4 @@
-
 import translationDetails from "../../../../models/Customer/translationModel/translationDetails.js";
-import translationPayment from "../../../../models/Customer/translationModel/translationPayment.js";
 import translationDocument from "../../../../models/Customer/translationModel/translationDocument.js";
 import { formatDate } from "../../../../helper/dateFormatter.js";
 import mongoose from "mongoose";
@@ -21,9 +19,9 @@ export const getAllTranslations = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "translation_payments",
+          from: "Customer_Transactions",
           localField: "_id",
-          foreignField: "translationCase",
+          foreignField: "caseId",
           as: "payment"
         }
       },
@@ -31,6 +29,31 @@ export const getAllTranslations = async (req, res, next) => {
         $unwind: {
           path: "$payment",
           preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "customer_additionatransactions", // Match collection name in lowercase
+          let: { caseId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$caseId", "$$caseId"] },
+                    { $eq: ["$status", "pending"] } // Check if any additional payment is pending
+                  ]
+                }
+              }
+            },
+            { $limit: 1 } // If at least one pending payment exists, it's enough
+          ],
+          as: "pendingPayments"
+        }
+      },
+      {
+        $addFields: {
+          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] } // Returns true if there are pending payments
         }
       },
       {
@@ -49,7 +72,8 @@ export const getAllTranslations = async (req, res, next) => {
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
           paymentAmount: "$payment.amount",
-          paymentCurrency: "$payment.paidCurrency"
+          paymentCurrency: "$payment.paidCurrency",
+          hasPendingPayment: 1
         }
       },
       {
@@ -70,45 +94,52 @@ export const getAllTranslations = async (req, res, next) => {
     next(error);
   }
 };
-export const getCaseDocs  = async (req, res, next) => {
+export const getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    // Fetch court case by ID
-    const translation = await translationDetails.findById(caseId);
-    if (!translation) {
-      return res.status(404).json({ message: "translation not found" });
+    const caseDocuments = await translationDocument.aggregate([
+      { $match: { translationCase: new mongoose.Types.ObjectId(caseId) } },
+      { $sort: { createdAt: -1 } },
+      {
+        $project: {
+          _id: 1,
+          documentType: 1,
+          documents: 1,
+          description: 1,
+          uploadedBy: 1,
+          status: 1,
+          requestReason: 1,
+          createdAt: 1
+        }
+      }
+    ]);
+
+    if (caseDocuments.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No documents found for this case." });
     }
 
-    // Fetch associated court case document
-    const translationDoc = await translationDocument.findOne({ translationCase: caseId });
-
-    // Format the court case
-    const formattedCase = {
-      ...translationDoc.toObject(),
-      createdAt: formatDate(translationDoc.createdAt)
-    };
+    // Format dates
+    const formattedDocs = caseDocuments.map(doc => ({
+      ...doc,
+      createdAt: formatDate(doc.createdAt)
+    }));
 
     res.status(200).json({
-      message: "translation  fetched successfully",
-      translation: formattedCase,
-      
+      message: "Documents fetched successfully",
+      translationCase: caseId,
+      documents: formattedDocs
     });
   } catch (error) {
     next(error);
   }
 };
 
-
 export const getTranslationCaseById = async (req, res, next) => {
   try {
     const { customerId } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      return res.status(400).json({ message: "Invalid customerId" });
-    }
-
-    console.log("customerId:", customerId);
 
     let translationCase = await translationDetails.aggregate([
       {
@@ -127,9 +158,9 @@ export const getTranslationCaseById = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "translation_payments",
+          from: "Customer_Transactions",
           localField: "_id",
-          foreignField: "translationCase",
+          foreignField: "caseId",
           as: "payment"
         }
       },
@@ -137,6 +168,31 @@ export const getTranslationCaseById = async (req, res, next) => {
         $unwind: {
           path: "$payment",
           preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "customer_additionatransactions", // Match collection name in lowercase
+          let: { caseId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$caseId", "$$caseId"] },
+                    { $eq: ["$status", "pending"] } // Check if any additional payment is pending
+                  ]
+                }
+              }
+            },
+            { $limit: 1 } // If at least one pending payment exists, it's enough
+          ],
+          as: "pendingPayments"
+        }
+      },
+      {
+        $addFields: {
+          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] } // Returns true if there are pending payments
         }
       },
       {
@@ -155,14 +211,14 @@ export const getTranslationCaseById = async (req, res, next) => {
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
           paymentAmount: "$payment.amount",
-          paymentCurrency: "$payment.paidCurrency"
+          paymentCurrency: "$payment.paidCurrency",
+          hasPendingPayment: 1
         }
+      },
+      {
+        $sort: { createdAt: -1 }
       }
     ]);
-
-    if (!translationCase.length) {
-      return res.status(404).json({ message: "Translation case not found" });
-    }
 
     translationCase = translationCase.map(caseItem => ({
       ...caseItem,

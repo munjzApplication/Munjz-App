@@ -1,6 +1,5 @@
 import Document from "../../../../models/Customer/notaryServiceModel/notaryServiceDocument.js";
 import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
-import Payment from "../../../../models/Customer/customerModels/transaction.js";
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import mongoose from "mongoose";

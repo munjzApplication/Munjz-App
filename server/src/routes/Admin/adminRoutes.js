@@ -48,12 +48,12 @@ router.use("/withdrawals", protectAdmin, withdrawRequestRoute);
 
 // Court Services Routes
 router.use("/court-services", protectAdmin, courtServiceRoute);
-router.use("/court-service-requests", courtServiceRequestRoute);
+router.use("/court-service-requests", protectAdmin, courtServiceRequestRoute);
 router.use("/court-case", protectAdmin, courtCaseRoute);
 
 // Notary Services Routes
 router.use("/notary-services", protectAdmin, notaryServiceRoute);
-router.use("/notary-service-requests", notaryServiceRequestRoute);
+router.use("/notary-service-requests", protectAdmin, notaryServiceRequestRoute);
 router.use("/notary-case", protectAdmin, notaryCaseRoute);
 
 // Translation Routes
@@ -65,11 +65,11 @@ router.use("/getDatas", protectAdmin, getAllConsultantDatasRoute);
 router.use("/invoices", protectAdmin, invoiceRoute);
 
 // Admin-related Routes
-router.use("/get-data",protectAdmin,getAdminEarningsRoutes)
+router.use("/get-data", protectAdmin, getAdminEarningsRoutes)
 router.use("/admin/follower-update", protectAdmin, adminFollowerUpdateRoute);
 router.use("/notifications", protectAdmin, adminNotificationRoutes);
 router.use("/news", protectAdmin, adminNewsRoutes);
-router.use("/get-datas",protectAdmin,getConsultationRoute)
+router.use("/get-datas", protectAdmin, getConsultationRoute)
 router.use("/upload-icon", uploadimage);
 router.use("/notify-admin", notifyAdminOnCustomerChatRoute);
 

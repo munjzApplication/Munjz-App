@@ -15,7 +15,7 @@ const CustomerTransactionSchema = new mongoose.Schema(
     caseType: {
       type: String,
       sparse: true,
-      enum: ["NotaryService_Case", "CourtService_Case", "Translation_Details"]
+      enum: ["NotaryService_Case", "CourtService_Case", "Translation_Case"]
     },
     serviceType: {
       type: String,

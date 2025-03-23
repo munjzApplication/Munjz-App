@@ -2,6 +2,8 @@
 import courtCaseModel from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import courtCaseeDocument from "../../../../models/Customer/courtServiceModel/courtServiceDocument.js"
 import { formatDate } from "../../../../helper/dateFormatter.js";
+import customerProfileModel from "../../../../models/Customer/customerModels/customerModel.js";
+
 import mongoose from "mongoose";
 
 export const getAllCourtCases = async (req, res, next) => {
@@ -20,9 +22,9 @@ export const getAllCourtCases = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "courtservice_payments",
+          from: "Customer_Transactions",
           localField: "_id",
-          foreignField: "courtServiceCase",
+          foreignField: "caseId",
           as: "payment"
         }
       },
@@ -145,6 +147,13 @@ export const getCaseDocs = async (req, res, next) => {
 export const getCourtCaseById = async (req, res, next) => {
   try {
     const { customerId } = req.params;
+    
+            // Validate if customer exists
+            const customerExists = await customerProfileModel.findById(customerId);
+            if (!customerExists) {
+              return res.status(404).json({ message: "Customer not found" });
+            }
+        
 
     let courtCases = await courtCaseModel.aggregate([
       {
@@ -163,9 +172,9 @@ export const getCourtCaseById = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "courtservice_payments",
+          from: "Customer_Transactions",
           localField: "_id",
-          foreignField: "courtServiceCase",
+          foreignField: "caseId",
           as: "payment"
         }
       },
@@ -173,6 +182,31 @@ export const getCourtCaseById = async (req, res, next) => {
         $unwind: {
           path: "$payment",
           preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "customer_additionatransactions", // Match collection name in lowercase
+          let: { caseId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$caseId", "$$caseId"] },
+                    { $eq: ["$status", "pending"] } // Check if any additional payment is pending
+                  ]
+                }
+              }
+            },
+            { $limit: 1 } // If at least one pending payment exists, it's enough
+          ],
+          as: "pendingPayments"
+        }
+      },
+      {
+        $addFields: {
+          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] } // Returns true if there are pending payments
         }
       },
       {
@@ -192,7 +226,8 @@ export const getCourtCaseById = async (req, res, next) => {
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
           paymentAmount: "$payment.amount",
-          paymentCurrency: "$payment.paidCurrency"
+          paymentCurrency: "$payment.paidCurrency",
+          hasPendingPayment: 1
         }
       },
       {

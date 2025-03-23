@@ -6,17 +6,17 @@ export const editTranslation = async (req, res, next) => {
     const { caseId } = req.params;
     const { status } = req.body;
 
-    // Validate caseId (Check if it's a valid MongoDB ObjectId)
+
     if (!mongoose.Types.ObjectId.isValid(caseId)) {
       return res.status(400).json({ message: "Invalid case ID" });
     }
 
-    // Ensure status is provided
+ 
     if (!status) {
       return res.status(400).json({ message: "Status is required" });
     }
 
-    // Allowed status values
+
     const allowedStatuses = [
       "submitted",
       "working",
@@ -24,12 +24,12 @@ export const editTranslation = async (req, res, next) => {
       "rejected",
     ];
 
-    // Validate the status
+  
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid status value" });
     }
 
-    // Find and update the Translation case in a single query
+  
     const updatedCase = await translationDetails.findOneAndUpdate(
       { _id: caseId },  
       { $set: { status } },  
