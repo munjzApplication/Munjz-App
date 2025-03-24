@@ -10,15 +10,21 @@ import mongoose from "mongoose";
 import { formatDatewithmonth } from "../../../../helper/dateFormatter.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 
+
 export const saveCourtServiceDetails = async (req, res, next) => {
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
         const customerId = req.user._id;
-        const { serviceName, selectedServiceCountry, caseDescription, paymentAmount, paidCurrency } = req.body;
-        console.log("reqbody", req.body);
-        console.log("reqfile", req.files);
+        const { 
+            serviceName, 
+            selectedServiceCountry, 
+            caseDescription, 
+            paymentAmount, 
+            paidCurrency
+         } = req.body;
+
         // Validate customer
         const customer = await Customer.findById(customerId).lean();
         if (!customer) throw new Error("Invalid customer");
@@ -26,7 +32,14 @@ export const saveCourtServiceDetails = async (req, res, next) => {
         if (!paymentAmount || !paidCurrency) throw new Error("Payment is required for registration.");
 
         const { courtCase, courtServiceID } = await saveCourtCase(
-            { customerId, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus: "paid", status: "submitted" },
+            { 
+                customerId, 
+                serviceName, 
+                selectedServiceCountry, 
+                caseDescription, 
+                casePaymentStatus: "paid", 
+                status: "submitted" 
+            },
             session
         );
 
@@ -44,6 +57,7 @@ export const saveCourtServiceDetails = async (req, res, next) => {
 
         await session.commitTransaction();
         session.endSession();
+
         // Notify Customer
         await notificationService.sendToCustomer(
             customerId,
@@ -72,24 +86,46 @@ export const getAllCourtCases = async (req, res, next) => {
         const courtCases = await CourtCase.aggregate([
             { $match: { customerId } },
             { $sort: { createdAt: -1 } },
+
+            // Lookup main payment transactions
             {
                 $lookup: {
-                    from: "customer_transactions",  // Ensure correct collection name
+                    from: "customer_transactions", 
                     localField: "_id",  
                     foreignField: "caseId",
                     as: "paymentDetails"
                 }
             },
+
+            // Lookup additional payments
+            {
+                $lookup: {
+                    from: "customer_additionatransactions",
+                    localField: "_id",
+                    foreignField: "caseId",
+                    as: "additionalPayments"
+                }
+            },
+
+            // Calculate total amount paid from both transactions
             {
                 $addFields: {
-                    totalAmountPaid: { 
-                        $sum: "$paymentDetails.amountPaid" 
+                    mainPaymentsTotal: { $sum: "$paymentDetails.amountPaid" },
+                    additionalPaymentsTotal: { $sum: "$additionalPayments.amount" },
+                    totalAmountPaid: {
+                        $add: [
+                            { $sum: "$paymentDetails.amountPaid" },
+                            { $sum: "$additionalPayments.amount" }
+                        ]
                     },
                     paidCurrency: { 
                         $ifNull: [{ $arrayElemAt: ["$paymentDetails.currency", 0] }, "N/A"] 
-                    }
+                    },
+                    
                 }
             },
+
+            // Select required fields
             {
                 $project: {
                     createdAt: 1,
@@ -100,12 +136,14 @@ export const getAllCourtCases = async (req, res, next) => {
                     casePaymentStatus: 1,
                     follower: 1,
                     status: 1,
-                    amount: { $ifNull: ["$totalAmountPaid", 0] },  // Ensure default value if no transactions
-                    paidCurrency: 1
+                    amount: { $ifNull: ["$totalAmountPaid", 0] },  
+                    paidCurrency: 1,
+                    hasPendingPayment:1
                 }
             }
         ]);
 
+        // Format createdAt date
         const formattedCases = courtCases.map(caseItem => ({
             ...caseItem,
             createdAt: formatDatewithmonth(caseItem.createdAt)
@@ -116,4 +154,5 @@ export const getAllCourtCases = async (req, res, next) => {
         next(error);
     }
 };
+
 

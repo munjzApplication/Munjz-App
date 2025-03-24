@@ -20,6 +20,7 @@ const NotaryCaseSchema = new mongoose.Schema(
       require: true
     },
     caseDescription: String,
+    totalAmountPaid: { type: Number, default: 0 }, 
     casePaymentStatus: {
       type: String,
       enum: ['free', 'paid'], 

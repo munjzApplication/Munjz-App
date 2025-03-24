@@ -25,14 +25,15 @@ const CourtCaseSchema = new mongoose.Schema(
       type: String,
       require: true
     },
+    totalAmountPaid: { type: Number, default: 0 }, 
     casePaymentStatus: {
       type: String,
-      enum: ['free', 'paid'], 
-     
+      enum: ['free', 'paid'],
+
     },
     status: {
       type: String,
-      enum: ['submitted', 'working','completed', 'rejected',],
+      enum: ['submitted', 'working', 'completed', 'rejected',],
 
     },
     follower: {
@@ -40,6 +41,7 @@ const CourtCaseSchema = new mongoose.Schema(
       default: "unread"
     }
   },
+  
   { timestamps: true }
 );
 

@@ -19,6 +19,7 @@ const TranslationDetailsSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  totalAmountPaid: { type: Number, default: 0 }, 
   PaymentStatus: {
     type: String,
     enum: ['paid','unpaid'],  

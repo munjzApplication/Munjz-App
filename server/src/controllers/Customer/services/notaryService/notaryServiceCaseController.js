@@ -4,7 +4,6 @@ import {
   saveNotaryPayment
 } from "../../../../helper/notaryService/notaryCaseHelper.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
-
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import { formatDatewithmonth } from "../../../../helper/dateFormatter.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
@@ -15,9 +14,6 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
   session.startTransaction();
 
   try {
-    console.log("Transaction Started...");
-    console.log("reqbody", req.body);
-    console.log("reqfile", req.files);
     const customerId = req.user._id;
     const {
       serviceName,
@@ -31,7 +27,6 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
     const customer = await Customer.findById(customerId).lean();
     if (!customer) throw new Error("Invalid customer");
 
-    const customerName = customer.Name;
 
     if (!paymentAmount || !paidCurrency)
       throw new Error("Payment is required for registration.");
@@ -49,15 +44,13 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
       session
     );
 
-    console.log("Notary Case Saved:", notaryCase._id);
+  
 
-    // Step 2: Save Documents (if any)
     if (req.files?.length > 0) {
       await saveNotaryDocuments(req.files, notaryCase._id, session);
     }
 
-    // Step 3: Save Payment
-    console.log("Processing payment...");
+
     await saveNotaryPayment(
       {
         notaryCaseId: notaryCase._id,
@@ -68,12 +61,9 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
       },
       session
     );
-    console.log("Payment processed successfully.");
-
-    // ✅ Commit transaction if everything is successful
+  
     await session.commitTransaction();
     session.endSession();
-    console.log("Transaction Committed!");
 
     // Notify Customer
     await notificationService.sendToCustomer(
@@ -107,15 +97,37 @@ export const getAllNotaryCases = async (req, res, next) => {
       { $sort: { createdAt: -1 } },
       {
         $lookup: {
-          from: "notaryservice_payments",
+          from: "customer_transactions",
           localField: "_id",
-          foreignField: "notaryServiceCase",
+          foreignField: "caseId",
           as: "paymentDetails"
         }
       },
-      {
-        $unwind: { path: "$paymentDetails", preserveNullAndEmptyArrays: true }
+        // Lookup additional payments
+        {
+          $lookup: {
+              from: "customer_additionatransactions",
+              localField: "_id",
+              foreignField: "caseId",
+              as: "additionalPayments"
+          }
       },
+       // Calculate total amount paid from both transactions
+       {
+        $addFields: {
+            mainPaymentsTotal: { $sum: "$paymentDetails.amountPaid" },
+            additionalPaymentsTotal: { $sum: "$additionalPayments.amount" },
+            totalAmountPaid: {
+                $add: [
+                    { $sum: "$paymentDetails.amountPaid" },
+                    { $sum: "$additionalPayments.amount" }
+                ]
+            },
+            paidCurrency: { 
+                $ifNull: [{ $arrayElemAt: ["$paymentDetails.currency", 0] }, "N/A"] 
+            }
+        }
+    },
       {
         $project: {
           createdAt: 1,
@@ -126,8 +138,8 @@ export const getAllNotaryCases = async (req, res, next) => {
           casePaymentStatus: 1,
           follower: 1,
           status: 1,
-          amount: "$paymentDetails.amount",
-          paidCurrency: "$paymentDetails.paidCurrency"
+          amount: { $ifNull: ["$totalAmountPaid", 0] },  
+          paidCurrency: 1
         }
       }
     ]);
