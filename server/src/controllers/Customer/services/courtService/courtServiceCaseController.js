@@ -86,8 +86,6 @@ export const getAllCourtCases = async (req, res, next) => {
         const courtCases = await CourtCase.aggregate([
             { $match: { customerId } },
             { $sort: { createdAt: -1 } },
-
-            // Lookup main payment transactions
             {
                 $lookup: {
                     from: "customer_transactions", 
@@ -96,36 +94,16 @@ export const getAllCourtCases = async (req, res, next) => {
                     as: "paymentDetails"
                 }
             },
-
-            // Lookup additional payments
-            {
-                $lookup: {
-                    from: "customer_additionatransactions",
-                    localField: "_id",
-                    foreignField: "caseId",
-                    as: "additionalPayments"
-                }
-            },
-
-            // Calculate total amount paid from both transactions
             {
                 $addFields: {
-                    mainPaymentsTotal: { $sum: "$paymentDetails.amountPaid" },
-                    additionalPaymentsTotal: { $sum: "$additionalPayments.amount" },
-                    totalAmountPaid: {
-                        $add: [
-                            { $sum: "$paymentDetails.amountPaid" },
-                            { $sum: "$additionalPayments.amount" }
-                        ]
+                    totalAmountPaid: { 
+                        $sum: "$paymentDetails.amountPaid" 
                     },
                     paidCurrency: { 
                         $ifNull: [{ $arrayElemAt: ["$paymentDetails.currency", 0] }, "N/A"] 
-                    },
-                    
+                    }
                 }
             },
-
-            // Select required fields
             {
                 $project: {
                     createdAt: 1,
@@ -137,13 +115,11 @@ export const getAllCourtCases = async (req, res, next) => {
                     follower: 1,
                     status: 1,
                     amount: { $ifNull: ["$totalAmountPaid", 0] },  
-                    paidCurrency: 1,
-                    hasPendingPayment:1
+                    paidCurrency: 1
                 }
             }
         ]);
 
-        // Format createdAt date
         const formattedCases = courtCases.map(caseItem => ({
             ...caseItem,
             createdAt: formatDatewithmonth(caseItem.createdAt)
@@ -154,5 +130,4 @@ export const getAllCourtCases = async (req, res, next) => {
         next(error);
     }
 };
-
 

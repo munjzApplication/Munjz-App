@@ -9,12 +9,13 @@ export const getCaseDetails = async (req, res, next) => {
         const { caseId } = req.params;
 
         // Fetch data in parallel with filtering
-        const [caseDetails, documents, payments, pendingDocs, pendingPayments] = await Promise.all([
+        const [caseDetails, documents, payments, pendingDocs, pendingPayments,adminUploads] = await Promise.all([
             courtCase.findById(caseId).lean(),
             Document.find({ courtServiceCase: caseId }).lean(),
             Transaction.find({ caseId: caseId }).lean(),
-            Document.find({ courtServiceCase: caseId, status: "pending", documentType: "admin-request" }).lean(), // Only admin-requested docs
-            AdditionalPayment.find({ caseId: caseId, status: "pending" }).lean(), // Only pending payments
+            Document.find({ courtServiceCase: caseId, status: "pending", documentType: "admin-request" }).lean(), 
+            AdditionalPayment.find({ caseId: caseId, status: "pending" }).lean(), 
+            Document.find({ courtServiceCase: caseId, status: "submitted", documentType: "admin-upload" }).lean() 
         ]);
 
         if (!caseDetails) {
@@ -36,7 +37,7 @@ export const getCaseDetails = async (req, res, next) => {
         });
 
         // Format dates for notifications
-        const notifications = [...pendingDocs, ...pendingPayments].map(notification => ({
+        const notifications = [...pendingDocs, ...pendingPayments, ...adminUploads].map(notification => ({
             ...notification,
             requestedAt: notification.requestedAt ? formatDate(notification.requestedAt) : null,
             uploadedAt: notification.uploadedAt ? formatDate(notification.uploadedAt) : null,
