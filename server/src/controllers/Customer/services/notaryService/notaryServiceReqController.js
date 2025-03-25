@@ -47,7 +47,7 @@ export const uploadCustomerAdditionalDocument = async (req, res) => {
 
     res.status(201).json({
       message: "Additional document uploaded successfully.",
-      document: newDocument[0], // Since `create` returns an array
+     
     });
   } catch (error) {
     await session.abortTransaction();
@@ -115,7 +115,7 @@ export const uploadAdminRequestedDocument = async (req, res, next) => {
 
     res.status(200).json({
       message: "Admin-requested document uploaded successfully.",
-      document: updatedDocument,
+    
     });
   } catch (error) {
     await session.abortTransaction();
@@ -199,7 +199,7 @@ export const submitAdditionalPayment = async (req, res, next) => {
 
     res.status(200).json({
       message: "Additional payment submitted successfully.",
-      additionalPayment,
+
     });
 
   } catch (error) {

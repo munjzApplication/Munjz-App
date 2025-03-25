@@ -4,6 +4,7 @@ import AdditionalPayment from "../../../../models/Customer/customerModels/additi
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
+import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 
 export const uploadCustomerAdditionalDocument = async (req, res) => {
@@ -11,6 +12,7 @@ export const uploadCustomerAdditionalDocument = async (req, res) => {
   session.startTransaction();
 
   try {
+    const customerId = req.user._id;
     const { caseId } = req.params;
     const files = req.files;
 
@@ -25,7 +27,14 @@ export const uploadCustomerAdditionalDocument = async (req, res) => {
       const documentUrl = await uploadFileToS3(file, "CourtCaseDocs");
       documentUrls.push({ documentUrl });
     }
+    // Fetch customer details to get the email
+    const customer = await Customer.findById(customerId).select("email");
 
+    if (!customer) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "Customer not found." });
+    }
 
     const newDocument = await DocumentModel.create(
       [
@@ -44,9 +53,14 @@ export const uploadCustomerAdditionalDocument = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
+    // Notify Admin with customer email instead of caseId
+    await notificationService.sendToAdmin(
+      "Customer Uploaded Document",
+      `Additional Document has been submitted by ${customer.email}.`
+    );
     res.status(201).json({
       message: "Additional document uploaded successfully.",
-      document: newDocument[0], // Since `create` returns an array
+
     });
   } catch (error) {
     await session.abortTransaction();
@@ -64,6 +78,7 @@ export const uploadAdminRequestedDocument = async (req, res) => {
   session.startTransaction();
 
   try {
+    const customerId = req.user._id
     const { caseId } = req.params;
     const files = req.files;
 
@@ -88,6 +103,14 @@ export const uploadAdminRequestedDocument = async (req, res) => {
         message: "No pending admin-requested document found for this case.",
       });
     }
+    // Fetch customer details to get the email
+    const customer = await Customer.findById(customerId).select("email");
+
+    if (!customer) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "Customer not found." });
+    }
 
 
     const documentUrls = [];
@@ -111,10 +134,13 @@ export const uploadAdminRequestedDocument = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
-
+    // Notify Admin with customer email instead of caseId
+    await notificationService.sendToAdmin(
+      "Admin Requested Document Submitted",
+      `A requested document has been submitted by ${customer.email}.`
+    );
     res.status(200).json({
       message: "Admin-requested document uploaded successfully.",
-      document: updatedDocument,
     });
   } catch (error) {
     await session.abortTransaction();
@@ -159,7 +185,14 @@ export const submitAdditionalPayment = async (req, res, next) => {
       return res.status(400).json({ message: "The payment amount does not match the requested amount." });
     }
 
+    // Fetch customer details to get the email
+    const customer = await Customer.findById(customerId).select("email");
 
+    if (!customer) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "Customer not found." });
+    }
     const additionalPayment = await AdditionalPayment.findOneAndUpdate(
       { caseId, status: "pending" },
       {
@@ -194,9 +227,14 @@ export const submitAdditionalPayment = async (req, res, next) => {
     await session.commitTransaction();
     session.endSession();
 
+    // Notify Admin with customer email instead of caseId
+    await notificationService.sendToAdmin(
+      "Admin Requested Payment Submitted",
+      `A requested payment has been completed by ${customer.email}.`
+    );
     res.status(200).json({
       message: "Additional payment submitted successfully.",
-      additionalPayment,
+
     });
 
   } catch (error) {
