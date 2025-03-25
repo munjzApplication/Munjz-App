@@ -158,6 +158,7 @@ export const submitAdditionalPayment = async (req, res, next) => {
   session.startTransaction();
 
   try {
+    const customerId = req.user._id;
     const { caseId } = req.params;
     const { amount, paidCurrency } = req.body;
 
