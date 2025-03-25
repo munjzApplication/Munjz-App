@@ -22,7 +22,7 @@ export const submitTranslationRequest = async (req, res, next) => {
       paidCurrency,
       noOfPage
     } = req.body;
-    
+
 
     // Validate customer existence
     const customer = await Customer.findById(customerId).lean();
@@ -31,7 +31,7 @@ export const submitTranslationRequest = async (req, res, next) => {
     const customerName = customer.Name;
     if (!documentLanguage) throw new Error("Document language is required.");
     if (!translationLanguage) throw new Error("Translation language is required.");
-    
+
     if (paymentAmount && !paidCurrency) throw new Error("Paid currency is required for payment.");
 
     if (!req.files || req.files.length === 0) {
@@ -61,46 +61,32 @@ export const submitTranslationRequest = async (req, res, next) => {
       await saveTranslationDocuments(req.files, translationCase._id, noOfPage, session);
     }
 
-    // Save Payment Details only if paymentAmount exists
-    if (paymentAmount) {
-      await saveTranslationPayment(
-        {
-          translationCaseId: translationCase._id,
-          paymentAmount,
-          paidCurrency,
-          customerId
-        },
-        session
-      );
-    }
+    await saveTranslationPayment(
+      {
+        translationCaseId: translationCase._id,
+        paymentAmount,
+        paidCurrency,
+        paymentDate: new Date(),
+        customerId
+      },
+      session
+    );
+
 
     await session.commitTransaction();
-    
-    if (paymentAmount) {
-      // **Paid Case**
-      await notificationService.sendToCustomer(
-        customerId,
-        "Translation Request Submitted - Paid",
-        `Your translation request (${documentLanguage} → ${translationLanguage}) has been submitted successfully. Payment received.`
-      );
-    
-      await notificationService.sendToAdmin(
-        "New Translation Request - Paid",
-        `A new PAID translation request (${documentLanguage} → ${translationLanguage}) has been submitted by ${customerName}.`
-      );
-    } else {
-      // **Unpaid Case**
-      await notificationService.sendToCustomer(
-        customerId,
-        "Translation Request Submitted - Unpaid",
-        `Your translation request (${documentLanguage} → ${translationLanguage}) has been submitted successfully. Payment is pending.`
-      );
-    
-      await notificationService.sendToAdmin(
-        "New Translation Request - Unpaid",
-        `A new UNPAID translation request (${documentLanguage} → ${translationLanguage}) has been submitted by ${customerName}.`
-      );
-    }
+    session.endSession();
+
+    await notificationService.sendToCustomer(
+      customerId,
+      "Translation Case Registered",
+      `Your translation request (${documentLanguage} → ${translationLanguage}) has been submitted successfully.`
+    );
+
+    await notificationService.sendToAdmin(
+      "New Translation Request submitted",
+      `A new  translation request (${documentLanguage} → ${translationLanguage}) has been submitted by ${customerName}.`
+    );
+
     return res.status(201).json({
       message: "Translation request submitted successfully",
     });

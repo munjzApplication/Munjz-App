@@ -100,26 +100,22 @@ export const saveTranslationPayment = async ({
   translationCaseId,
   paymentAmount,
   paidCurrency,
+  paymentDate,
   session
 }) => {
+  if (!paymentAmount) throw new Error("Payment amount is required.");
+  if (!paidCurrency) throw new Error("Paid currency is required.");
   try {
-    // If no payment is provided, return unpaid status
-    if (!paymentAmount || !paidCurrency) {
-      console.log("No payment provided, marking case as unpaid.");
-      return null; 
-    }
-
-    // Save payment details
     const translationPayment = await Transaction.create(
       [
         { 
           customerId,
           caseId: translationCaseId, 
-          caseType:"Translation_Details",
+          caseType:"Translation_Case",
           serviceType :"Translation",
           amountPaid: paymentAmount, 
           currency :paidCurrency, 
-          paymentDate: new Date(), 
+          paymentDate: paymentDate || new Date(), 
           status: "paid" 
         }
       ],
