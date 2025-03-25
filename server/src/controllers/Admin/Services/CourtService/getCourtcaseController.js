@@ -108,11 +108,6 @@ export const getCaseDocs = async (req, res, next) => {
         }
       }
     ]);
-
-    if (caseDocuments.length === 0) {
-      return res.status(404).json({ message: "No documents found for this case." });
-    }
-
     // Format dates
     const formattedDocs = caseDocuments.map(doc => ({
       ...doc,
@@ -122,7 +117,7 @@ export const getCaseDocs = async (req, res, next) => {
     res.status(200).json({
       message: "Documents fetched successfully",
       courtServiceCase: caseId,
-      documents: formattedDocs
+      documents: formattedDocs || []
     });
   } catch (error) {
     next(error);
