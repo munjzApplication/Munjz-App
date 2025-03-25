@@ -17,13 +17,13 @@ export const saveCourtServiceDetails = async (req, res, next) => {
 
     try {
         const customerId = req.user._id;
-        const { 
-            serviceName, 
-            selectedServiceCountry, 
-            caseDescription, 
-            paymentAmount, 
+        const {
+            serviceName,
+            selectedServiceCountry,
+            caseDescription,
+            paymentAmount,
             paidCurrency
-         } = req.body;
+        } = req.body;
 
         // Validate customer
         const customer = await Customer.findById(customerId).lean();
@@ -32,13 +32,13 @@ export const saveCourtServiceDetails = async (req, res, next) => {
         if (!paymentAmount || !paidCurrency) throw new Error("Payment is required for registration.");
 
         const { courtCase, courtServiceID } = await saveCourtCase(
-            { 
-                customerId, 
-                serviceName, 
-                selectedServiceCountry, 
-                caseDescription, 
-                casePaymentStatus: "paid", 
-                status: "submitted" ,
+            {
+                customerId,
+                serviceName,
+                selectedServiceCountry,
+                caseDescription,
+                casePaymentStatus: "paid",
+                status: "submitted",
                 paymentAmount,
                 paidCurrency
             },
@@ -88,24 +88,93 @@ export const getAllCourtCases = async (req, res, next) => {
         const courtCases = await CourtCase.aggregate([
             { $match: { customerId } },
             { $sort: { createdAt: -1 } },
+
+           
             {
                 $lookup: {
-                    from: "customer_transactions", 
-                    localField: "_id",  
+                    from: "customer_additionatransactions",
+                    localField: "_id",
                     foreignField: "caseId",
-                    as: "paymentDetails"
+                    as: "requestpayments"
+                }
+            },
+
+            
+            {
+                $lookup: {
+                    from: "courtservice_documents", 
+                    localField: "_id",
+                    foreignField: "courtServiceCase",
+                    as: "requestdocuments"
+                }
+            },
+        
+            {
+                $addFields: {
+                    hasAdminRequestedPayment: {
+                        $gt: [
+                            {
+                                $size: {
+                                    $filter: {
+                                        input: "$requestpayments",
+                                        as: "payment",
+                                        cond: { $eq: ["$$payment.status", "pending"] }
+                                    }
+                                }
+                            }, 0]
+                    },
+
+                    hasAdminRequestedDocument: {
+                        $gt: [
+                            {
+                                $size: {
+                                    $filter: {
+                                        input: "$requestdocuments",
+                                        as: "document",
+                                        cond: {
+                                            $and: [
+                                                { $eq: ["$$document.status", "pending"] },
+                                                { $eq: ["$$document.documentType", "admin-request"] }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }, 0]
+                    },
+                    hasAdminUploadDocument: {
+                        $gt: [
+                            {
+                                $size: {
+                                    $filter: {
+                                        input: "$requestdocuments",
+                                        as: "document",
+                                        cond: {
+                                            $and: [
+                                                { $eq: ["$$document.status", "submitted"] },
+                                                { $eq: ["$$document.documentType", "admin-upload"] }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }, 0]
+                    }
+                    
+
                 }
             },
             {
                 $addFields: {
-                    totalAmountPaid: { 
-                        $sum: "$paymentDetails.amountPaid" 
-                    },
-                    paidCurrency: { 
-                        $ifNull: [{ $arrayElemAt: ["$paymentDetails.currency", 0] }, "N/A"] 
+                    hasAdminAction : {
+                        $or: [
+                            "$hasAdminRequestedPayment",
+                            "$hasAdminRequestedDocument",
+                            "$hasAdminUploadDocument"
+                        ]
                     }
                 }
             },
+
+
             {
                 $project: {
                     createdAt: 1,
@@ -116,11 +185,14 @@ export const getAllCourtCases = async (req, res, next) => {
                     casePaymentStatus: 1,
                     follower: 1,
                     status: 1,
-                    amount: { $ifNull: ["$totalAmountPaid", 0] },  
-                    paidCurrency: 1
+                    amount: "$totalAmountPaid",
+                    paidCurrency: 1,
+                    hasAdminAction: 1,
+                   
                 }
             }
         ]);
+
 
         const formattedCases = courtCases.map(caseItem => ({
             ...caseItem,
@@ -132,4 +204,6 @@ export const getAllCourtCases = async (req, res, next) => {
         next(error);
     }
 };
+
+
 
