@@ -55,9 +55,7 @@ export const saveTranslationDocuments = async (
   noOfPage,
   session
 ) => {
-  console.log("Received files:", files);
-  console.log("Translation Case ID:", translationCaseId);
-  console.log("Received noOfPage:", noOfPage);
+
 
   if (!files?.length) throw new Error("No files provided for document upload.");
 

@@ -7,7 +7,6 @@ import { formatDate, formatMinutesToMMSS } from "../../helper/dateFormatter.js";
 export const getConsultationDetails = async (req, res, next) => {
   try {
     const consultantId = req.user._id;
-    console.log("Consultant ID:", consultantId);
 
     const consultant = await ConsultantProfile.findById(consultantId);
     if (!consultant) {
@@ -35,9 +34,7 @@ export const getConsultationDetails = async (req, res, next) => {
         }
       }
     ]);
-    console.log("Aggregated Consultation Data:", consultationDatas);
 
-    console.log("Aggregated Consultation Data:", consultationDatas);
 
     const formattedConsultationDatas = consultationDatas.map(item => ({
       ...item,

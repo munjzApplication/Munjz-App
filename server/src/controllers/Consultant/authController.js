@@ -325,7 +325,6 @@ export const googleAuthWithToken = async (req, res, next) => {
 
 export const facebookAuthWithToken = async (req, res, next) => {
   const { access_token } = req.body;
-  console.log("access_token received:", access_token);
 
   if (!access_token) {
     return res.status(400).json({ message: "Access token is required." });

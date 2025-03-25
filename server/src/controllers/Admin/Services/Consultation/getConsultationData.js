@@ -56,7 +56,7 @@ export const getAllConsultationDatas = async (req, res, next) => {
     const formattedConsultationDatas = await Promise.all(
       consultationDatas.map(async ({ consultantCountryCode, ...item }) => {
         const consultantCurrency = await getCurrencyFromCountryCode(consultantCountryCode || "");
-        console.log("Consultant Currency:", consultantCurrency);
+      
 
         return {
           ...item,

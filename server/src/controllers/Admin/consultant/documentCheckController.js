@@ -15,8 +15,6 @@ export const handleDocumentStatus = async (req, res, next) => {
       });
     }
 
-    console.log("Consultant ID:", consultantId);
-
     // Check if consultant exists
     const consultant = await Consultant.findById(consultantId);
     if (!consultant) {

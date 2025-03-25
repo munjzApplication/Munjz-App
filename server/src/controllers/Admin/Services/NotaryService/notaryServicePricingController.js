@@ -70,7 +70,6 @@ export const updateNotaryServicePricing = async (req, res, next) => {
     const { serviceId } = req.params;
     const { country, price, currency } = req.body;
 
-    console.log("Service ID: ", serviceId);
 
     if (!mongoose.Types.ObjectId.isValid(serviceId)) {
       return res.status(400).json({ message: "Invalid ID format" });
@@ -80,7 +79,7 @@ export const updateNotaryServicePricing = async (req, res, next) => {
       service: serviceId
     }).select("service pricingTiers");
 
-    console.log("Current Pricing: ", pricing);
+ 
 
     if (!pricing) {
       return res.status(404).json({ message: "Pricing item not found" });
@@ -97,7 +96,7 @@ export const updateNotaryServicePricing = async (req, res, next) => {
 
     await pricing.save();
 
-    console.log("Updated Pricing: ", pricing);
+   
 
     res.status(200).json({
       message: "Pricing updated successfully",
@@ -131,14 +130,11 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
   try {
     const { country } = req.params;
 
-    console.log("Fetching service names for country:", country);
 
     // Find pricing entries that contain the specified country
     const pricingEntries = await NotaryServicePricing.find({
       [`pricingTiers.${country}`]: { $exists: true }
     });
-
-    console.log("Pricing Entries:", pricingEntries);
 
     const serviceIds = pricingEntries.map(entry => entry.service);
 
@@ -146,14 +142,12 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
       _id: { $in: serviceIds }
     }).sort({ serviceNo: 1 });
 
-    console.log("Services:", services);
 
     const addedList = services.map(service => {
       const pricingEntry = pricingEntries.find(
         entry => entry.service.toString() === service._id.toString()
       );
-      console.log("Full Pricing Tiers:", JSON.stringify(pricingEntry.pricingTiers, null, 2));
-      console.log(`Checking pricing for country: ${country}`);
+  
       
       if (!pricingEntry) {
         console.warn(`No pricing entry found for service ${service._id}`);
@@ -162,8 +156,6 @@ export const getNotaryServicesByCountry = async (req, res, next) => {
 
       const countryPricing = pricingEntry?.pricingTiers.get(country);
 
-
-      console.log("Country Pricing:", countryPricing);
 
       if (!countryPricing) {
         console.warn(`No pricing found for country ${country} in service ${service._id}`);

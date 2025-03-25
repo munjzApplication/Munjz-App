@@ -89,7 +89,7 @@ export const getAllCourtCases = async (req, res, next) => {
             { $match: { customerId } },
             { $sort: { createdAt: -1 } },
 
-           
+
             {
                 $lookup: {
                     from: "customer_additionatransactions",
@@ -99,16 +99,16 @@ export const getAllCourtCases = async (req, res, next) => {
                 }
             },
 
-            
+
             {
                 $lookup: {
-                    from: "courtservice_documents", 
+                    from: "courtservice_documents",
                     localField: "_id",
                     foreignField: "courtServiceCase",
                     as: "requestdocuments"
                 }
             },
-        
+
             {
                 $addFields: {
                     hasAdminRequestedPayment: {
@@ -158,13 +158,13 @@ export const getAllCourtCases = async (req, res, next) => {
                                 }
                             }, 0]
                     }
-                    
+
 
                 }
             },
             {
                 $addFields: {
-                    hasAdminAction : {
+                    hasAdminAction: {
                         $or: [
                             "$hasAdminRequestedPayment",
                             "$hasAdminRequestedDocument",
@@ -188,7 +188,7 @@ export const getAllCourtCases = async (req, res, next) => {
                     amount: "$totalAmountPaid",
                     paidCurrency: 1,
                     hasAdminAction: 1,
-                   
+
                 }
             }
         ]);

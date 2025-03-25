@@ -72,7 +72,7 @@ export const countrySetup = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const { country, countryCode, phoneNumber } = req.body;
-    console.log("Country Setup:", req.body);
+
 
     if (!country || !countryCode) {
       return res.status(400).json({
@@ -107,7 +107,6 @@ export const countrySetup = async (req, res, next) => {
       { new: true, upsert: true, runValidators: true } // Creates if not exists
     );
 
-    console.log("Updated Profile:", customerProfile);
     // Notify on registration
     await notificationService.sendToCustomer(
       customerProfile._id,
@@ -159,7 +158,6 @@ export const updateProfile = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const updates = req.body;
-    console.log("pppop", updates);
 
     const updatedProfile = await CustomerProfile.findByIdAndUpdate(
       userId,
@@ -326,7 +324,6 @@ export const getAllServices = async (req, res) => {
       });
     }
 
-    console.log("Service Details:", courtService);
 
     res.status(200).json({
       success: true,

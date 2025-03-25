@@ -36,7 +36,7 @@ export const updateTotalAmountPaid = async (caseId, caseType, amount, session = 
         if (!updatedCase) {
             throw new Error(`${caseType} not found.`);
         }
-console.log("updatedCase", updatedCase);
+
 
         return updatedCase;
     } catch (error) {

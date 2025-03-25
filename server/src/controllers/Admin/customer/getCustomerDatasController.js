@@ -41,7 +41,7 @@ export const getAllCustomerData = async (req, res) => {
         customersData.declined.push(formattedCustomer);
       }
     });
-console.log("customersData", customersData);
+
 
     res.status(200).json({
       message: "Customer data fetched successfully.",

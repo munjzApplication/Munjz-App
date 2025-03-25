@@ -235,13 +235,9 @@ export const getPaymentsByCaseId = async (req, res, next) => {
   try {
     const { caseId } = req.params;
 
-    console.log("Received caseId:", caseId);
-
     const payments = await Payment.find({ caseId: caseId });
     const additionalPayment = await AdditionalPayment.find({ caseId: caseId });
 
-    console.log("payments", payments);
-    console.log("additional Payments", additionalPayment);
 
     if (!payments || payments.length === 0) {
       return res

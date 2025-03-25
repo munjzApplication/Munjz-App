@@ -11,7 +11,7 @@ import mongoose from "mongoose";
 export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus, status,paymentAmount ,paidCurrency}, session) => {
   try {
     const courtServiceID = await generateUniqueServiceID("court");
-    console.log("Court Service ID:", courtServiceID);
+
 
 
     const courtCase = await CourtCase.create([
@@ -39,10 +39,7 @@ export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCo
  * Save Court Documents
  */
 export const saveCourtDocuments = async (files, courtCaseId, session) => {
-  console.log("files", files);
-  console.log("courtcaseid", courtCaseId);
-
-
+ 
   if (!files?.length) throw new Error("No files provided for document upload.");
 
   try {

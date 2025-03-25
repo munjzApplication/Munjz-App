@@ -100,11 +100,8 @@ export const getAllConsultantData = async (req, res , next) => {
 export const getConsultantDocs = async (req, res) => {
   try {
     const { consultantId } = req.params;
-    console.log(consultantId);
-
-    // Now proceed with the query since the consultantId is valid
+    
     const consultantDocs = await IdProof.findOne({ consultantId });
-    console.log(consultantDocs);
 
     // If no documents found, return an error message
     if (!consultantDocs) {
@@ -129,11 +126,11 @@ export const getConsultantDocs = async (req, res) => {
 export const getConsultantDocuments = async (req, res) => {
   try {
     const { consultantId } = req.params;
-    console.log(consultantId);
+  
 
     // Now proceed with the query since the consultantId is valid
     const consultantDocs = await IdProof.findOne({ consultantId });
-    console.log(consultantDocs);
+
 
     // If no documents found, return an error message
     if (!consultantDocs) {
@@ -158,11 +155,11 @@ export const getConsultantDocuments = async (req, res) => {
 export const getConsultantBankDetails = async (req, res) => {
   try {
     const { consultantId } = req.params;
-    console.log(consultantId);
+   
 
     // Now proceed with the query since the consultantId is valid
     const bankDetails = await BankDetails.findOne({ consultantId });
-    console.log(bankDetails);
+  
 
     // If no documents found, return an error message
     if (!bankDetails) {
@@ -188,14 +185,14 @@ export const getConsultantData = async (req, res, next) => {
   try {
     const { consultantId } = req.params;
 
-    console.log(consultantId);
+   
 
     // Query consultant data excluding the "password" field
     const consultantData = await consultantProfile.findOne({ _id: consultantId }).select(
       "-password -resetOtpHash -resetOtpExpiry"
     );
     
-    console.log(consultantData);
+
 
     // If no documents found, return an error message
     if (!consultantData) {

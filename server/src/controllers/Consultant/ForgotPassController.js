@@ -131,11 +131,6 @@ export const verifyOTP = async (req, res, next) => {
         .json({ message: "Invalid email or OTP. Please try again." });
     }
 
-    console.log("Consultant found:", {
-      email: consultant.email,
-      resetOtpExpiry: consultant.resetOtpExpiry,
-      resetOtpHash: consultant.resetOtpHash
-    });
 
     // Check if OTP has expired
     if (consultant.resetOtpExpiry < Date.now()) {

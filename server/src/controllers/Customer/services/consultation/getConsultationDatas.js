@@ -10,7 +10,7 @@ import {
 export const getConsultationDatas = async (req, res, next) => {
   try {
     const customerId = req.user._id;
-    console.log("Customer ID:", customerId);
+  
 
     const customer = await customerProfile.findById(customerId);
     if (!customer) {
@@ -58,7 +58,7 @@ export const getConsultationDatas = async (req, res, next) => {
       consultationDuration: formatMinutesToMMSS(item.consultationDuration / 60)
     }));
 
-    console.log(formattedConsultationDatas);
+  
 
     if (formattedConsultationDatas.length === 0) {
       return res.status(404).json({ message: "No Consultation done" });

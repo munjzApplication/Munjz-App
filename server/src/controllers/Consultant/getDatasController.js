@@ -12,7 +12,6 @@ export const getBankDetails = async (req, res) => {
   try {
     const consultantId = req.user._id;
 
-    console.log(consultantId);
 
     const consultantBankDetails = await BankDetails.findOne({ consultantId });
 

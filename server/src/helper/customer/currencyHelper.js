@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const getCurrencyFromCountryCode = async (countryCode) => {
-    console.log("Country Code:", countryCode);
+  
 
   try {
     const response = await axios.get(`https://restcountries.com/v3.1/alpha/${countryCode}`);
@@ -18,8 +18,7 @@ export const getCurrencyFromCountryCode = async (countryCode) => {
 
 
 export const getExchangeRate = async (fromCurrency, toCurrency) => {
-    console.log("fromCurrency", fromCurrency);
-    console.log("toCurrency", toCurrency);
+    
     
     try {
       const apiKey = "9063cdbf5e26edef4abc3d85"; 

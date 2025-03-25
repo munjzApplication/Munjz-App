@@ -110,7 +110,7 @@ export const convertEarningsToLocalCurrency = async (req, res, next) => {
     const consultantCurrency = await getCurrencyFromCountryCode(
       consultant.countryCode
     );
-    console.log("Consultant Currency:", consultantCurrency);
+ 
 
     let convertedAmount = totalEarnings;
     let convertedCurrency = currency;
@@ -121,7 +121,6 @@ export const convertEarningsToLocalCurrency = async (req, res, next) => {
       convertedAmount = parseFloat((totalEarnings * exchangeRateToOriginal).toFixed(2));
       convertedCurrency = consultantCurrency;
 
-      console.log(`Converted ${totalEarnings} AED to ${convertedAmount} ${consultantCurrency}`);
     } 
     else if (currency !== "AED" && currency === consultantCurrency) {
       // Convert consultant's currency to AED

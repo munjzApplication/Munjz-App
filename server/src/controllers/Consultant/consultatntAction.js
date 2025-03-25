@@ -24,11 +24,6 @@ export const handleConsultantAction = async (req, res, next) => {
     const { nationalId } = idProof;
     const { holderName, accountNumber, bankName, iban } = bankDetails;
 
-    console.log("Parsed Data:", { personalDetails, idProof, bankDetails });
-
-    console.log("req.body", req.body);
-    console.log("req.files", req.files);
-
     // Ensure all required fields are present
     const missingFields = [];
 

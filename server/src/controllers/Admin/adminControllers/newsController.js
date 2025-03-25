@@ -68,11 +68,11 @@ export const updateNews = async (req, res) => {
 // Delete a news article
 export const deleteNews = async (req, res) => {
   const { id } = req.params;
-  console.log(id);
+  
 
   try {
     const news = await News.findByIdAndDelete(id);
-    console.log(news);
+   
 
     if (!news)
       return res.status(404).json({ message: "News article not found" });

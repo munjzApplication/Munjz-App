@@ -10,7 +10,6 @@ export const authenticateUser = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET); 
-    console.log("jwt",token);
     
     req.user = await CustomerProfile.findById(decoded.id);
 

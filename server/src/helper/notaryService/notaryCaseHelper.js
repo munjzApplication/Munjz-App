@@ -15,7 +15,7 @@ export const saveNotaryCase = async (
 ) => {
   try {
     const notaryServiceID = await generateUniqueServiceID("notary");
-console.log("notaryServiceID", notaryServiceID);
+
 
     const [notaryCase] = await NotaryCase.create(
       [

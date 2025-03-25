@@ -86,18 +86,16 @@ export const handleConsultationDetails = async (req, res, next) => {
     let consultantShare = callDurationInSecond * consultationAmountPerSecond;
     consultantShare = parseFloat(consultantShare.toFixed(2)); // Round consultant's share
 
-    console.log("consultantShare", consultantShare);
 
     // If the dividend is not in AED, convert the consultant's share to AED
     if (dividend.countryCode !== "AE") {
       const localCurrency = await getCurrencyFromCountryCode(countryCode);
-      console.log("localCurrency", localCurrency);
+   
       const conversionRate = await getExchangeRate(localCurrency, "AED");
       consultantShare *= conversionRate;
       consultantShare = parseFloat(consultantShare.toFixed(2)); // Round the converted share
     }
 
-    console.log("consultantShare (converted)", consultantShare);
 
     // Save consultation details
     const newConsultationDetails = new consultationDetails({

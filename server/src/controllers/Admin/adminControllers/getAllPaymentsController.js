@@ -33,10 +33,6 @@ export const getAllPayments = async (req, res, next) => {
       pendingPayments
     } = await fetchAndCategorizePayments(models);
 
-    // Log categorized payments (optional)
-    console.log("Success Payments:", successPayments);
-    console.log("Pending Payments:", pendingPayments);
-
     // Send a structured response
     res.status(200).json({
       success: true,

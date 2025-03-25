@@ -7,8 +7,7 @@ export const UploadRejectedDocuments = async (req, res, next) => {
   try {
     // Retrieve consultantId from the token
     const consultantId = req.user._id;
-    console.log("req.files", req.files);
-    console.log(consultantId);
+   
 
     // Check if files are provided in the request
     if (!req.files || Object.keys(req.files).length === 0) {
