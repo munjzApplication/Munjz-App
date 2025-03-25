@@ -8,7 +8,7 @@ import mongoose from "mongoose";
 /**
  * Save Court Case Details
  */
-export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus, status }, session) => {
+export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus, status,paymentAmount ,paidCurrency}, session) => {
   try {
     const courtServiceID = await generateUniqueServiceID("court");
     console.log("Court Service ID:", courtServiceID);
@@ -22,7 +22,9 @@ export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCo
         selectedServiceCountry, 
         caseDescription, 
         casePaymentStatus, 
-        status 
+        status ,
+        totalAmountPaid: paymentAmount,
+        paidCurrency
       }
     ], { session });
 

@@ -12,6 +12,8 @@ const router = express.Router();
 
 router.get("/get-service/:country", getServices);
 router.post("/register",upload.array("documents"),saveCourtServiceDetails);
+
+
 router.get("/get-cases",getAllCourtCases)
 router.post("/additional-docs/:caseId",upload.array("documents"),uploadCustomerAdditionalDocument);
 router.get("/get-case/details/:caseId",getCaseDetails)

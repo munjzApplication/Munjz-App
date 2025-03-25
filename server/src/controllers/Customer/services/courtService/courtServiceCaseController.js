@@ -38,7 +38,9 @@ export const saveCourtServiceDetails = async (req, res, next) => {
                 selectedServiceCountry, 
                 caseDescription, 
                 casePaymentStatus: "paid", 
-                status: "submitted" 
+                status: "submitted" ,
+                paymentAmount,
+                paidCurrency
             },
             session
         );

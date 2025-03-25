@@ -22,20 +22,6 @@ export const getAllCourtCases = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "Customer_Transactions",
-          localField: "_id",
-          foreignField: "caseId",
-          as: "payment"
-        }
-      },
-      {
-        $unwind: {
-          path: "$payment",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $lookup: {
           from: "customer_additionatransactions", // Match collection name in lowercase
           let: { caseId: "$_id" },
           pipeline: [
@@ -75,17 +61,15 @@ export const getAllCourtCases = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
-          paymentAmount: "$payment.amount",
-          paymentCurrency: "$payment.paidCurrency",
-          hasPendingPayment: 1 // Include the true/false value in response
+          paymentAmount: "$totalAmountPaid", 
+          paymentCurrency: "$paidCurrency", 
+          hasPendingPayment: 1 
         }
       },
       {
         $sort: { createdAt: -1 }
       }
     ]);
-
-    console.log("courtCases", courtCases);
 
     courtCases = courtCases.map(courtCase => ({
       ...courtCase,
@@ -100,6 +84,7 @@ export const getAllCourtCases = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
 export const getCaseDocs = async (req, res, next) => {
@@ -170,20 +155,7 @@ export const getCourtCaseById = async (req, res, next) => {
       {
         $unwind: "$customer"
       },
-      {
-        $lookup: {
-          from: "Customer_Transactions",
-          localField: "_id",
-          foreignField: "caseId",
-          as: "payment"
-        }
-      },
-      {
-        $unwind: {
-          path: "$payment",
-          preserveNullAndEmptyArrays: true
-        }
-      },
+   
       {
         $lookup: {
           from: "customer_additionatransactions", // Match collection name in lowercase
@@ -225,8 +197,8 @@ export const getCourtCaseById = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
-          paymentAmount: "$payment.amount",
-          paymentCurrency: "$payment.paidCurrency",
+          paymentAmount: "$totalAmountPaid", 
+          paymentCurrency: "$paidCurrency", 
           hasPendingPayment: 1
         }
       },

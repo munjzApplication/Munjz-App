@@ -1,159 +1,248 @@
 import DocumentModel from "../../../../models/Customer/translationModel/translationDocument.js";
-import AdditionalDocument from "../../../../models/Customer/translationModel/translationAdditionalDocuments.js";
-import Payment from "../../../../models/Customer/translationModel/translationPayment.js";
-import AdditionalPayment from "../../../../models/Customer/translationModel/translationAdditionalPayments.js";
+import Payment from "../../../../models/Customer/customerModels/transaction.js";
+import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import TranslationCase from "../../../../models/Customer/translationModel/translationDetails.js";
-import Customer from "../../../../models/Customer/customerModels/customerModel.js";
+import mongoose from "mongoose";
+
+export const uploadCustomerAdditionalDocument = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { caseId } = req.params;
+    const files = req.files;
+
+    if (!files || files.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "No files uploaded." });
+    }
+
+    const documentUrls = [];
+    for (const file of files) {
+      const documentUrl = await uploadFileToS3(file, "TranslationCaseDocs");
+      documentUrls.push({ documentUrl });
+    }
+
+
+    const newDocument = await DocumentModel.create(
+      [
+        {
+          translationCase: caseId,
+          documents: documentUrls,
+          uploadedBy: "customer",
+          documentType: "additional",
+          status: "submitted",
+          uploadedAt: new Date(),
+        },
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({
+      message: "Additional document uploaded successfully.",
+      document: newDocument[0], // Since `create` returns an array
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+
+    res.status(500).json({
+      message: "Failed to upload additional document.",
+      error: error.message,
+    });
+  }
+};
+
 export const uploadAdminReqDocuments = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { caseId } = req.params;
     const { files } = req;
 
     if (!files || files.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ message: "No files uploaded." });
     }
 
-    const currentTime = new Date();
-    const uploadedDocuments = [];
+    const requestedDocument = await DocumentModel.findOne({
 
-    // Upload the documents to S3 and gather the URLs
+      translationCase: caseId,
+      documentType: "admin-request",
+      status: "pending",
+
+    }).session(session);
+
+
+    if (!requestedDocument) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({
+        message: "No pending admin-requested document found for this case.",
+      });
+    }
+
+    const documentUrls = [];
     for (const file of files) {
-      try {
-        const documentUrl = await uploadFileToS3(file, "translationCaseDocs");
-        uploadedDocuments.push({
-          documentUrl,
-          uploadedAt: currentTime
-        });
-      } catch (uploadError) {
-        console.error("Error uploading file:", uploadError);
-        return res.status(500).json({
-          message: `Error uploading file: ${file.originalname}`,
-          error: uploadError.message
-        });
-      }
-    }
-    // Find the CourtCase by caseId (or courtServiceID)
-    const translationCase = await TranslationCase.findOne({ _id: caseId });
-    if (!translationCase) {
-      return res.status(404).json({ message: "translation case not found." });
+      const documentUrl = await uploadFileToS3(file, "TranslationCaseDocs");
+      documentUrls.push({ documentUrl });
     }
 
-    // Get the customer details using the customerID from the courtCase
-    const customer = await Customer.findById(translationCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
+
+    const updatedDocument = await DocumentModel.findByIdAndUpdate(
+      requestedDocument._id,
+      {
+        $set: {
+          documents: documentUrls,
+          status: "submitted",
+          fulfilledAt: new Date(),
+        },
+      },
+      { new: true, session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      message: "Admin-requested document uploaded successfully.",
+      document: updatedDocument,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+
+    res.status(500).json({
+      message: "Failed to upload requested document.",
+      error: error.message,
+    });
+  }
+};
+
+
+export const submitAdditionalPayment = async (req, res, next) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const { caseId } = req.params;
+    const { amount, paidCurrency } = req.body;
+
+    if (!amount || !paidCurrency) {
+      return res.status(400).json({ message: "Amount and currency are required." });
     }
-    let existingDocument = await AdditionalDocument.findOne({
-      translationCase: caseId
+
+    if (!mongoose.Types.ObjectId.isValid(caseId)) {
+      return res.status(400).json({ message: "Invalid case ID." });
+    }
+
+
+    const additionalPaymentData = await AdditionalPayment.findOne({ caseId, status: "pending" });
+
+    if (!additionalPaymentData) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "No pending additional payment request found for this case." });
+    }
+
+
+    if (additionalPaymentData.amount !== amount) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "The payment amount does not match the requested amount." });
+    }
+
+
+    const additionalPayment = await AdditionalPayment.findOneAndUpdate(
+      { caseId, status: "pending" },
+      {
+        $set: {
+          amount,
+          paidCurrency,
+          status: "completed",
+          paymentDate: new Date()
+        }
+      },
+      { new: true, session }
+    );
+
+    if (!additionalPayment) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "No pending additional payment request found for this case." });
+    }
+
+    // Update totalAmount in Translation
+    const updatedTranslationCase = await TranslationCase.findOneAndUpdate(
+      { _id: caseId },
+      { $inc: { totalAmountPaid: amount } },
+      { new: true, session }
+    );
+
+    if (!updatedTranslationCase) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "Translation case not found." });
+    }
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      message: "Additional payment submitted successfully.",
+      additionalPayment,
     });
 
-    if (existingDocument) {
-      existingDocument.documents = uploadedDocuments;
-      existingDocument.requestStatus = "updated";
-      existingDocument.requestUpdatedAt = currentTime;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    next(error);
+  }
+};
 
-      await existingDocument.save();
-      const translationServiceID = existingDocument.translationServiceID;
-      const serviceName = translationCase.serviceName;
-      const customerName = customer.Name || "Unknown Customer";
+export const getDocummentByCaseId = async (req, res, next) => {
+  try {
+    const { caseId } = req.params;
 
-      return res.status(200).json({
-        message: "Documents uploaded and request status updated to 'updated'.",
-        additionalDocument: existingDocument
-      });
-    } else {
-      // Step 3: If no existing document is found, create a new entry with 'pending' status
-      const newAdditionalDocument = new AdditionalDocument({
-        translationCase: caseId,
-        translationServiceID,
-        documents: [],
-        requestReason: requestReason || "No reason provided",
-        requestStatus: "pending",
-        requestUpdatedAt: currentTime
-      });
+    const documents = await DocumentModel.find({ translationCase: caseId });
 
-      await newAdditionalDocument.save();
-
-      return res.status(201).json({
-        message:
-          "Document entry created with 'pending' status. Please wait for customer upload.",
-        additionalDocument: newAdditionalDocument
-      });
+    if (!documents || documents.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No documents found for the given case ID" });
     }
+
+    res.status(200).json({
+      message: "Documents retrieved successfully",
+      documents
+    });
   } catch (error) {
     next(error);
   }
 };
 
-export const submitAdditionalPayment = async (req, res, next) => {
+export const getPaymentsByCaseId = async (req, res, next) => {
   try {
     const { caseId } = req.params;
-    const { transactionId, paymentMethod, paymentDate } = req.body;
 
-    if (!transactionId || !paymentMethod || !paymentDate) {
-      return res.status(400).json({
-        message:
-          "All fields are required (transactionId, paymentMethod, paymentDate)."
-      });
-    }
+    const payments = await Payment.find({ caseId: caseId });
+    const additionalPayment = await AdditionalPayment.find({ caseId: caseId });
 
-    // Find the additional payment record by caseId
-    const payment = await AdditionalPayment.findOne({
-      TranslationcaseId: caseId
-    });
-    if (!payment) {
+
+    if (!payments || payments.length === 0) {
       return res
         .status(404)
-        .json({
-          message: "Additional payment record not found for the given case ID."
-        });
+        .json({ message: "No payments found for the given case ID" });
     }
-
-    if (payment.paymentStatus === "paid") {
-      return res.status(400).json({
-        message: "This additional payment has already been paid."
-      });
-    }
-
-    // Update the payment status to 'paid'
-    const updatedPayment = await AdditionalPayment.updateOne(
-      { _id: payment._id },
-      {
-        $set: {
-          transactionId: transactionId,
-          paymentMethod: paymentMethod,
-          paymentDate: paymentDate,
-          paymentStatus: "paid",
-          paidAt: new Date()
-        }
-      }
-    );
-
-    if (updatedPayment.modifiedCount === 0) {
-      return res
-        .status(500)
-        .json({ message: "Failed to update payment status." });
-    }
-
-    // Get Court Case and Customer details for the notification
-    const translationCase = await TranslationCase.findOne({ _id: caseId });
-    if (!translationCase) {
-      return res.status(404).json({ message: "translation case not found." });
-    }
-
-    const customer = await Customer.findById(translationCase.customerID);
-    if (!customer) {
-      return res.status(404).json({ message: "Customer not found." });
-    }
-
-    const translationServiceID = translationCase.translationServiceID;
-    const serviceName = translationCase.serviceName;
-    const customerName = customer.Name || "Unknown Customer";
 
     res.status(200).json({
-      message: "Additional payment submitted successfully.",
-      additionalDetails: payment
+      message: "Payments retrieved successfully",
+      payments,
+      additionalPayment
     });
   } catch (error) {
     next(error);

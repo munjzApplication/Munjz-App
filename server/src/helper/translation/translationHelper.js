@@ -15,6 +15,8 @@ export const saveTranslationCase = async ({
   PaymentStatus,
   submissionDate,
   status,
+  paymentAmount,
+  paidCurrency,
   session
 }) => {
   try {
@@ -29,7 +31,9 @@ export const saveTranslationCase = async ({
           translationLanguage,
           PaymentStatus,
           submissionDate,
-          status
+          status,
+          totalAmountPaid: paymentAmount,
+          paidCurrency
         }
       ],
       { session }

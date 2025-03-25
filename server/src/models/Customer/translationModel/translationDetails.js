@@ -19,6 +19,7 @@ const TranslationDetailsSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  paidCurrency:{type: String},
   totalAmountPaid: { type: Number, default: 0 }, 
   PaymentStatus: {
     type: String,

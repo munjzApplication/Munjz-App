@@ -20,20 +20,6 @@ export const getAllNotaryCases = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "Customer_Transactions",
-          localField: "_id",
-          foreignField: "CaseId",
-          as: "payment"
-        }
-      },
-      {
-        $unwind: {
-          path: "$payment",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $lookup: {
           from: "customer_additionatransactions", // Match collection name in lowercase
           let: { caseId: "$_id" },
           pipeline: [
@@ -73,8 +59,8 @@ export const getAllNotaryCases = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
-          paymentAmount: "$payment.amount",
-          paymentCurrency: "$payment.paidCurrency",
+          paymentAmount: "$totalAmountPaid", 
+          paymentCurrency: "$paidCurrency", 
           hasPendingPayment: 1
         }
       },
@@ -169,20 +155,6 @@ export const getNotaryCaseById = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "Customer_Transactions",
-          localField: "_id",
-          foreignField: "caseId",
-          as: "payment"
-        }
-      },
-      {
-        $unwind: {
-          path: "$payment",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $lookup: {
           from: "customer_additionatransactions", // Match collection name in lowercase
           let: { caseId: "$_id" },
           pipeline: [
@@ -222,8 +194,8 @@ export const getNotaryCaseById = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
-          paymentAmount: "$payment.amount",
-          paymentCurrency: "$payment.paidCurrency",
+          paymentAmount: "$totalAmountPaid", 
+          paymentCurrency: "$paidCurrency", 
           hasPendingPayment: 1
         }
       },

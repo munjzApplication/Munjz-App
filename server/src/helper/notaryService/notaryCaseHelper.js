@@ -10,7 +10,7 @@ import { generateUniqueServiceID } from "../../helper/uniqueIDHelper.js";
  * Save Notary Case Details
  */
 export const saveNotaryCase = async (
-  { customerId, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus,status },
+  { customerId, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus,status,paymentAmount,paidCurrency },
   session
 ) => {
   try {
@@ -26,7 +26,9 @@ console.log("notaryServiceID", notaryServiceID);
           selectedServiceCountry,
           caseDescription,
           casePaymentStatus,
-          status
+          status,
+          totalAmountPaid: paymentAmount,
+          paidCurrency
         },
       ],
       { session } // Ensure session is passed correctly

@@ -25,6 +25,7 @@ const CourtCaseSchema = new mongoose.Schema(
       type: String,
       require: true
     },
+    paidCurrency:{type: String},
     totalAmountPaid: { type: Number, default: 0 }, 
     casePaymentStatus: {
       type: String,

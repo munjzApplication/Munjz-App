@@ -23,8 +23,6 @@ export const submitTranslationRequest = async (req, res, next) => {
       noOfPage
     } = req.body;
     
-    console.log("reqbody", req.body);
-    console.log("reqfile", req.files);
 
     // Validate customer existence
     const customer = await Customer.findById(customerId).lean();
@@ -51,7 +49,9 @@ export const submitTranslationRequest = async (req, res, next) => {
         translationLanguage,
         PaymentStatus,
         submissionDate: new Date(),
-        status: "submitted"
+        status: "submitted",
+        paymentAmount,
+        paidCurrency,
       },
       session
     );

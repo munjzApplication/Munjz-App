@@ -19,32 +19,32 @@ import getDataRoutes from "./customerRoutes/getDataRoute.js";
 import consultationRoute from "./services/consultation/consultationRoute.js";
 import getNews from "./newses/newsRoutes.js";
 
-import {authenticateUser} from '../../middlewares/customerMiddleware.js';
+import { authenticateUser } from '../../middlewares/customerMiddleware.js';
 
 
 const router = express.Router();
 
 router.use("/auth", authRoute);
-router.use("/profile",authenticateUser, profileRoute);
+router.use("/profile", authenticateUser, profileRoute);
 router.use("/forgot-password", customerForgotRoute);
-router.use("/activity",authenticateUser, callActivity);
-router.use('/transaction',authenticateUser,transactionRoute);
-router.use('/favorite',authenticateUser,favRoute);
-router.use('/court-service',authenticateUser,courtServiceRoute);
-router.use('/adminCourt-req-submit',authenticateUser,courtServiceReqRoute);
-router.use('/notary-service',authenticateUser,notaryServiceRoute);
-router.use('/adminNotary-req-submit',authenticateUser,notaryServiceReqRoute);
-router.use('/translation',authenticateUser,translationRoute);
-router.use('/adminreqinvoice',authenticateUser,adminreqinvoiceRoute);
-router.use('/pendings',authenticateUser,customerPendingsRoute);
-router.use("/notifications",authenticateUser,notificationRoute)
-router.use('/consultant-list',authenticateUser,getConsultantListRoutes);
-router.use('/pricing',authenticateUser,getPricingRoutes); 
-router.use('/get-datas',authenticateUser,getDataRoutes);
-router.use('/news',authenticateUser,getNews)
+router.use("/activity", authenticateUser, callActivity);
+router.use('/transaction', authenticateUser, transactionRoute);
+router.use('/favorite', authenticateUser, favRoute);
+router.use('/court-service', authenticateUser, courtServiceRoute);
+router.use('/court-case', authenticateUser, courtServiceReqRoute);
+router.use('/notary-service', authenticateUser, notaryServiceRoute);
+router.use('/notary-case', authenticateUser, notaryServiceReqRoute);
+router.use('/translation', authenticateUser, translationRoute);
+router.use('/adminreqinvoice', authenticateUser, adminreqinvoiceRoute);
+router.use('/pendings', authenticateUser, customerPendingsRoute);
+router.use("/notifications", authenticateUser, notificationRoute)
+router.use('/consultant-list', authenticateUser, getConsultantListRoutes);
+router.use('/pricing', authenticateUser, getPricingRoutes);
+router.use('/get-datas', authenticateUser, getDataRoutes);
+router.use('/news', authenticateUser, getNews)
 
 // Consultation Routesut
-router.use("/consultations",authenticateUser, consultationRoute);
+router.use("/consultations", authenticateUser, consultationRoute);
 
 
 export default router;
