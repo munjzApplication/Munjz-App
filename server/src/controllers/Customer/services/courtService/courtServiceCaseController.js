@@ -64,14 +64,15 @@ export const saveCourtServiceDetails = async (req, res, next) => {
         await notificationService.sendToCustomer(
             customerId,
             "Court Case Registered",
-            `Your court case for ${serviceName} in ${selectedServiceCountry} has been registered successfully.`
+            `Your court case for ${serviceName} in ${selectedServiceCountry} has been registered paymentAmount.`
         );
 
         // Notify Admin
         await notificationService.sendToAdmin(
-            "New Court Case Submitted",
-            `A new court case (${serviceName}) has been registered by ${customer.Name} in ${selectedServiceCountry} .`
+            "New Court Case Registered",
+            `A new court case (${serviceName}) has been registered by ${customer.Name} in ${selectedServiceCountry} for ${paymentAmount}.`
         );
+        
         return res.status(201).json({ message: "Court case registered successfully" });
     } catch (error) {
         console.error("Error in saveCourtServiceDetails:", error);

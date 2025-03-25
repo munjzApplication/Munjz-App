@@ -77,8 +77,8 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
 
     // Notify Admin
     await notificationService.sendToAdmin(
-      "New Notary Case Submitted",
-      `A new notary case (${serviceName}) has been registered by ${customer.Name} in ${selectedServiceCountry}.`
+      "New Notary Case Registered",
+      `A new notary case (${serviceName}) has been registered by ${customer.Name} in ${selectedServiceCountry} for ${paymentAmount}.`
     );
     return res.status(201).json({
       message: "Notary case registered successfully"
