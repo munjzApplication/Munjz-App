@@ -79,12 +79,12 @@ export const submitTranslationRequest = async (req, res, next) => {
     await notificationService.sendToCustomer(
       customerId,
       "Translation Case Registered",
-      `Your translation request (${documentLanguage} → ${translationLanguage}) has been submitted successfully.`
+      `Your translation request (${documentLanguage} → ${translationLanguage}) has been Registered successfully.`
     );
 
     await notificationService.sendToAdmin(
       "New Translation Request Registered",
-      `A new  translation request (${documentLanguage} → ${translationLanguage}) has been submitted by ${customerName} for ${paymentAmount}.`
+      `A new  translation request (${documentLanguage} → ${translationLanguage}) has been registered with a payment of ${paymentAmount} ${paidCurrency}.`
     );
 
     return res.status(201).json({

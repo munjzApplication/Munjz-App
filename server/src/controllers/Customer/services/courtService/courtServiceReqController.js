@@ -12,7 +12,7 @@ export const uploadCustomerAdditionalDocument = async (req, res) => {
   session.startTransaction();
 
   try {
-    const customerId = req.user._id;
+  
     const { caseId } = req.params;
     const files = req.files;
 
@@ -27,13 +27,13 @@ export const uploadCustomerAdditionalDocument = async (req, res) => {
       const documentUrl = await uploadFileToS3(file, "CourtCaseDocs");
       documentUrls.push({ documentUrl });
     }
-    // Fetch customer details to get the email
-    const customer = await Customer.findById(customerId).select("email");
+ 
+    const courtcase = await CourtCase.findById({_id:caseId}).select("courtServiceID");
 
-    if (!customer) {
+    if (!courtcase) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: "Customer not found." });
+      return res.status(404).json({ message: "courtcase not found." });
     }
 
     const newDocument = await DocumentModel.create(
@@ -56,8 +56,9 @@ export const uploadCustomerAdditionalDocument = async (req, res) => {
     // Notify Admin with customer email instead of caseId
     await notificationService.sendToAdmin(
       "Customer Uploaded Document",
-      `Additional Document has been submitted by ${customer.email}.`
+      `Additional Document has been submitted for Case ID: ${courtcase.courtServiceID}.`
     );
+    
     res.status(201).json({
       message: "Additional document uploaded successfully.",
 
@@ -78,7 +79,7 @@ export const uploadAdminRequestedDocument = async (req, res) => {
   session.startTransaction();
 
   try {
-    const customerId = req.user._id
+    
     const { caseId } = req.params;
     const files = req.files;
 
@@ -103,14 +104,14 @@ export const uploadAdminRequestedDocument = async (req, res) => {
         message: "No pending admin-requested document found for this case.",
       });
     }
-    // Fetch customer details to get the email
-    const customer = await Customer.findById(customerId).select("email");
+    const courtcase = await CourtCase.findById({_id:caseId}).select("courtServiceID");
 
-    if (!customer) {
+    if (!courtcase) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: "Customer not found." });
+      return res.status(404).json({ message: "courtcase not found." });
     }
+
 
 
     const documentUrls = [];
@@ -137,7 +138,7 @@ export const uploadAdminRequestedDocument = async (req, res) => {
     // Notify Admin with customer email instead of caseId
     await notificationService.sendToAdmin(
       "Admin Requested Document Submitted",
-      `A requested document has been submitted by ${customer.email}.`
+      `A requested document has been submitted for Case ID: ${courtcase.courtServiceID}`
     );
     res.status(200).json({
       message: "Admin-requested document uploaded successfully.",
@@ -158,7 +159,7 @@ export const submitAdditionalPayment = async (req, res, next) => {
   session.startTransaction();
 
   try {
-    const customerId = req.user._id;
+   
     const { caseId } = req.params;
     const { amount, paidCurrency } = req.body;
 
@@ -186,14 +187,14 @@ export const submitAdditionalPayment = async (req, res, next) => {
       return res.status(400).json({ message: "The payment amount does not match the requested amount." });
     }
 
-    // Fetch customer details to get the email
-    const customer = await Customer.findById(customerId).select("email");
+    const courtcase = await CourtCase.findById({_id:caseId}).select("courtServiceID");
 
-    if (!customer) {
+    if (!courtcase) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: "Customer not found." });
+      return res.status(404).json({ message: "courtcase not found." });
     }
+
     const additionalPayment = await AdditionalPayment.findOneAndUpdate(
       { caseId, status: "pending" },
       {
@@ -231,7 +232,7 @@ export const submitAdditionalPayment = async (req, res, next) => {
     // Notify Admin with customer email instead of caseId
     await notificationService.sendToAdmin(
       "Admin Requested Payment Submitted",
-      `A requested payment has been completed by ${customer.email}.`
+      `A requested payment has been completed for Case ID: ${courtcase.courtServiceID}`
     );
     res.status(200).json({
       message: "Additional payment submitted successfully.",
