@@ -92,7 +92,6 @@ export const uploadAdminRequestedDocument = async (req, res) => {
     const requestedDocument = await DocumentModel.findOne({
 
       courtServiceCase: caseId,
-      uploadedBy: "customer",
       documentType: "admin-request",
       status: "pending",
 
@@ -126,6 +125,7 @@ export const uploadAdminRequestedDocument = async (req, res) => {
       requestedDocument._id,
       {
         $set: {
+          uploadedBy: "customer",
           documents: documentUrls,
           status: "submitted",
           fulfilledAt: new Date(),
