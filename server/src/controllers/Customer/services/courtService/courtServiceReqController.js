@@ -92,6 +92,7 @@ export const uploadAdminRequestedDocument = async (req, res) => {
     const requestedDocument = await DocumentModel.findOne({
 
       courtServiceCase: caseId,
+      uploadedBy: "customer",
       documentType: "admin-request",
       status: "pending",
 

@@ -22,7 +22,7 @@ export const getAllCourtCases = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "customer_additionatransactions", // Match collection name in lowercase
+          from: "customer_additionatransactions", 
           let: { caseId: "$_id" },
           pipeline: [
             {
@@ -30,7 +30,7 @@ export const getAllCourtCases = async (req, res, next) => {
                 $expr: {
                   $and: [
                     { $eq: ["$caseId", "$$caseId"] },
-                    { $eq: ["$status", "pending"] } // Check if any additional payment is pending
+                    { $eq: ["$status", "pending"] } 
                   ]
                 }
               }
@@ -42,7 +42,7 @@ export const getAllCourtCases = async (req, res, next) => {
       },
       {
         $addFields: {
-          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] } // Returns true if there are pending payments
+          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] } 
         }
       },
       {

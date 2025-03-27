@@ -22,7 +22,8 @@ import customerRoutes from "./adminRoutes/customerRoutes.js";
 import getAdminEarningsRoutes from "./adminRoutes/getAdminEarningsRoute.js";
 import getConsultationRoute from "./services/consultation/consultationRoute.js";
 import uploadimage from "./adminRoutes/uploadimage.js";
-import notifyAdminOnCustomerChatRoute from "./notification/admin-notifyRoute.js";
+import notifyAdminOnCustomerChatRoute from "./notification/admin-notifyRoute.js"; 
+import getAllServicesRoute from "./services/getAllServices/getAllServicesRoutes.js";
 import { protectAdmin } from "../../middlewares/adminMiddleware.js";
 
 
@@ -72,5 +73,7 @@ router.use("/news", adminNewsRoutes);
 router.use("/get-datas", getConsultationRoute)
 router.use("/upload-icon", uploadimage);
 router.use("/notify-admin", notifyAdminOnCustomerChatRoute);
+
+router.use("/get-services",getAllServicesRoute);
 
 export default router;

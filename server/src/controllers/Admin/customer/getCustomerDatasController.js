@@ -40,10 +40,15 @@ export const getAllCustomerData = async (req, res) => {
     };
 
 
-    customerData.forEach(customer => {
+    customerData.forEach((customer) => {
+      // Format wallet balance in JavaScript
+      const balance = parseFloat(customer.walletBalance).toFixed(2);
+      const [whole, decimal] = balance.split(".");
+
       const formattedCustomer = {
         ...customer,
-        creationDate: formatDate(customer.creationDate)
+        creationDate: formatDate(customer.creationDate), // Format date
+        walletBalance: `${whole}:${decimal}`, // Convert to "0:00" format
       };
 
       if (!customer.isBlocked) {
