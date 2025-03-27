@@ -1,4 +1,4 @@
-import Transaction from "../../../models/Customer/customerModels/transactionModel.js";
+import Transaction from "../../../models/Customer/customerModels/transaction.js";
 import CustomerProfile from "../../../models/Customer/customerModels/customerModel.js";
 import Wallet from "../../../models/Customer/customerModels/walletModel.js";
 import {
@@ -17,7 +17,7 @@ export const getTransactionDetails = async (req, res, next) => {
     }
 
     // Fetch transaction details and sort by createdAt in descending order
-    const transactionData = await Transaction.aggregate([
+    const transactionData = await CustomerTransaction.aggregate([
       { $match: { customerId } }, 
       { $sort: { createdAt: -1 } },
       {
@@ -25,6 +25,8 @@ export const getTransactionDetails = async (req, res, next) => {
           currency: 1,
           amountPaid: 1,
           status: 1,
+          serviceType: 1,
+          paymentMethod: 1,
           createdAt: 1
         }
       }
@@ -33,7 +35,7 @@ export const getTransactionDetails = async (req, res, next) => {
     // Format createdAt using the helper function
     const formattedTransactions = transactionData.map(transaction => ({
       ...transaction,
-      createdAt: formatDate(transaction.createdAt) // Using the helper function
+      createdAt: formatDate(transaction.createdAt)
     }));
 
     res.status(200).json({

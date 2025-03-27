@@ -1,10 +1,8 @@
-import courtServiceAdditionalPayment from "../../models/Customer/courtServiceModel/courtServiceAdditionalPayment.js";
-import notaryServiceAdditionalPayment from "../../models/Customer/notaryServiceModel/notaryServiceAdditionalPayment.js";
-import translationAdditionalPayments from "../../models/Customer/translationModel/translationAdditionalPayments.js";
+import payment from "../../models/Customer/customerModels/transaction.js";
 
-import courtServiceAdditionalDocument from "../../models/Customer/courtServiceModel/courtServiceAdditionalDocuments.js";
-import notaryServiceAdditionalDocument from "../../models/Customer/notaryServiceModel/notaryServiceAdditionalDocuments.js";
-import translationAdditionalDocument from "../../models/Customer/translationModel/translationAdditionalDocuments.js";
+import courtServiceDocument from "../../models/Customer/courtServiceModel/courtServiceDocument.js";
+import notaryServiceDocument from "../../models/Customer/notaryServiceModel/notaryServiceDocument.js";
+import translationDocument from "../../models/Customer/translationModel/translationDocument.js";
 
 // Helper function to fetch all payments (paid and pending)
 export const getPayments = async () => {
@@ -46,9 +44,9 @@ export const getPayments = async () => {
 
 // Helper function to fetch all pending documents (both paid and pending)
 export const getDocuments = async () => {
-  const courtDocuments = await courtServiceAdditionalDocument.find({});
-  const notaryDocuments = await notaryServiceAdditionalDocument.find({});
-  const translationDocuments = await translationAdditionalDocument.find({});
+  const courtDocuments = await courtServiceDocument.find({});
+  const notaryDocuments = await notaryServiceDocument.find({});
+  const translationDocuments = await translationDocument.find({});
 
   return [
     ...courtDocuments.map(doc => ({
