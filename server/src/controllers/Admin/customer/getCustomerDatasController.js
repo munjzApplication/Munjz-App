@@ -5,6 +5,15 @@ export const getAllCustomerData = async (req, res) => {
   try {
     const customerData = await customerProfile.aggregate([
       {
+        $lookup: {
+          from: "customer_wallets",
+          localField: "_id",
+          foreignField: "customerId",
+          as: "wallet",
+        },
+      },
+      {
+
         $project: {
           _id: 1,
           customerUniqueId: 1,
@@ -16,11 +25,13 @@ export const getAllCustomerData = async (req, res) => {
           profilePhoto: 1,
           countryCode: 1,
           country: 1,
-
-          // ✅ Do NOT mix exclusion (0) with inclusion (1)
+          walletBalance: {
+            $ifNull: [{ $arrayElemAt: ["$wallet.balance", 0] }, 0], 
+          },
+         
         }
       },
-      { $sort: { creationDate: -1 } } // Sort customers from newest to oldest
+      { $sort: { creationDate: -1 } } 
     ]);
 
     const customersData = {
@@ -28,7 +39,7 @@ export const getAllCustomerData = async (req, res) => {
       declined: []
     };
 
-    // Categorize customers and format date fields
+
     customerData.forEach(customer => {
       const formattedCustomer = {
         ...customer,
