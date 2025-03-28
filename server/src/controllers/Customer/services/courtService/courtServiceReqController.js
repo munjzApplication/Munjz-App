@@ -233,8 +233,9 @@ export const submitAdditionalPayment = async (req, res, next) => {
     // Notify Admin with customer email instead of caseId
     await notificationService.sendToAdmin(
       "Admin Requested Payment Submitted",
-      `A requested payment has been completed for Case ID: ${courtcase.courtServiceID}`
+      `A requested payment of ${amount} ${paidCurrency} has been completed for Case ID: ${courtcase.courtServiceID}`
     );
+    
     res.status(200).json({
       message: "Additional payment submitted successfully.",
 

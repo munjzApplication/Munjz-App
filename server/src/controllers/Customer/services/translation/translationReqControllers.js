@@ -3,6 +3,7 @@ import Payment from "../../../../models/Customer/customerModels/transaction.js";
 import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import TranslationCase from "../../../../models/Customer/translationModel/translationDetails.js";
+import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 
 export const uploadCustomerAdditionalDocument = async (req, res) => {
@@ -192,6 +193,12 @@ export const submitAdditionalPayment = async (req, res, next) => {
     }
     await session.commitTransaction();
     session.endSession();
+
+    // Notify Admin with customer email instead of caseId
+    await notificationService.sendToAdmin(
+      "Admin Requested Payment Submitted",
+      `A requested payment of ${amount} ${paidCurrency} has been completed for Case ID: ${TranslationCase.translationServiceID}.`
+    );
 
     res.status(200).json({
       message: "Additional payment submitted successfully.",

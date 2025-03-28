@@ -64,7 +64,7 @@ export const saveCourtServiceDetails = async (req, res, next) => {
         await notificationService.sendToCustomer(
             customerId,
             "Court Case Registered",
-            `Your court case (Case ID: ${courtServiceID}) has been registered paymentAmount.`
+            `Your court case (Case ID: ${courtServiceID}) has been registered successfully, with a payment of ${paymentAmount} ${paidCurrency}.`
         );
 
         // Notify Admin

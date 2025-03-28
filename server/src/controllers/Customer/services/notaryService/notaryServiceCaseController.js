@@ -72,7 +72,7 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
     await notificationService.sendToCustomer(
       customerId,
       "Notary Case Registered",
-      `Your notary case (Case ID: ${notaryServiceID}) has been registered successfully.`
+      `Your notary case (Case ID: ${notaryServiceID}) has been registered successfully, with a payment of ${paymentAmount} ${paidCurrency}.`
     );
 
     // Notify Admin
