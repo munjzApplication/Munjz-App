@@ -45,7 +45,11 @@ const AdditionalPaymentSchema = new mongoose.Schema(
             default: "pending"
         },
         
-        requestedAt: { type: Date, default: Date.now }
+        requestedAt: { type: Date, default: Date.now },
+        paymentDate: { 
+            type: Date, 
+            default: Date.now 
+          }
     },
     { timestamps: true }
 );

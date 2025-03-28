@@ -1,8 +1,9 @@
-
 import courtCaseModel from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import courtCaseeDocument from "../../../../models/Customer/courtServiceModel/courtServiceDocument.js"
 import { formatDate } from "../../../../helper/dateFormatter.js";
 import customerProfileModel from "../../../../models/Customer/customerModels/customerModel.js";
+import CustomerTransaction from "../../../../models/Customer/customerModels/transaction.js";
+import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
 
 import mongoose from "mongoose";
 
@@ -22,7 +23,7 @@ export const getAllCourtCases = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "customer_additionatransactions", 
+          from: "customer_additionatransactions",
           let: { caseId: "$_id" },
           pipeline: [
             {
@@ -30,7 +31,7 @@ export const getAllCourtCases = async (req, res, next) => {
                 $expr: {
                   $and: [
                     { $eq: ["$caseId", "$$caseId"] },
-                    { $eq: ["$status", "pending"] } 
+                    { $eq: ["$status", "pending"] }
                   ]
                 }
               }
@@ -42,7 +43,7 @@ export const getAllCourtCases = async (req, res, next) => {
       },
       {
         $addFields: {
-          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] } 
+          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] }
         }
       },
       {
@@ -61,9 +62,9 @@ export const getAllCourtCases = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
-          paymentAmount: "$totalAmountPaid", 
-          paymentCurrency: "$paidCurrency", 
-          hasPendingPayment: 1 
+          paymentAmount: "$totalAmountPaid",
+          paymentCurrency: "$paidCurrency",
+          hasPendingPayment: 1
         }
       },
       {
@@ -84,8 +85,6 @@ export const getAllCourtCases = async (req, res, next) => {
     next(error);
   }
 };
-
-
 
 export const getCaseDocs = async (req, res, next) => {
   try {
@@ -127,13 +126,13 @@ export const getCaseDocs = async (req, res, next) => {
 export const getCourtCaseById = async (req, res, next) => {
   try {
     const { customerId } = req.params;
-    
-            // Validate if customer exists
-            const customerExists = await customerProfileModel.findById(customerId);
-            if (!customerExists) {
-              return res.status(404).json({ message: "Customer not found" });
-            }
-        
+
+    // Validate if customer exists
+    const customerExists = await customerProfileModel.findById(customerId);
+    if (!customerExists) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
 
     let courtCases = await courtCaseModel.aggregate([
       {
@@ -150,7 +149,7 @@ export const getCourtCaseById = async (req, res, next) => {
       {
         $unwind: "$customer"
       },
-   
+
       {
         $lookup: {
           from: "customer_additionatransactions", // Match collection name in lowercase
@@ -192,8 +191,8 @@ export const getCourtCaseById = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
-          paymentAmount: "$totalAmountPaid", 
-          paymentCurrency: "$paidCurrency", 
+          paymentAmount: "$totalAmountPaid",
+          paymentCurrency: "$paidCurrency",
           hasPendingPayment: 1
         }
       },
@@ -217,4 +216,48 @@ export const getCourtCaseById = async (req, res, next) => {
 };
 
 
+export const getAllCourtPayments = async (req, res, next) => {
+  try {
+    const { caseId } = req.params;
+
+    if (!caseId) {
+      return res.status(400).json({ message: "Case ID is required" });
+    }
+
+    const caseObjectId = new mongoose.Types.ObjectId(caseId);
+
+    // Fetch all transactions and additional payments in parallel
+    const [paidTransactions, pendingTransactions] = await Promise.all([
+      // Fetch all "paid" transactions from both collections
+      Promise.all([
+        CustomerTransaction.find({ caseId: caseObjectId, caseType: "CourtService_Case", status: "paid" }),
+        AdditionalPayment.find({ caseId: caseObjectId, caseType: "CourtService_Case", status: "paid" })
+      ]).then(([customerPaid, additionalPaid]) => [...customerPaid, ...additionalPaid]),
+
+      // Fetch all "pending" additional payments
+      AdditionalPayment.find({ caseId: caseObjectId, caseType: "CourtService_Case", status: "pending" })
+    ]);
+
+     // Format dates before sending response
+     const formattedPaidTransactions = paidTransactions.map((transaction) => ({
+      ...transaction._doc,
+      paymentDate: formatDate(transaction.paymentDate),
+    }));
+
+    const formattedPendingTransactions = pendingTransactions.map((transaction) => ({
+      ...transaction._doc,
+      dueDate: formatDate(transaction.dueDate),
+      paymentDate: formatDate(transaction.paymentDate),
+    }));
+
+    // Construct response
+    return res.status(200).json({
+      message: "Court payments fetched successfully",
+      paidTransactions : formattedPaidTransactions,
+      pendingTransactions: formattedPendingTransactions
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
