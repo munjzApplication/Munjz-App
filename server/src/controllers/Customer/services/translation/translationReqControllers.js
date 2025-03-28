@@ -165,7 +165,7 @@ export const submitAdditionalPayment = async (req, res, next) => {
         $set: {
           amount,
           paidCurrency,
-          status: "completed",
+          status: "paid",
           paymentDate: new Date()
         }
       },

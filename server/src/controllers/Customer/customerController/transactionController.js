@@ -1,13 +1,24 @@
 import mongoose from "mongoose";
 import CustomerTransaction from "../../../models/Customer/customerModels/transaction.js";
+import CustomerAdditionalTransaction from "../../../models/Customer/customerModels/additionalTransaction.js";
 import { formatDatewithmonth } from "../../../helper/dateFormatter.js";
 
 export const getCustomerTransactions = async (req, res) => {
   try {
     const customerId = req.user._id;
-    const transactions = await CustomerTransaction.find({ customerId }).sort({ paymentDate: -1 });
 
-    const formattedTransactions = transactions.map((transaction) => ({
+    // Fetch transactions from both collections
+    const transactions = await CustomerTransaction.find({ customerId });
+    const additionalTransactions = await CustomerAdditionalTransaction.find({ customerId });
+
+    // Combine transactions
+    const allTransactions = [...transactions, ...additionalTransactions];
+
+    // Sort transactions by paymentDate in descending order
+    allTransactions.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+
+    // Format transactions
+    const formattedTransactions = allTransactions.map((transaction) => ({
       _id: transaction._id,
       amount: transaction.amountPaid,
       currency: transaction.currency,
