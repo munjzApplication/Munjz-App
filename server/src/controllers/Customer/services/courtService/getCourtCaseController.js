@@ -9,13 +9,14 @@ export const getCaseDetails = async (req, res, next) => {
         const { caseId } = req.params;
 
         // Fetch data in parallel with filtering
-        const [caseDetails, documents, payments, pendingDocs, pendingPayments,adminUploads] = await Promise.all([
+        const [caseDetails, documents, initialPayments, additionalPayment, pendingDocs, pendingPayments, adminUploads] = await Promise.all([
             courtCase.findById(caseId).lean(),
             Document.find({ courtServiceCase: caseId }).lean(),
-            Transaction.find({ caseId: caseId }).lean(),
-            Document.find({ courtServiceCase: caseId, status: "pending", documentType: "admin-request" }).lean(), 
-            AdditionalPayment.find({ caseId: caseId, status: "pending" }).lean(), 
-            Document.find({ courtServiceCase: caseId, status: "submitted", documentType: "admin-upload" }).lean() 
+            Transaction.find({ caseId: caseId, }).lean(),
+            AdditionalPayment.find({ caseId: caseId, status: "paid" }).lean(),
+            Document.find({ courtServiceCase: caseId, status: "pending", documentType: "admin-request" }).lean(),
+            AdditionalPayment.find({ caseId: caseId, status: "pending" }).lean(),
+            Document.find({ courtServiceCase: caseId, status: "submitted", documentType: "admin-upload" }).lean()
         ]);
 
         if (!caseDetails) {
@@ -32,8 +33,30 @@ export const getCaseDetails = async (req, res, next) => {
             doc.fulfilledAt = doc.fulfilledAt ? formatDate(doc.fulfilledAt) : null;
         });
 
+        // Merge initial payments and additional payments into a single array
+        const payments = [
+            ...initialPayments,
+            ...additionalPayment.map(payment => ({
+                _id: payment._id,
+                customerId: payment.customerId,
+                caseId: payment.caseId,
+                caseType: payment.caseType,
+                serviceType: payment.serviceType,
+                amountPaid: payment.amount,
+                currency: payment.paidCurrency,
+                requestReason: payment.requestReason,
+                dueDate: payment.dueDate,
+                status: payment.status,
+                requestedAt: formatDate(payment.requestedAt),
+                createdAt: formatDate(payment.createdAt),
+                updatedAt: formatDate(payment.updatedAt),
+                paymentDate: formatDate(payment.paymentDate || payment.updatedAt)
+            }))
+        ];
+
+        // Format payment dates
         payments.forEach(payment => {
-            payment.paymentDate = formatDate(payment.paymentDate);
+            payment.paymentDate = payment.paymentDate ? formatDate(payment.paymentDate) : formatDate(payment.updatedAt);
         });
 
         // Format dates for notifications

@@ -44,6 +44,7 @@ const AdditionalPaymentSchema = new mongoose.Schema(
             enum: ["pending", "completed", "rejected"],
             default: "pending"
         },
+        
         requestedAt: { type: Date, default: Date.now }
     },
     { timestamps: true }
