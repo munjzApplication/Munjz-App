@@ -255,9 +255,19 @@ export const getAllCourtPayments = async (req, res, next) => {
 
 
     const formattedPendingTransactions = pendingTransactions.map((transaction) => ({
-      ...transaction._doc,
+      _id: transaction._id,
+      customerId: transaction.customerId,
+      caseId: transaction.caseId,
+      caseType: transaction.caseType,
+      serviceType: transaction.serviceType,
+      amountPaid: transaction.amount || transaction.amountPaid,
+      currency: transaction.currency || transaction.paidCurrency,
+      requestReason: transaction.requestReason,
       dueDate: formatDate(transaction.dueDate),
       paymentDate: formatDate(transaction.paymentDate),
+      status: transaction.status,
+      createdAt: transaction.createdAt,
+      updatedAt: transaction.updatedAt,
     }));
 
     // Construct response
