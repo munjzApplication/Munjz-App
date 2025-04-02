@@ -9,12 +9,14 @@ export const getCaseDetails = async (req, res, next) => {
         const { caseId } = req.params;
 
         // Fetch data in parallel with filtering
-        const [caseDetails, documents, payments, pendingDocs, pendingPayments] = await Promise.all([
+        const [caseDetails, documents, initialPayments,additionalPayment, pendingDocs, pendingPayments,adminUploads] = await Promise.all([
             notaryCase.findById(caseId).lean(),
             Document.find({ notaryServiceCase: caseId }).lean(),
             Transaction.find({ caseId: caseId }).lean(),
+            AdditionalPayment.find({ caseId: caseId, status: "paid" }).lean(),
             Document.find({ notaryServiceCase: caseId, status: "pending", documentType: "admin-request" }).lean(), // Only admin-requested docs
-            AdditionalPayment.find({ caseId: caseId, status: "pending" }).lean(), // Only pending payments
+            AdditionalPayment.find({ caseId: caseId, status: "pending" }).lean(), 
+            Document.find({ notaryServiceCase: caseId, status: "submitted", documentType: "admin-upload" }).lean()
         ]);
 
         if (!caseDetails) {
@@ -31,17 +33,39 @@ export const getCaseDetails = async (req, res, next) => {
             doc.fulfilledAt = doc.fulfilledAt ? formatDate(doc.fulfilledAt) : null;
         });
 
-        payments.forEach(payment => {
-            payment.paymentDate = formatDate(payment.paymentDate);
-        });
+         // Merge initial payments and additional payments into a single array
+                const payments = [
+                    ...initialPayments,
+                    ...additionalPayment.map(payment => ({
+                        _id: payment._id,
+                        customerId: payment.customerId,
+                        caseId: payment.caseId,
+                        caseType: payment.caseType,
+                        serviceType: payment.serviceType,
+                        amountPaid: payment.amount,
+                        currency: payment.paidCurrency,
+                        requestReason: payment.requestReason,
+                        dueDate: payment.dueDate,
+                        status: payment.status,
+                        requestedAt: formatDate(payment.requestedAt),
+                        createdAt: formatDate(payment.createdAt),
+                        updatedAt: formatDate(payment.updatedAt),
+                        paymentDate: formatDate(payment.paymentDate || payment.updatedAt)
+                    }))
+                ];
 
-        // Format dates for notifications
-        const notifications = [...pendingDocs, ...pendingPayments].map(notification => ({
-            ...notification,
-            requestedAt: notification.requestedAt ? formatDate(notification.requestedAt) : null,
-            uploadedAt: notification.uploadedAt ? formatDate(notification.uploadedAt) : null,
-            createdAt: notification.createdAt ? formatDate(notification.createdAt) : null,
-        }));
+    // Format payment dates
+    payments.forEach(payment => {
+        payment.paymentDate = payment.paymentDate ? formatDate(payment.paymentDate) : formatDate(payment.updatedAt);
+    });
+
+    // Format dates for notifications
+    const notifications = [...pendingDocs, ...pendingPayments, ...adminUploads].map(notification => ({
+        ...notification,
+        requestedAt: notification.requestedAt ? formatDate(notification.requestedAt) : null,
+        uploadedAt: notification.uploadedAt ? formatDate(notification.uploadedAt) : null,
+        createdAt: notification.createdAt ? formatDate(notification.createdAt) : null,
+    }));
 
         res.status(200).json({
             message: "Case details fetched successfully",

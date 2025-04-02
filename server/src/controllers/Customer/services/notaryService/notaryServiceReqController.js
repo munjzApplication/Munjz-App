@@ -4,6 +4,7 @@ import AdditionalPayment from "../../../../models/Customer/customerModels/additi
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
+import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 
 

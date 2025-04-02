@@ -2,6 +2,9 @@ import notaryCaseModel from "../../../../models/Customer/notaryServiceModel/nota
 import notaryCaseDocument from "../../../../models/Customer/notaryServiceModel/notaryServiceDocument.js";
 import { formatDate } from "../../../../helper/dateFormatter.js";
 import customerProfileModel from "../../../../models/Customer/customerModels/customerModel.js";
+import CustomerTransaction from "../../../../models/Customer/customerModels/transaction.js";
+import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
+
 import mongoose from "mongoose";
 
 export const getAllNotaryCases = async (req, res, next) => {
@@ -209,6 +212,61 @@ export const getNotaryCaseById = async (req, res, next) => {
     res.status(200).json({
       message: "Notary case fetched successfully",
       notaryCases
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllNotaryPayments = async (req, res, next) => {
+  try {
+    const { caseId } = req.params;
+
+    if (!caseId) {
+      return res.status(400).json({ message: "Case ID is required" });
+    }
+
+    const caseObjectId = new mongoose.Types.ObjectId(caseId);
+
+    // Fetch all transactions and additional payments in parallel
+    const [paidTransactions, pendingTransactions] = await Promise.all([
+      // Fetch all "paid" transactions from both collections
+      Promise.all([
+        CustomerTransaction.find({ caseId: caseObjectId, caseType: "NotaryService_Case", status: "paid" }),
+        AdditionalPayment.find({ caseId: caseObjectId, caseType: "NotaryService_Case", status: "paid" })
+      ]).then(([customerPaid, additionalPaid]) => [...customerPaid, ...additionalPaid]),
+
+      // Fetch all "pending" additional payments
+      AdditionalPayment.find({ caseId: caseObjectId, caseType: "NotaryService_Case", status: "pending" })
+    ]);
+
+     // Format dates before sending response
+     const formattedPaidTransactions = paidTransactions.map((transaction) => ({
+      _id: transaction._id,
+      customerId: transaction.customerId,
+      caseId: transaction.caseId,
+      caseType: transaction.caseType,
+      serviceType: transaction.serviceType,
+      amountPaid: transaction.amount || transaction.amountPaid,
+      currency: transaction.currency || transaction.paidCurrency,
+      status: transaction.status,
+      paymentDate: formatDate(transaction.createdAt), 
+      createdAt: transaction.createdAt,
+      updatedAt: transaction.updatedAt,
+    }));
+
+
+    const formattedPendingTransactions = pendingTransactions.map((transaction) => ({
+      ...transaction._doc,
+      dueDate: formatDate(transaction.dueDate),
+      paymentDate: formatDate(transaction.paymentDate),
+    }));
+
+    // Construct response
+    return res.status(200).json({
+      message: "Notary payments fetched successfully",
+      paidTransactions : formattedPaidTransactions,
+      pendingTransactions: formattedPendingTransactions
     });
   } catch (error) {
     next(error);

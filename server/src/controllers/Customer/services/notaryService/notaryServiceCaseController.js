@@ -98,39 +98,90 @@ export const getAllNotaryCases = async (req, res, next) => {
     const notaryCases = await NotaryCase.aggregate([
       { $match: { customerId } },
       { $sort: { createdAt: -1 } },
-      {
-        $lookup: {
-          from: "customer_transactions",
+
+      { 
+
+         $lookup: {
+          from: "customer_additionatransactions",
           localField: "_id",
           foreignField: "caseId",
-          as: "paymentDetails"
+          as: "requestpayments"
         }
       },
         // Lookup additional payments
         {
           $lookup: {
-              from: "customer_additionatransactions",
+              from: "NotaryService_Document",
               localField: "_id",
-              foreignField: "caseId",
-              as: "additionalPayments"
+              foreignField: "notaryServiceCase",
+              as: "requestdocuments"
           }
       },
        // Calculate total amount paid from both transactions
        {
         $addFields: {
-            mainPaymentsTotal: { $sum: "$paymentDetails.amountPaid" },
-            additionalPaymentsTotal: { $sum: "$additionalPayments.amount" },
-            totalAmountPaid: {
-                $add: [
-                    { $sum: "$paymentDetails.amountPaid" },
-                    { $sum: "$additionalPayments.amount" }
-                ]
-            },
-            paidCurrency: { 
-                $ifNull: [{ $arrayElemAt: ["$paymentDetails.currency", 0] }, "N/A"] 
-            }
-        }
+          hasAdminRequestedPayment: {
+              $gt: [
+                  {
+                      $size: {
+                          $filter: {
+                              input: "$requestpayments",
+                              as: "payment",
+                              cond: { $eq: ["$$payment.status", "pending"] }
+                          }
+                      }
+                  }, 0]
+          },
+
+          hasAdminRequestedDocument: {
+              $gt: [
+                  {
+                      $size: {
+                          $filter: {
+                              input: "$requestdocuments",
+                              as: "document",
+                              cond: {
+                                  $and: [
+                                      { $eq: ["$$document.status", "pending"] },
+                                      { $eq: ["$$document.documentType", "admin-request"] }
+                                  ]
+                              }
+                          }
+                      }
+                  }, 0]
+          },
+          hasAdminUploadDocument: {
+              $gt: [
+                  {
+                      $size: {
+                          $filter: {
+                              input: "$requestdocuments",
+                              as: "document",
+                              cond: {
+                                  $and: [
+                                      { $eq: ["$$document.status", "submitted"] },
+                                      { $eq: ["$$document.documentType", "admin-upload"] }
+                                  ]
+                              }
+                          }
+                      }
+                  }, 0]
+          }
+
+
+      }
     },
+    {
+      $addFields: {
+          hasAdminAction: {
+              $or: [
+                  "$hasAdminRequestedPayment",
+                  "$hasAdminRequestedDocument",
+                  "$hasAdminUploadDocument"
+              ]
+          }
+      }
+  },
       {
         $project: {
           createdAt: 1,
@@ -141,8 +192,9 @@ export const getAllNotaryCases = async (req, res, next) => {
           casePaymentStatus: 1,
           follower: 1,
           status: 1,
-          amount: { $ifNull: ["$totalAmountPaid", 0] },  
-          paidCurrency: 1
+          amount: "$totalAmountPaid",
+          paidCurrency: 1,
+          hasAdminAction: 1,
         }
       }
     ]);
