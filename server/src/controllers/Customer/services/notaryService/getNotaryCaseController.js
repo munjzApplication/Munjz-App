@@ -14,7 +14,7 @@ export const getCaseDetails = async (req, res, next) => {
             Document.find({ notaryServiceCase: caseId }).lean(),
             Transaction.find({ caseId: caseId }).lean(),
             AdditionalPayment.find({ caseId: caseId, status: "paid" }).lean(),
-            Document.find({ notaryServiceCase: caseId, status: "pending", documentType: "admin-request" }).lean(), // Only admin-requested docs
+            Document.find({ notaryServiceCase: caseId, status: "pending", documentType: "admin-request" }).lean(), 
             AdditionalPayment.find({ caseId: caseId, status: "pending" }).lean(), 
             Document.find({ notaryServiceCase: caseId, status: "submitted", documentType: "admin-upload" }).lean()
         ]);
@@ -23,11 +23,18 @@ export const getCaseDetails = async (req, res, next) => {
             return res.status(404).json({ success: false, message: "Case not found" });
         }
 
+           // Rename field in caseDetails
+           caseDetails.courtServiceID = caseDetails.notaryServiceID;
+           delete caseDetails.notaryServiceID;
+   
         // Format dates
         caseDetails.createdAt = formatDate(caseDetails.createdAt);
         caseDetails.updatedAt = formatDate(caseDetails.updatedAt);
 
         documents.forEach(doc => {
+            doc.courtServiceCase = doc.notaryServiceCase;
+            delete doc.notaryServiceCase;
+
             doc.uploadedAt = formatDate(doc.uploadedAt);
             doc.requestedAt = doc.requestedAt ? formatDate(doc.requestedAt) : null;
             doc.fulfilledAt = doc.fulfilledAt ? formatDate(doc.fulfilledAt) : null;
@@ -60,12 +67,16 @@ export const getCaseDetails = async (req, res, next) => {
     });
 
     // Format dates for notifications
-    const notifications = [...pendingDocs, ...pendingPayments, ...adminUploads].map(notification => ({
-        ...notification,
+    const notifications = [...pendingDocs, ...pendingPayments, ...adminUploads].map(notification => {
+        const { notaryServiceCase, ...rest } = notification;
+        return {
+            ...rest,
+        courtServiceCase: notification.notaryServiceCase, // Keep serviceCaseID
         requestedAt: notification.requestedAt ? formatDate(notification.requestedAt) : null,
         uploadedAt: notification.uploadedAt ? formatDate(notification.uploadedAt) : null,
         createdAt: notification.createdAt ? formatDate(notification.createdAt) : null,
-    }));
+    };
+    });
 
         res.status(200).json({
             message: "Case details fetched successfully",
