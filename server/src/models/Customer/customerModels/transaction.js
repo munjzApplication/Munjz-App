@@ -40,7 +40,7 @@ const CustomerTransactionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "completed", "failed", "refunded","paid"], 
+      enum: ["pending", "completed", "failed", "refunded","paid","unpaid"], 
       default: "pending",
       required: true
     },

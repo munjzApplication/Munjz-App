@@ -25,6 +25,13 @@ export const uploadCustomerAdditionalDocument = async (req, res) => {
       const documentUrl = await uploadFileToS3(file, "TranslationCaseDocs");
       documentUrls.push({ documentUrl });
     }
+   const translationcase = await TranslationCase.findById({_id:caseId}).select("translationServiceID");
+
+    if (!translationcase) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "translation not found." });
+    }
 
 
     const newDocument = await DocumentModel.create(
@@ -43,10 +50,14 @@ export const uploadCustomerAdditionalDocument = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
+    // Notify Admin with customer email instead of caseId
+    await notificationService.sendToAdmin(
+      "Customer Uploaded Document",
+      `Additional Document has been submitted for Case ID: ${translationcase.translationServiceID}.`
+    );
 
     res.status(201).json({
       message: "Additional document uploaded successfully.",
-      document: newDocument[0], // Since `create` returns an array
     });
   } catch (error) {
     await session.abortTransaction();
@@ -89,6 +100,14 @@ export const uploadAdminReqDocuments = async (req, res, next) => {
       });
     }
 
+    const translationcase = await TranslationCase.findById({_id:caseId}).select("translationServiceID");
+
+    if (!translationcase) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "translation not found." });
+    }
+
     const documentUrls = [];
     for (const file of files) {
       const documentUrl = await uploadFileToS3(file, "TranslationCaseDocs");
@@ -111,7 +130,11 @@ export const uploadAdminReqDocuments = async (req, res, next) => {
 
     await session.commitTransaction();
     session.endSession();
-
+// Notify Admin with customer email instead of caseId
+await notificationService.sendToAdmin(
+  "Admin Requested Document Submitted",
+  `A requested document has been submitted for Case ID: ${translationcase.translationServiceID}`
+);
     res.status(200).json({
       message: "Admin-requested document uploaded successfully.",
       document: updatedDocument,
@@ -159,6 +182,14 @@ export const submitAdditionalPayment = async (req, res, next) => {
       return res.status(400).json({ message: "The payment amount does not match the requested amount." });
     }
 
+    const translationcase = await TranslationCase.findById({_id:caseId}).select("translationServiceID");
+
+    if (!translationcase) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: "translation not found." });
+    }
+
 
     const additionalPayment = await AdditionalPayment.findOneAndUpdate(
       { caseId, status: "pending" },
@@ -197,12 +228,12 @@ export const submitAdditionalPayment = async (req, res, next) => {
     // Notify Admin with customer email instead of caseId
     await notificationService.sendToAdmin(
       "Admin Requested Payment Submitted",
-      `A requested payment of ${amount} ${paidCurrency} has been completed for Case ID: ${TranslationCase.translationServiceID}.`
+      `A requested payment of ${amount} ${paidCurrency} has been completed for Case ID: ${translationcase.translationServiceID}.`
     );
 
     res.status(200).json({
       message: "Additional payment submitted successfully.",
-      additionalPayment,
+  
     });
 
   } catch (error) {

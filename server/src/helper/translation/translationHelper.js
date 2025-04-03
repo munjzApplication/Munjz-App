@@ -101,29 +101,27 @@ export const saveTranslationPayment = async ({
   paymentDate,
   session
 }) => {
-  if (!paymentAmount) throw new Error("Payment amount is required.");
-  if (!paidCurrency) throw new Error("Paid currency is required.");
   try {
     const translationPayment = await Transaction.create(
       [
         { 
           customerId,
           caseId: translationCaseId, 
-          caseType:"Translation_Case",
-          serviceType :"Translation",
-          amountPaid: paymentAmount, 
-          currency :paidCurrency, 
+          caseType: "Translation_Case",
+          serviceType: "Translation",
+          amountPaid: paymentAmount || 0, 
+          currency: paidCurrency || "N/A", 
           paymentDate: paymentDate || new Date(), 
-          status: "paid" 
+          status: paymentAmount ? "paid" : "unpaid" 
         }
       ],
       { session }
     );
 
-    
     return translationPayment;
   } catch (error) {
     console.error("Error saving Translation Payment:", error);
     throw new Error("Failed to save Translation Payment.");
   }
 };
+

@@ -22,7 +22,9 @@ export const submitTranslationRequest = async (req, res, next) => {
       paidCurrency,
       noOfPage
     } = req.body;
-
+    
+    console.log("reqbody", req.body);
+    console.log("reqfile", req.files);
 
     // Validate customer existence
     const customer = await Customer.findById(customerId).lean();
@@ -31,7 +33,7 @@ export const submitTranslationRequest = async (req, res, next) => {
     const customerName = customer.Name;
     if (!documentLanguage) throw new Error("Document language is required.");
     if (!translationLanguage) throw new Error("Translation language is required.");
-
+    
     if (paymentAmount && !paidCurrency) throw new Error("Paid currency is required for payment.");
 
     if (!req.files || req.files.length === 0) {
@@ -49,9 +51,7 @@ export const submitTranslationRequest = async (req, res, next) => {
         translationLanguage,
         PaymentStatus,
         submissionDate: new Date(),
-        status: "submitted",
-        paymentAmount,
-        paidCurrency,
+        status: "submitted"
       },
       session
     );
@@ -61,31 +61,37 @@ export const submitTranslationRequest = async (req, res, next) => {
       await saveTranslationDocuments(req.files, translationCase._id, noOfPage, session);
     }
 
-    await saveTranslationPayment(
-      {
-        translationCaseId: translationCase._id,
-        paymentAmount,
-        paidCurrency,
-        paymentDate: new Date(),
-        customerId
-      },
-      session
-    );
-
+    // Save Payment Details only if paymentAmount exists
+    if (paymentAmount) {
+      await saveTranslationPayment(
+        {
+          translationCaseId: translationCase._id,
+          paymentAmount,
+          paidCurrency,
+          customerName,
+          customerId
+        },
+        session
+      );
+    }
 
     await session.commitTransaction();
     session.endSession();
 
-    await notificationService.sendToCustomer(
-      customerId,
-      "Translation Case Registered",
-      `Your translation request (${documentLanguage} → ${translationLanguage}) has been Registered successfully,with a payment of ${paymentAmount} ${paidCurrency}.`
-    );
-
-    await notificationService.sendToAdmin(
-      "New Translation Request Registered",
-      `A new  translation request (${documentLanguage} → ${translationLanguage}) has been registered with a payment of ${paymentAmount} ${paidCurrency}.`
-    );
+      // Send Notifications
+      const paymentMessage = paymentAmount ? ` with a payment of ${paymentAmount} ${paidCurrency}.` : " without payment.";
+    
+      await notificationService.sendToCustomer(
+        customerId,
+        "Translation Case Registered",
+        `Your translation request (${documentLanguage} → ${translationLanguage}) has been registered successfully${paymentMessage}`
+      );
+  
+      await notificationService.sendToAdmin(
+        "New Translation Request Registered",
+        `A new translation request (${documentLanguage} → ${translationLanguage}) has been registered${paymentMessage}`
+      );
+  
 
     return res.status(201).json({
       message: "Translation request submitted successfully",
@@ -98,6 +104,7 @@ export const submitTranslationRequest = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
 export const getAllTranslation = async (req, res, next) => {
