@@ -1,6 +1,8 @@
 import translationDetails from "../../../../models/Customer/translationModel/translationDetails.js";
 import translationDocument from "../../../../models/Customer/translationModel/translationDocument.js";
 import { formatDate } from "../../../../helper/dateFormatter.js";
+import CustomerTransaction from "../../../../models/Customer/customerModels/transaction.js";
+import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
 import mongoose from "mongoose";
 
 export const getAllTranslations = async (req, res, next) => {
@@ -62,20 +64,20 @@ export const getAllTranslations = async (req, res, next) => {
           translationServiceID: 1,
           documentLanguage: 1,
           translationLanguage: 1,
-          noOfPage:"$noOfPage",
+          noOfPage: "$noOfPage",
           PaymentStatus: 1,
           follower: 1,
           createdAt: 1,
           status: 1,
-          noOfPage:1,
+          noOfPage: 1,
           customerUniqueId: "$customer.customerUniqueId",
           customerName: "$customer.Name",
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
-          country:"$customer.country",
-          paymentAmount: "$totalAmountPaid", 
-          paymentCurrency: "$paidCurrency", 
+          country: "$customer.country",
+          paymentAmount: "$totalAmountPaid",
+          paymentCurrency: "$paidCurrency",
           hasPendingPayment: 1
         }
       },
@@ -167,7 +169,7 @@ export const getTranslationCaseById = async (req, res, next) => {
           noOfPage: { $sum: "$documents.noOfPage" } // Sum the pages from all related documents
         }
       },
-     
+
       {
         $lookup: {
           from: "customer_additionatransactions", // Match collection name in lowercase
@@ -210,9 +212,9 @@ export const getTranslationCaseById = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
-          country:"$customer.country",
-          paymentAmount: "$totalAmountPaid", 
-          paymentCurrency: "$paidCurrency", 
+          country: "$customer.country",
+          paymentAmount: "$totalAmountPaid",
+          paymentCurrency: "$paidCurrency",
           hasPendingPayment: 1
         }
       },
@@ -229,6 +231,70 @@ export const getTranslationCaseById = async (req, res, next) => {
     res.status(200).json({
       message: "Translation case fetched successfully",
       translationCase
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const getAllTranslationPayments = async (req, res, next) => {
+  try {
+    const { caseId } = req.params;
+
+    if (!caseId) {
+      return res.status(400).json({ message: "Case ID is required" });
+    }
+
+    const caseObjectId = new mongoose.Types.ObjectId(caseId);
+
+    // Fetch all transactions and additional payments in parallel
+    const [paidTransactions, pendingTransactions] = await Promise.all([
+      // Fetch all "paid" transactions from both collections
+      Promise.all([
+        CustomerTransaction.find({ caseId: caseObjectId, caseType: "Translation_Case", status: "paid" }),
+        AdditionalPayment.find({ caseId: caseObjectId, caseType: "Translation_Case", status: "paid" })
+      ]).then(([customerPaid, additionalPaid]) => [...customerPaid, ...additionalPaid]),
+
+      // Fetch all "pending" additional payments
+      AdditionalPayment.find({ caseId: caseObjectId, caseType: "Translation_Case", status: "pending" })
+    ]);
+
+    // Format dates before sending response
+    const formattedPaidTransactions = paidTransactions.map((transaction) => ({
+      _id: transaction._id,
+      customerId: transaction.customerId,
+      caseId: transaction.caseId,
+      caseType: transaction.caseType,
+      serviceType: transaction.serviceType,
+      amountPaid: transaction.amount || transaction.amountPaid,
+      currency: transaction.currency || transaction.paidCurrency,
+      status: transaction.status,
+      paymentDate: formatDate(transaction.createdAt),
+      createdAt: transaction.createdAt,
+      updatedAt: transaction.updatedAt,
+    }));
+
+
+    const formattedPendingTransactions = pendingTransactions.map((transaction) => ({
+      _id: transaction._id,
+      customerId: transaction.customerId,
+      caseId: transaction.caseId,
+      caseType: transaction.caseType,
+      serviceType: transaction.serviceType,
+      amountPaid: transaction.amount || transaction.amountPaid,
+      currency: transaction.currency || transaction.paidCurrency,
+      requestReason: transaction.requestReason,
+      dueDate: formatDate(transaction.dueDate),
+      paymentDate: formatDate(transaction.paymentDate),
+      status: transaction.status,
+      createdAt: transaction.createdAt,
+      updatedAt: transaction.updatedAt,
+    }));
+
+    // Construct response
+    return res.status(200).json({
+      message: "Translation payments fetched successfully",
+      paidTransactions: formattedPaidTransactions,
+      pendingTransactions: formattedPendingTransactions
     });
   } catch (error) {
     next(error);
