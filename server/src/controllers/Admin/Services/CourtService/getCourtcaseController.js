@@ -63,6 +63,7 @@ export const getAllCourtCases = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
+          country:"$customer.country",
           paymentAmount: "$totalAmountPaid",
           paymentCurrency: "$paidCurrency",
           hasPendingPayment: 1
@@ -193,6 +194,7 @@ export const getCourtCaseById = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
+          country:"$customer.country",
           paymentAmount: "$totalAmountPaid",
           paymentCurrency: "$paidCurrency",
           hasPendingPayment: 1

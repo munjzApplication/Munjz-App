@@ -63,6 +63,7 @@ export const getAllNotaryCases = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
+          country:"$customer.country",
           paymentAmount: "$totalAmountPaid", 
           paymentCurrency: "$paidCurrency", 
           hasPendingPayment: 1
@@ -196,6 +197,7 @@ export const getNotaryCaseById = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
+          country:"$customer.country",
           paymentAmount: "$totalAmountPaid", 
           paymentCurrency: "$paidCurrency", 
           hasPendingPayment: 1
