@@ -1,4 +1,4 @@
-import Document from "../../../../models/Customer/notaryServiceModel/notaryServiceDocument.js";
+import Document from "../../../../models/Customer/translationModel/translationDocument.js";
 import Transaction from "../../../../models/Customer/customerModels/transaction.js";
 import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
 import translationCase from "../../../../models/Customer/translationModel/translationDetails.js";
@@ -11,12 +11,12 @@ export const getCaseDetails = async (req, res, next) => {
         // Fetch data in parallel with filtering
         const [caseDetails, documents, initialPayments, additionalPayment, pendingDocs, pendingPayments,adminUploads] = await Promise.all([
             translationCase.findById(caseId).lean(),
-            Document.find({ notaryServiceCase: caseId }).lean(),
+            Document.find({ translationCase: caseId }).lean(),
             Transaction.find({ caseId: caseId }).lean(),
             AdditionalPayment.find({ caseId: caseId, status: "paid" }).lean(),
-            Document.find({ notaryServiceCase: caseId, status: "pending", documentType: "admin-request" }).lean(), // Only admin-requested docs
+            Document.find({ translationCase: caseId, status: "pending", documentType: "admin-request" }).lean(), // Only admin-requested docs
             AdditionalPayment.find({ caseId: caseId, status: "pending" }).lean(), // Only pending payments
-            Document.find({ courtServiceCase: caseId, status: "submitted", documentType: "admin-upload" }).lean()
+            Document.find({ translationCase: caseId, status: "submitted", documentType: "admin-upload" }).lean()
         ]);
 
         if (!caseDetails) {

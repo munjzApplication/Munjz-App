@@ -118,15 +118,86 @@ export const getAllTranslation = async (req, res, next) => {
       { $sort: { createdAt: -1 } },
       {
         $lookup: {
-          from: "translation_payments",
+          from: "customer_additionatransactions",
           localField: "_id",
-          foreignField: "translationCase",
-          as: "paymentDetails"
+          foreignField: "caseId",
+          as: "requestpayments"
         }
       },
-      {
-        $unwind: { path: "$paymentDetails", preserveNullAndEmptyArrays: true }
+        // Lookup additional payments
+        {
+          $lookup: {
+              from: "Translation_Document",
+              localField: "_id",
+              foreignField: "translationCase",
+              as: "requestdocuments"
+          }
       },
+     // Calculate total amount paid from both transactions
+     {
+      $addFields: {
+        hasAdminRequestedPayment: {
+            $gt: [
+                {
+                    $size: {
+                        $filter: {
+                            input: "$requestpayments",
+                            as: "payment",
+                            cond: { $eq: ["$$payment.status", "pending"] }
+                        }
+                    }
+                }, 0]
+        },
+
+        hasAdminRequestedDocument: {
+            $gt: [
+                {
+                    $size: {
+                        $filter: {
+                            input: "$requestdocuments",
+                            as: "document",
+                            cond: {
+                                $and: [
+                                    { $eq: ["$$document.status", "pending"] },
+                                    { $eq: ["$$document.documentType", "admin-request"] }
+                                ]
+                            }
+                        }
+                    }
+                }, 0]
+        },
+        hasAdminUploadDocument: {
+            $gt: [
+                {
+                    $size: {
+                        $filter: {
+                            input: "$requestdocuments",
+                            as: "document",
+                            cond: {
+                                $and: [
+                                    { $eq: ["$$document.status", "submitted"] },
+                                    { $eq: ["$$document.documentType", "admin-upload"] }
+                                ]
+                            }
+                        }
+                    }
+                }, 0]
+        }
+
+
+    }
+  },
+  {
+    $addFields: {
+        hasAdminAction: {
+            $or: [
+                "$hasAdminRequestedPayment",
+                "$hasAdminRequestedDocument",
+                "$hasAdminUploadDocument"
+            ]
+        }
+    }
+},
       {
         $project: {
           createdAt: 1,
@@ -136,8 +207,9 @@ export const getAllTranslation = async (req, res, next) => {
           PaymentStatus: 1,
           follower: 1,
           status: 1,
-          amount: "$paymentDetails.amount",
-          paidCurrency: "$paymentDetails.paidCurrency"
+          amount: "$totalAmountPaid",
+          paidCurrency: 1,
+          hasAdminAction: 1,
         }
       }
     ]);
