@@ -213,9 +213,14 @@ export const submitAdditionalPayment = async (req, res, next) => {
     // Update totalAmount in Translation
     const updatedTranslationCase = await TranslationCase.findOneAndUpdate(
       { _id: caseId },
-      { $inc: { totalAmountPaid: amount } },
+      { 
+        $inc: { totalAmountPaid: amount },
+        $set: { PaymentStatus: "paid" } // Ensure the payment status is updated
+      },
       { new: true, session }
     );
+    
+    
 
     if (!updatedTranslationCase) {
       await session.abortTransaction();

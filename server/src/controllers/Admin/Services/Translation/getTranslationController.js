@@ -17,7 +17,19 @@ export const getAllTranslations = async (req, res, next) => {
       {
         $unwind: "$customer"
       },
-      
+      {
+        $lookup: {
+          from: "translation_documents", // Ensure this matches your actual collection name in MongoDB
+          localField: "_id",
+          foreignField: "translationCase",
+          as: "documents"
+        }
+      },
+      {
+        $addFields: {
+          noOfPage: { $sum: "$documents.noOfPage" } // Sum the pages from all related documents
+        }
+      },
       {
         $lookup: {
           from: "customer_additionatransactions", // Match collection name in lowercase
@@ -50,15 +62,18 @@ export const getAllTranslations = async (req, res, next) => {
           translationServiceID: 1,
           documentLanguage: 1,
           translationLanguage: 1,
+          noOfPage:"$noOfPage",
           PaymentStatus: 1,
           follower: 1,
           createdAt: 1,
           status: 1,
+          noOfPage:1,
           customerUniqueId: "$customer.customerUniqueId",
           customerName: "$customer.Name",
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
+          country:"$customer.country",
           paymentAmount: "$totalAmountPaid", 
           paymentCurrency: "$paidCurrency", 
           hasPendingPayment: 1
@@ -139,6 +154,19 @@ export const getTranslationCaseById = async (req, res, next) => {
       {
         $unwind: "$customer"
       },
+      {
+        $lookup: {
+          from: "translation_documents", // Ensure this matches your actual collection name in MongoDB
+          localField: "_id",
+          foreignField: "translationCase",
+          as: "documents"
+        }
+      },
+      {
+        $addFields: {
+          noOfPage: { $sum: "$documents.noOfPage" } // Sum the pages from all related documents
+        }
+      },
      
       {
         $lookup: {
@@ -176,11 +204,13 @@ export const getTranslationCaseById = async (req, res, next) => {
           follower: 1,
           createdAt: 1,
           status: 1,
+          noOfPage: 1,
           customerUniqueId: "$customer.customerUniqueId",
           customerName: "$customer.Name",
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
+          country:"$customer.country",
           paymentAmount: "$totalAmountPaid", 
           paymentCurrency: "$paidCurrency", 
           hasPendingPayment: 1

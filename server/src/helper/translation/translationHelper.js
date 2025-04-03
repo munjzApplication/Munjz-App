@@ -10,6 +10,7 @@ import { generateUniqueServiceID } from "../../helper/uniqueIDHelper.js";
  */
 export const saveTranslationCase = async ({
   customerId,
+  noOfPage,
   documentLanguage,
   translationLanguage,
   PaymentStatus,

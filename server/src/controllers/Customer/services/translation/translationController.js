@@ -51,7 +51,9 @@ export const submitTranslationRequest = async (req, res, next) => {
         translationLanguage,
         PaymentStatus,
         submissionDate: new Date(),
-        status: "submitted"
+        status: "submitted",
+        paymentAmount,
+        paidCurrency
       },
       session
     );
