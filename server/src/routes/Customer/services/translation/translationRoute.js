@@ -4,13 +4,14 @@ import {
   uploadAdminReqDocuments,
   submitAdditionalPayment
 } from "../../../../controllers/Customer/services/translation/translationReqControllers.js";
-
+import { getCaseDetails } from "../../../../controllers/Customer/services/translation/getTranslationController.js"
 import upload from "../../../../middlewares/fileUpload.js";
 
 const router = express.Router();
 
 router.post("/submit-translation",upload.array("documents"),submitTranslationRequest);
-router.get("/get",getAllTranslation)
+router.get("/get",getAllTranslation);
+router.get("/get-case/details/:caseId",getCaseDetails)
 router.post("/documents/upload/:caseId",upload.array("documents", 5),uploadAdminReqDocuments);
 router.post("/payments/submit/:caseId", submitAdditionalPayment);
 
