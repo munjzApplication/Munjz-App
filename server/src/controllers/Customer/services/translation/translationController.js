@@ -208,7 +208,7 @@ export const getAllTranslation = async (req, res, next) => {
           follower: 1,
           status: 1,
           amount: "$totalAmountPaid",
-          paidCurrency: 1,
+          paidCurrency: { $ifNull: ["$paidCurrency", "AED"] },
           hasAdminAction: 1,
         }
       }
