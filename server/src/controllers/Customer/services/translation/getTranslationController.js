@@ -23,11 +23,19 @@ export const getCaseDetails = async (req, res, next) => {
             return res.status(404).json({ success: false, message: "Case not found" });
         }
 
+        
+           // Rename field in caseDetails
+           caseDetails.courtServiceID = caseDetails.translationServiceID;
+           delete caseDetails.translationServiceID;
+
         // Format dates
         caseDetails.createdAt = formatDate(caseDetails.createdAt);
         caseDetails.updatedAt = formatDate(caseDetails.updatedAt);
 
         documents.forEach(doc => {
+            doc.courtServiceCase = doc.translationCase;
+            delete doc.translationCase;
+
             doc.uploadedAt = formatDate(doc.uploadedAt);
             doc.requestedAt = doc.requestedAt ? formatDate(doc.requestedAt) : null;
             doc.fulfilledAt = doc.fulfilledAt ? formatDate(doc.fulfilledAt) : null;
@@ -60,12 +68,16 @@ export const getCaseDetails = async (req, res, next) => {
     });
 
     // Format dates for notifications
-    const notifications = [...pendingDocs, ...pendingPayments, ...adminUploads].map(notification => ({
-        ...notification,
+    const notifications = [...pendingDocs, ...pendingPayments, ...adminUploads].map(notification => {
+        const { translationCase, ...rest } = notification;
+        return {
+            ...rest,
+        courtServiceCase: notification.translationCase, // Keep serviceCaseID
         requestedAt: notification.requestedAt ? formatDate(notification.requestedAt) : null,
         uploadedAt: notification.uploadedAt ? formatDate(notification.uploadedAt) : null,
         createdAt: notification.createdAt ? formatDate(notification.createdAt) : null,
-    }));
+        };
+    });
 
 
         res.status(200).json({
