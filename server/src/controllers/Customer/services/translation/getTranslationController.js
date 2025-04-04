@@ -28,6 +28,7 @@ export const getCaseDetails = async (req, res, next) => {
            caseDetails.courtServiceID = caseDetails.translationServiceID;
            delete caseDetails.translationServiceID;
 
+           caseDetails.noOfPages = documents.length > 0 ? documents[0].noOfPage : null;
         // Format dates
         caseDetails.createdAt = formatDate(caseDetails.createdAt);
         caseDetails.updatedAt = formatDate(caseDetails.updatedAt);
