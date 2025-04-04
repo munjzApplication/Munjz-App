@@ -111,7 +111,7 @@ export const saveTranslationPayment = async ({
           caseType: "Translation_Case",
           serviceType: "Translation",
           amountPaid: paymentAmount || 0, 
-          currency: paidCurrency || "N/A", 
+          currency: paidCurrency || "AED", 
           paymentDate: paymentDate || new Date(), 
           status: paymentAmount ? "paid" : "unpaid" 
         }
