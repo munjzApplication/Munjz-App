@@ -2,6 +2,7 @@ import Document from "../../../../models/Customer/courtServiceModel/courtService
 import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
+import { notificationService } from "../../../../service/sendPushNotification.js"
 import mongoose from "mongoose";
 
 export const requestDocument = async (req, res) => {
@@ -17,6 +18,14 @@ export const requestDocument = async (req, res) => {
       await session.abortTransaction();
       session.endSession();
       return res.status(404).json({ message: "Court case not found." });
+    }
+
+    // Extract customerId from court case
+    const customerId = courtCase.customerId;
+    if (!customerId) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "Customer ID is missing for this court case." });
     }
     const existingRequest = await Document.findOne({
       courtServiceCase: caseId,
@@ -45,7 +54,13 @@ export const requestDocument = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
+    // Notify Customer
+    await notificationService.sendToCustomer(
+      customerId,
+      "New Document Request",
+      `An admin has requested a document for your case: ${courtCase.courtServiceID}. Please upload the required document.`,
 
+    );
     res.status(201).json({
       message: "Document request created successfully.",
       documentRequest: documentRequest[0],
@@ -113,7 +128,12 @@ export const requestAdditionalPayment = async (req, res, next) => {
     if (!courtCase) {
       return res.status(404).json({ message: "Court case not found." });
     }
-
+    const customerId = courtCase.customerId;
+    if (!customerId) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "Customer ID is missing for this court case." });
+    }
 
     const pendingRequestExists = await AdditionalPayment.exists({ caseId, status: "pending" });
 
@@ -135,6 +155,12 @@ export const requestAdditionalPayment = async (req, res, next) => {
       status: "pending",
     });
 
+
+    await notificationService.sendToCustomer(
+      customerId,
+      "New Payment Request",
+      `An admin has requested an additional payment of ${amount} ${paidCurrency} for your case: ${courtCase.courtServiceID}. Please complete the payment before ${dueDate}.`
+    );
 
     res.status(201).json({
       message: "Additional payment requested successfully.",
@@ -167,7 +193,12 @@ export const adminSubmittedDoc = async (req, res, next) => {
       session.endSession();
       return res.status(404).json({ message: "Court case not found." });
     }
-
+    const customerId = courtCase.customerId;
+    if (!customerId) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "Customer ID is missing for this court case." });
+    }
 
     const documentUrls = [];
     for (const file of files) {
@@ -193,6 +224,13 @@ export const adminSubmittedDoc = async (req, res, next) => {
 
     await session.commitTransaction();
     session.endSession();
+
+    // ✅ Notify Customer
+    await notificationService.sendToCustomer(
+      customerId,
+      "New Document Uploaded",
+      `An admin has uploaded new documents for your case: ${courtCase.courtServiceID}. Please review them.`,
+    );
 
     res.status(201).json({
       message: "Admin document uploaded successfully.",

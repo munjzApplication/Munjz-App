@@ -3,6 +3,7 @@ import AdditionalPayment from "../../../../models/Customer/customerModels/additi
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import mongoose from "mongoose";
+import { notificationService } from "../../../../service/sendPushNotification.js";
 
 export const requestDocument = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -23,6 +24,13 @@ export const requestDocument = async (req, res, next) => {
       status: "pending",
     }).session(session);
 
+    // Extract customerId from Notary case
+    const customerId = notaryCase.customerId;
+    if (!customerId) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "Customer ID is missing for this Notary case." });
+    }
     if (existingRequest) {
       await session.abortTransaction();
       session.endSession();
@@ -46,6 +54,13 @@ export const requestDocument = async (req, res, next) => {
     await session.commitTransaction();
     session.endSession();
 
+    // Notify Customer
+    await notificationService.sendToCustomer(
+      customerId,
+      "New Document Request",
+      `An admin has requested a document for your case: ${notaryCase.notaryServiceID}. Please upload the required document.`,
+
+    );
     res.status(201).json({
       message: "Document request created successfully.",
       documentRequest: documentRequest[0],
@@ -116,6 +131,13 @@ export const requestAdditionalPayment = async (req, res, next) => {
       return res.status(404).json({ message: "Notary case not found." });
     }
 
+    const customerId = notaryCase.customerId;
+    if (!customerId) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "Customer ID is missing for this notary case." });
+    }
+
     const pendingRequestExists = await AdditionalPayment.exists({ caseId, status: "pending" });
 
     if (pendingRequestExists) {
@@ -137,6 +159,12 @@ export const requestAdditionalPayment = async (req, res, next) => {
       status: "pending",
     });
 
+
+    await notificationService.sendToCustomer(
+      customerId,
+      "New Payment Request",
+      `An admin has requested an additional payment of ${amount} ${paidCurrency} for your case: ${notaryCase.notaryServiceID}. Please complete the payment before ${dueDate}.`
+    );
 
     res.status(201).json({
       message: "Additional payment requested successfully.",
@@ -172,6 +200,18 @@ export const adminSubmittedDoc = async (req, res, next) => {
       return res.status(404).json({ message: "Notary case not found." });
     }
 
+    const customerId = notaryCase.customerId;
+    if (!customerId) {
+      await session.abortTransaction();
+      session.endSession();
+
+      await notificationService.sendToCustomer(
+        customerId,
+        "New Document Uploaded",
+        `An admin has uploaded new documents for your case: ${notaryCase.notaryServiceID}. Please review them.`,
+      );
+      return res.status(400).json({ message: "Customer ID is missing for this notary case." });
+    }
 
     const documentUrls = [];
     for (const file of files) {
