@@ -127,7 +127,7 @@ export const getAllTranslation = async (req, res, next) => {
         // Lookup additional payments
         {
           $lookup: {
-              from: "Translation_Document",
+              from: "translation_documents",
               localField: "_id",
               foreignField: "translationCase",
               as: "requestdocuments"

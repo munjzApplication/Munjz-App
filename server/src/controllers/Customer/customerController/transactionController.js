@@ -11,25 +11,43 @@ export const getCustomerTransactions = async (req, res) => {
     const transactions = await CustomerTransaction.find({ customerId });
     const additionalTransactions = await CustomerAdditionalTransaction.find({ customerId });
 
-    // Combine transactions
-    const allTransactions = [...transactions, ...additionalTransactions];
-
-    // Sort transactions by paymentDate in descending order
-    allTransactions.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
-
-    // Format transactions
-    const formattedTransactions = allTransactions.map((transaction) => ({
+    // Normalize and combine transactions
+    const normalizedMainTransactions = transactions.map((transaction) => ({
       _id: transaction._id,
       amount: transaction.amountPaid,
       currency: transaction.currency,
-      paymentDate: formatDatewithmonth(transaction.paymentDate),
+      paymentDate: transaction.paymentDate,
       status: transaction.status,
       serviceType: transaction.serviceType
     }));
 
+    const normalizedAdditionalTransactions = additionalTransactions.map((transaction) => ({
+      _id: transaction._id,
+      amount: transaction.amount,
+      currency: transaction.paidCurrency,
+      paymentDate: transaction.paymentDate,
+      status: transaction.status,
+      serviceType: transaction.serviceType
+    }));
+
+    const allTransactions = [...normalizedMainTransactions, ...normalizedAdditionalTransactions];
+
+    // Sort by payment date descending
+    allTransactions.sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+
+    // Format transactions for frontend
+    const formattedTransactions = allTransactions.map((transaction) => ({
+      ...transaction,
+      paymentDate: formatDatewithmonth(transaction.paymentDate)
+    }));
+
+    // Optional: Total amount calculation
+    const totalAmount = allTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+
     res.status(200).json({
       message: "Transactions fetched successfully",
-      transactions: formattedTransactions
+      transactions: formattedTransactions,
+      totalAmount
     });
   } catch (error) {
     console.error("Error fetching transactions:", error);
