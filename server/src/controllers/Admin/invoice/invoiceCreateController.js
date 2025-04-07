@@ -33,7 +33,7 @@ export const CreateCase = async (req, res, next) => {
     const files = req.files || []; // Handle uploaded files
 
     // Validate the customer
-    const customer = await Customer.findOne({ email: serviceData.requesterEmail });
+    const customer = serviceData.customerId;
     if (!customer) {
       return res.status(400).json({ error: "Customer does not exist." });
     }

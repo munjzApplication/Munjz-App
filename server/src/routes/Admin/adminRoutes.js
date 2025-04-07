@@ -63,7 +63,7 @@ router.use("/translation", translationCaseRoute);
 
 // Payment and Invoice Routes
 router.use("/getDatas", getAllConsultantDatasRoute);
-router.use("/invoices", invoiceRoute);
+router.use("/invoice", invoiceRoute);
 
 // Admin-related Routes
 router.use("/get-data", getAdminEarningsRoutes)
