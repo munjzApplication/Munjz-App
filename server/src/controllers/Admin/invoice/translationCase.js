@@ -6,6 +6,8 @@ import {
 import Customer from "../../../models/Customer/customerModels/customerModel.js";
 import mongoose from "mongoose";
 import { notificationService } from "../../../service/sendPushNotification.js";
+import fs from "fs";
+import path from "path";
 
 
 export const CreateTranslation = async (req, res, next) => {
@@ -55,6 +57,18 @@ export const CreateTranslation = async (req, res, next) => {
         // Save Translation Documents
         if (req.files?.length > 0) {
             await saveTranslationDocuments(req.files, translationCase._id, noOfPage, session);
+        } else {
+            // Add dummy document if no file uploaded
+            const dummyPath = path.join(process.cwd(), 'src', 'public', 'asset', 'invoice.png');
+
+            const dummyFile = {
+                originalname: "invoice.png",
+                mimetype: "image/png",
+                buffer: fs.readFileSync(dummyPath),
+                size: fs.statSync(dummyPath).size,
+            };
+
+            await saveTranslationDocuments([dummyFile], translationCase._id, noOfPage, session);
         }
 
         // Save Payment Details only if paymentAmount exists

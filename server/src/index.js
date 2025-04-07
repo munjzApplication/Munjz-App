@@ -50,7 +50,7 @@ app.use(consultantPassport.session());
 app.use("/api/consultant", consultantRoute);
 app.use("/api/customer", customerRoute);
 app.use("/api/admin", adminRoute);
-app.use("/public", express.static("public"));
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
