@@ -86,7 +86,7 @@ export const CreateTranslation = async (req, res, next) => {
         // Notify Customer
         await notificationService.sendToCustomer(
             customerId,
-            "Court Case Registered",
+            "Translation Registered",
             "A court service request was manually added by the MUNJZ team."
         );
 

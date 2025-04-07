@@ -71,7 +71,7 @@ export const CreateNotaryCase = async (req, res, next) => {
         // Notify Customer
         await notificationService.sendToCustomer(
             customerId,
-            "Court Case Registered",
+            "Notary Case Registered",
             "A court service request was manually added by the MUNJZ team."
         );
         return res.status(201).json({
