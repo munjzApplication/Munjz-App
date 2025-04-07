@@ -22,7 +22,7 @@ export const CreateTranslation = async (req, res, next) => {
             translationLanguage,
             paymentAmount,
             paidCurrency,
-            noOfPage
+            noOfPage,
         } = req.body;
 
 
@@ -100,6 +100,7 @@ export const CreateTranslation = async (req, res, next) => {
 
         return res.status(201).json({
             message: "Translation request submitted successfully",
+            caseId : translationCase._id,
         });
 
     } catch (error) {

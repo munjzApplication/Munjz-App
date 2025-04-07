@@ -66,7 +66,7 @@ export const CreateCourtCase = async (req, res, next) => {
         );
 
 
-        return res.status(201).json({ message: "Court case registered successfully" });
+        return res.status(201).json({ message: "Court case registered successfully",caseId: courtCase._id });
     } catch (error) {
         console.error("Error in saveCourtServiceDetails:", error);
         await session.abortTransaction();

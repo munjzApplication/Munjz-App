@@ -75,7 +75,8 @@ export const CreateNotaryCase = async (req, res, next) => {
             "A court service request was manually added by the MUNJZ team."
         );
         return res.status(201).json({
-            message: "Notary case registered successfully"
+            message: "Notary case registered successfully",
+            caseId: notaryCase._id,
         });
     } catch (error) {
         console.error("Error in saveNotaryServiceDetails:", error);
