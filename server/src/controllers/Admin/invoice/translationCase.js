@@ -23,8 +23,6 @@ export const CreateTranslation = async (req, res, next) => {
             noOfPage
         } = req.body;
 
-        console.log("reqbody", req.body);
-        console.log("reqfile", req.files);
 
         // Validate customer existence
         const customer = await Customer.findById(customerId).lean();
@@ -35,10 +33,6 @@ export const CreateTranslation = async (req, res, next) => {
         if (!translationLanguage) throw new Error("Translation language is required.");
 
         if (paymentAmount && !paidCurrency) throw new Error("Paid currency is required for payment.");
-
-        if (!req.files || req.files.length === 0) {
-            throw new Error("Document file is required.");
-        }
 
         // Determine Payment Status
         const PaymentStatus = paymentAmount ? "paid" : "unpaid";

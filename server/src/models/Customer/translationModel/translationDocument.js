@@ -8,7 +8,7 @@ const TranslationDocumentSchema = new mongoose.Schema({
   },
   documents: [
     {
-      documentUrl: { type: String, required: true },
+      documentUrl: { type: String },
     }
   ],
   description: { type: String },
@@ -17,11 +17,10 @@ const TranslationDocumentSchema = new mongoose.Schema({
     required: false
   },
   uploadedAt: { type: Date, default: Date.now },
-  uploadedBy: { type: String, enum: ["customer", "admin"], required: true }, // Who uploaded
+  uploadedBy: { type: String, enum: ["customer", "admin"]}, 
   documentType: { 
     type: String, 
-    enum: ["initial", "additional", "admin-request", "admin-upload"], 
-    required: true 
+    enum: ["initial", "additional", "admin-request", "admin-upload"]
   },
   status: { type: String, enum: ["pending", "submitted"], default: "submitted" },
   requestedAt: { type: Date }, 
