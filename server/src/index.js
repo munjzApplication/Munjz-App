@@ -6,9 +6,7 @@ import { connectDB } from "./config/db.js";
 import consultantRoute from "./routes/Consultant/consultantRoute.js";
 import customerRoute from "./routes/Customer/customerRoutes.js";
 import adminRoute from "./routes/Admin/adminRoutes.js";
-import consultantPassport from "./config/consultantPassport.js";
-import customerPassport from "./config/customerPassport.js";
-import session from "express-session";
+
 
 dotenv.config();
 
@@ -20,31 +18,6 @@ app.use(express.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 3000;
 
-// Separate session for customers
-app.use(
-  session({
-    name: "customer-session",
-    secret: process.env.CUSTOMER_SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }
-  })
-);
-app.use(customerPassport.initialize());
-app.use(customerPassport.session());
-
-// Separate session for consultants
-app.use(
-  session({
-    name: "consultant-session",
-    secret: process.env.CONSULTANT_SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }
-  })
-);
-app.use(consultantPassport.initialize());
-app.use(consultantPassport.session());
 
 // Routes
 app.use("/api/consultant", consultantRoute);

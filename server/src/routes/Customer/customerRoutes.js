@@ -35,16 +35,15 @@ router.use('/court-case', authenticateUser, courtServiceReqRoute);
 router.use('/notary-service', authenticateUser, notaryServiceRoute);
 router.use('/notary-case', authenticateUser, notaryServiceReqRoute);
 router.use('/translation', authenticateUser, translationRoute);
-router.use('/adminreqinvoice', authenticateUser, adminreqinvoiceRoute);
+router.use('/invoice', authenticateUser, adminreqinvoiceRoute);
 router.use('/pendings', authenticateUser, customerPendingsRoute);
 router.use("/notifications", authenticateUser, notificationRoute)
 router.use('/consultant-list', authenticateUser, getConsultantListRoutes);
 router.use('/pricing', authenticateUser, getPricingRoutes);
 router.use('/get-datas', authenticateUser, getDataRoutes);
 router.use('/news', authenticateUser, getNews)
-
-// Consultation Routesut
 router.use("/consultations", authenticateUser, consultationRoute);
+
 
 
 export default router;

@@ -1,6 +1,6 @@
 import ConsultantNotification from "../../../models/Consultant/notificationModel/ConsultantNotification.js";
 import { formatTime } from "../../../helper/dateFormatter.js";
-// Get all notifications grouped by date using aggregation pipeline
+
 export const getConsultantNotifications = async (req, res) => {
   try {
     const consultantId = req.user._id;
@@ -16,9 +16,9 @@ export const getConsultantNotifications = async (req, res) => {
         $group: {
           _id: {
             $dateToString: {
-              format: "%B %d", // Fixed format: Month day (e.g., December 03)
+              format: "%B %d", 
               date: "$timestamp",
-              timezone: "Asia/Dubai" // UAE timezone
+              timezone: "Asia/Dubai" 
             }
           },
           notifications: { $push: "$$ROOT" }
@@ -38,7 +38,7 @@ export const getConsultantNotifications = async (req, res) => {
     const result = groupedNotifications.reduce((acc, { date, notifications }) => {
       acc[date] = notifications.map((notification) => ({
         ...notification,
-        timestamp: formatTime(notification.timestamp) // Replacing timestamp with formatted time
+        timestamp: formatTime(notification.timestamp) 
       }));
       return acc;
     }, {});
@@ -51,7 +51,7 @@ export const getConsultantNotifications = async (req, res) => {
   }
 };
 
-// Mark a notification as read with existence check
+
 export const markConsultantNotificationRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
