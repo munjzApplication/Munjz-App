@@ -6,49 +6,86 @@ import mongoose from "mongoose";
 
 export const getPaymentDetails = async (req, res, next) => {
     try {
-        // Fetch paid transactions (from both collections)
-        const [paidMain, paidAdditional] = await Promise.all([
-            customerTransaction.find({ status: "paid" }).lean(),
-            customerAdditionalTransaction.find({ status: "paid" }).lean()
+        // Aggregated paid transactions (main)
+        const paidMainAgg = customerTransaction.aggregate([
+            { $match: { status: "paid" } },
+            {
+                $lookup: {
+                    from: "customer_profiles",
+                    localField: "customerId",
+                    foreignField: "_id",
+                    as: "customer"
+                }
+            },
+            { $unwind: "$customer" },
+            {
+                $project: {
+                    _id: 1,
+                    customerId: 1,
+                    caseId: 1,
+                    caseType: 1,
+                    serviceType: 1,
+                    amount: "$amountPaid",
+                    currency: "$currency",
+                    requestReason: 1,
+                    dueDate: 1,
+                    status: 1,
+                    paymentDate: 1,
+                    requestedAt: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    customerEmail: "$customer.email",
+                    customerUniqueId: "$customer.customerUniqueId"
+                }
+            }
         ]);
 
-        const paidTransactions = [
-            ...paidMain.map(payment => ({
-                _id: payment._id,
-                customerId: payment.customerId,
-                caseId: payment.caseId,
-                caseType: payment.caseType,
-                serviceType: payment.serviceType,
-                amount: payment.amountPaid,
-                currency: payment.currency,
-                requestReason: payment.requestReason,
-                dueDate: payment.dueDate ? formatDate(payment.dueDate) : null,
-                status: payment.status,
-                paymentDate: payment.paymentDate ? formatDate(payment.paymentDate) : null,
-                requestedAt: payment.requestedAt ? formatDate(payment.requestedAt) : null,
-                createdAt: payment.createdAt,
-                updatedAt: payment.updatedAt
-            })),
-            ...paidAdditional.map(payment => ({
-                _id: payment._id,
-                customerId: payment.customerId,
-                caseId: payment.caseId,
-                caseType: payment.caseType,
-                serviceType: payment.serviceType,
-                amount: payment.amountPaid ?? payment.amount,
-                currency: payment.currency ?? payment.paidCurrency,
-                requestReason: payment.requestReason,
-                dueDate: payment.dueDate ? formatDate(payment.dueDate) : null,
-                status: payment.status,
-                paymentDate: payment.paymentDate ? formatDate(payment.paymentDate) : null,
-                requestedAt: payment.requestedAt ? formatDate(payment.requestedAt) : null,
-                createdAt: payment.createdAt,
-                updatedAt: payment.updatedAt
-            }))
-        ];
+        // Aggregated paid additional transactions
+        const paidAdditionalAgg = customerAdditionalTransaction.aggregate([
+            { $match: { status: "paid" } },
+            {
+                $lookup: {
+                    from: "customer_profiles",
+                    localField: "customerId",
+                    foreignField: "_id",
+                    as: "customer"
+                }
+            },
+            { $unwind: "$customer" },
+            {
+                $project: {
+                    _id: 1,
+                    customerId: 1,
+                    caseId: 1,
+                    caseType: 1,
+                    serviceType: 1,
+                    amount: { $ifNull: ["$amountPaid", "$amount"] },
+                    currency: { $ifNull: ["$currency", "$paidCurrency"] },
+                    requestReason: 1,
+                    dueDate: 1,
+                    status: 1,
+                    paymentDate: 1,
+                    requestedAt: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    customerEmail: "$customer.email",
+                    customerUniqueId: "$customer.customerUniqueId"
+                }
+            }
+        ]);
 
-        // Aggregation for pending transactions + customer email
-        const pendingTransactions = await customerAdditionalTransaction.aggregate([
+        // Wait for both aggregates in parallel
+        const [paidMain, paidAdditional] = await Promise.all([paidMainAgg, paidAdditionalAgg]);
+
+        const paidTransactions = [...paidMain, ...paidAdditional].map(payment => ({
+            ...payment,
+            dueDate: payment.dueDate ? formatDate(payment.dueDate) : null,
+            paymentDate: payment.paymentDate ? formatDate(payment.paymentDate) : null,
+            requestedAt: payment.requestedAt ? formatDate(payment.requestedAt) : null,
+        }));
+
+        // Pending Transactions Aggregation
+        const pendingTransactionsRaw = await customerAdditionalTransaction.aggregate([
             { $match: { status: "pending" } },
             {
                 $lookup: {
@@ -70,18 +107,18 @@ export const getPaymentDetails = async (req, res, next) => {
                     currency: { $ifNull: ["$currency", "$paidCurrency"] },
                     requestReason: 1,
                     dueDate: 1,
+                    status: 1,
                     paymentDate: 1,
                     requestedAt: 1,
                     createdAt: 1,
                     updatedAt: 1,
-                    status: 1,
-                    customerEmail: "$customer.email"
+                    customerEmail: "$customer.email",
+                    customerUniqueId: "$customer.customerUniqueId"
                 }
             }
         ]);
 
-        // Format date fields in pending
-        const formattedPending = pendingTransactions.map(payment => ({
+        const pendingTransactions = pendingTransactionsRaw.map(payment => ({
             ...payment,
             dueDate: payment.dueDate ? formatDate(payment.dueDate) : null,
             paymentDate: payment.paymentDate ? formatDate(payment.paymentDate) : null,
@@ -91,7 +128,7 @@ export const getPaymentDetails = async (req, res, next) => {
         return res.status(200).json({
             message: "Payment details fetched successfully",
             paidTransactions,
-            pendingTransactions: formattedPending
+            pendingTransactions
         });
 
     } catch (error) {
@@ -101,10 +138,11 @@ export const getPaymentDetails = async (req, res, next) => {
 
 
 
+
 export const editPaymentDetails = async (req, res, next) => {
     try {
         const { caseId } = req.params;
-        const { serviceType, amount } = req.body;
+        const { amount } = req.body;
 
         // Find the payment document
         const payment = await customerAdditionalTransaction.findOne({
@@ -118,8 +156,9 @@ export const editPaymentDetails = async (req, res, next) => {
         if (!customerDetails) return res.status(404).json({ message: "Invalid customer ID" });
 
         // Update fields
-        payment.serviceType = serviceType;
+       
         payment.amount = amount;
+        
 
         await payment.save();
 
