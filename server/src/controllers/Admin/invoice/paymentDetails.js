@@ -127,9 +127,10 @@ export const getPaymentDetails = async (req, res, next) => {
 
         return res.status(200).json({
             message: "Payment details fetched successfully",
-            paidTransactions,
-            pendingTransactions
+            paidTransactions: paidTransactions || [],
+            pendingTransactions: pendingTransactions || []
         });
+        
 
     } catch (error) {
         next(error);
