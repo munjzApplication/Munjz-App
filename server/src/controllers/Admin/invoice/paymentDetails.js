@@ -4,133 +4,102 @@ import customer from '../../../models/Customer/customerModels/customerModel.js';
 import { formatDate } from "../../../helper/dateFormatter.js";
 import mongoose from "mongoose";
 
+
+// Reusable aggregation builder
+const buildTransactionAggregation = (statusFilter) => ([
+    { $match: { status: statusFilter } },
+    {
+        $lookup: {
+            from: "customer_profiles",
+            localField: "customerId",
+            foreignField: "_id",
+            as: "customer"
+        }
+    },
+    { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
+    {
+        $lookup: {
+            from: "courtservice_cases",
+            localField: "caseId",
+            foreignField: "_id",
+            as: "courtCase"
+        }
+    },
+    {
+        $lookup: {
+            from: "notaryservice_cases",
+            localField: "caseId",
+            foreignField: "_id",
+            as: "notaryCase"
+        }
+    },
+    {
+        $lookup: {
+            from: "translation_cases",
+            localField: "caseId",
+            foreignField: "_id",
+            as: "translationCase"
+        }
+    },
+    {
+        $addFields: {
+            serviceUniqueID: {
+                $switch: {
+                    branches: [
+                        { case: { $eq: ["$caseType", "CourtService_Case"] }, then: { $arrayElemAt: ["$courtCase.courtServiceID", 0] } },
+                        { case: { $eq: ["$caseType", "NotaryService_Case"] }, then: { $arrayElemAt: ["$notaryCase.notaryServiceID", 0] } },
+                        { case: { $eq: ["$caseType", "Translation_Case"] }, then: { $arrayElemAt: ["$translationCase.translationServiceID", 0] } }
+                    ],
+                    default: null
+                }
+            }
+        }
+    },
+    {
+        $project: {
+            _id: 1,
+            customerId: 1,
+            caseId: 1,
+            caseType: 1,
+            serviceType: 1,
+            amount: { $ifNull: ["$amountPaid", "$amount"] },
+            currency: { $ifNull: ["$currency", "$paidCurrency"] },
+            requestReason: 1,
+            dueDate: 1,
+            status: 1,
+            paymentDate: 1,
+            requestedAt: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            customerEmail: "$customer.email",
+            customerUniqueId: "$customer.customerUniqueId",
+            customerName: "$customer.Name",
+            serviceUniqueID: 1
+        }
+    }
+]);
+
 export const getPaymentDetails = async (req, res, next) => {
     try {
-        // Aggregated paid transactions (main)
-        const paidMainAgg = customerTransaction.aggregate([
-            { $match: { status: "paid" } },
-            {
-                $lookup: {
-                    from: "customer_profiles",
-                    localField: "customerId",
-                    foreignField: "_id",
-                    as: "customer"
-                }
-            },
-            { $unwind: "$customer" },
-            {
-                $project: {
-                    _id: 1,
-                    customerId: 1,
-                    caseId: 1,
-                    caseType: 1,
-                    serviceType: 1,
-                    amount: "$amountPaid",
-                    currency: "$currency",
-                    requestReason: 1,
-                    dueDate: 1,
-                    status: 1,
-                    paymentDate: 1,
-                    requestedAt: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    customerEmail: "$customer.email",
-                    customerUniqueId: "$customer.customerUniqueId"
-                }
-            }
+        const [paidMain, paidAdditional, pendingAdditional] = await Promise.all([
+            customerTransaction.aggregate(buildTransactionAggregation("paid")),
+            customerAdditionalTransaction.aggregate(buildTransactionAggregation("paid")),
+            customerAdditionalTransaction.aggregate(buildTransactionAggregation("pending")),
         ]);
 
-        // Aggregated paid additional transactions
-        const paidAdditionalAgg = customerAdditionalTransaction.aggregate([
-            { $match: { status: "paid" } },
-            {
-                $lookup: {
-                    from: "customer_profiles",
-                    localField: "customerId",
-                    foreignField: "_id",
-                    as: "customer"
-                }
-            },
-            { $unwind: "$customer" },
-            {
-                $project: {
-                    _id: 1,
-                    customerId: 1,
-                    caseId: 1,
-                    caseType: 1,
-                    serviceType: 1,
-                    amount: { $ifNull: ["$amountPaid", "$amount"] },
-                    currency: { $ifNull: ["$currency", "$paidCurrency"] },
-                    requestReason: 1,
-                    dueDate: 1,
-                    status: 1,
-                    paymentDate: 1,
-                    requestedAt: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    customerEmail: "$customer.email",
-                    customerUniqueId: "$customer.customerUniqueId"
-                }
-            }
-        ]);
+        const formatTransactions = (transactions) =>
+            transactions.map(payment => ({
+                ...payment,
+                dueDate: payment.dueDate ? formatDate(payment.dueDate) : null,
+                paymentDate: payment.paymentDate ? formatDate(payment.paymentDate) : null,
+                requestedAt: payment.requestedAt ? formatDate(payment.requestedAt) : null,
+            }));
 
-        // Wait for both aggregates in parallel
-        const [paidMain, paidAdditional] = await Promise.all([paidMainAgg, paidAdditionalAgg]);
-
-        const paidTransactions = [...paidMain, ...paidAdditional].map(payment => ({
-            ...payment,
-            dueDate: payment.dueDate ? formatDate(payment.dueDate) : null,
-            paymentDate: payment.paymentDate ? formatDate(payment.paymentDate) : null,
-            requestedAt: payment.requestedAt ? formatDate(payment.requestedAt) : null,
-        }));
-
-        // Pending Transactions Aggregation
-        const pendingTransactionsRaw = await customerAdditionalTransaction.aggregate([
-            { $match: { status: "pending" } },
-            {
-                $lookup: {
-                    from: "customer_profiles",
-                    localField: "customerId",
-                    foreignField: "_id",
-                    as: "customer"
-                }
-            },
-            { $unwind: "$customer" },
-            {
-                $project: {
-                    _id: 1,
-                    customerId: 1,
-                    caseId: 1,
-                    caseType: 1,
-                    serviceType: 1,
-                    amount: { $ifNull: ["$amountPaid", "$amount"] },
-                    currency: { $ifNull: ["$currency", "$paidCurrency"] },
-                    requestReason: 1,
-                    dueDate: 1,
-                    status: 1,
-                    paymentDate: 1,
-                    requestedAt: 1,
-                    createdAt: 1,
-                    updatedAt: 1,
-                    customerEmail: "$customer.email",
-                    customerUniqueId: "$customer.customerUniqueId"
-                }
-            }
-        ]);
-
-        const pendingTransactions = pendingTransactionsRaw.map(payment => ({
-            ...payment,
-            dueDate: payment.dueDate ? formatDate(payment.dueDate) : null,
-            paymentDate: payment.paymentDate ? formatDate(payment.paymentDate) : null,
-            requestedAt: payment.requestedAt ? formatDate(payment.requestedAt) : null,
-        }));
-
-        return res.status(200).json({
+        res.status(200).json({
             message: "Payment details fetched successfully",
-            paidTransactions: paidTransactions || [],
-            pendingTransactions: pendingTransactions || []
+            paidTransactions: formatTransactions([...paidMain, ...paidAdditional]),
+            pendingTransactions: formatTransactions(pendingAdditional)
         });
-        
 
     } catch (error) {
         next(error);
@@ -157,9 +126,9 @@ export const editPaymentDetails = async (req, res, next) => {
         if (!customerDetails) return res.status(404).json({ message: "Invalid customer ID" });
 
         // Update fields
-       
+
         payment.amount = amount;
-        
+
 
         await payment.save();
 
@@ -191,6 +160,6 @@ export const deletePaymentDetails = async (req, res, next) => {
             data: deletedPayment
         });
     } catch (error) {
-        next(error); 
+        next(error);
     }
 };
