@@ -4,7 +4,7 @@ import { uploadFileToS3 } from "../../../utils/s3Uploader.js";
 // Get all news articles
 export const getAllNews = async (req, res) => {
   try {
-    const news = await News.find().sort({ createdAt: -1 }); // Sorted by newest first
+    const news = await News.find().sort({ createdAt: -1 }); 
     res.status(200).json({ message: "News fetched successfully", news });
   } catch (error) {
     res
@@ -68,11 +68,11 @@ export const updateNews = async (req, res) => {
 // Delete a news article
 export const deleteNews = async (req, res) => {
   const { id } = req.params;
-  
+
 
   try {
     const news = await News.findByIdAndDelete(id);
-   
+
 
     if (!news)
       return res.status(404).json({ message: "News article not found" });

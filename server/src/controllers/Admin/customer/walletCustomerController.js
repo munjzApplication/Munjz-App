@@ -23,13 +23,12 @@ export const getWalletDetails = async (req, res, next) => {
 
     // Fetch all services if actionType is "ALL" or specific services based on actionType
     if (actionType === "ALL" || actionType === "CONSULTATION") {
-      // Fetch consultations (only necessary fields) and sort by consultationDate in descending order
       const consultations = await consultationDetails
         .find({ customerId })
         .select(
           "consultantId consultationDate consultationDuration consultationRate"
         )
-        .sort({ consultationDate: -1 }) // Sorting by consultationDate in descending order
+        .sort({ consultationDate: -1 }) 
         .lean();
 
       // Extract consultantIds and fetch consultant names
@@ -50,10 +49,10 @@ export const getWalletDetails = async (req, res, next) => {
         ...services,
         ...consultations.map(service => ({
           consultantName: consultantMap[service.consultantId] || "Unknown",
-          consultationDate: formatDate(service.consultationDate), // Formatting the date
+          consultationDate: formatDate(service.consultationDate), 
           consultationDuration: formatMinutesToMMSS(
             service.consultationDuration
-          ), // Formatting duration
+          ), 
           consultationRate: service.consultationRating,
           serviceType: "CONSULTATION"
         }))
@@ -109,6 +108,6 @@ export const getWalletDetails = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    next(error);
   }
 };

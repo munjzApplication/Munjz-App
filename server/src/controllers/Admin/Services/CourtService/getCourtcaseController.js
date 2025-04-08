@@ -36,7 +36,7 @@ export const getAllCourtCases = async (req, res, next) => {
                 }
               }
             },
-            { $limit: 1 } // If at least one pending payment exists, it's enough
+            { $limit: 1 } 
           ],
           as: "pendingPayments"
         }
@@ -154,7 +154,7 @@ export const getCourtCaseById = async (req, res, next) => {
 
       {
         $lookup: {
-          from: "customer_additionatransactions", // Match collection name in lowercase
+          from: "customer_additionatransactions", 
           let: { caseId: "$_id" },
           pipeline: [
             {
@@ -162,19 +162,19 @@ export const getCourtCaseById = async (req, res, next) => {
                 $expr: {
                   $and: [
                     { $eq: ["$caseId", "$$caseId"] },
-                    { $eq: ["$status", "pending"] } // Check if any additional payment is pending
+                    { $eq: ["$status", "pending"] } 
                   ]
                 }
               }
             },
-            { $limit: 1 } // If at least one pending payment exists, it's enough
+            { $limit: 1 } 
           ],
           as: "pendingPayments"
         }
       },
       {
         $addFields: {
-          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] } // Returns true if there are pending payments
+          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] }
         }
       },
       {

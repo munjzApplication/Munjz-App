@@ -44,7 +44,7 @@ export const editPendingPayment = async (req, res, next) => {
 
   try {
     let payment = await CustomerTransaction.findOne({ _id: paymentId, status: "pending" }) ||
-                  await AdditionalPayment.findOne({ _id: paymentId, status: "pending" });
+      await AdditionalPayment.findOne({ _id: paymentId, status: "pending" });
 
     if (!payment) {
       return res.status(404).json({ success: false, message: "Pending payment not found." });

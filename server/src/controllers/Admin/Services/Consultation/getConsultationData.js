@@ -39,7 +39,7 @@ export const getAllConsultationDatas = async (req, res, next) => {
           consultantShare: 1,
           consultationRating: 1,
           stringFeedback:1,
-          consultantCountryCode: "$consultant.countryCode", // Store temporarily for currency lookup
+          consultantCountryCode: "$consultant.countryCode", 
           CustomerId: "$customer._id",
           CustomerName: "$customer.Name",
           ConsultantId: "$consultant._id",
@@ -76,6 +76,6 @@ export const getAllConsultationDatas = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Error fetching consultation data:", error);
-    res.status(500).json({ message: "Internal server error" });
+    next(error);
   }
 };

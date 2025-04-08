@@ -6,20 +6,17 @@ import { formatDate } from "../../../helper/dateFormatter.js";
 
 export const getConsultantLists = async (req, res, next) => {
   try {
-    // Step 1: Get customer ID from request (assuming customer ID is available in req.user)
+   
     const customerId = req.user._id;
 
-    // Step 2: Fetch customer's favorite consultants
     const favorites = await Favorite.find({ customerId }).select("consultantId");
 
-    // Extract the list of favorite consultant IDs
     const favoriteConsultantIds = favorites.map(fav => fav.consultantId.toString());
 
-    // Step 3: Aggregate consultant data with average ratings in a single query
     const consultants = await ConsultantProfile.aggregate([
       {
         $match: {
-          Name: { $ne: "Deleted_User" }, // Exclude deleted users
+          Name: { $ne: "Deleted_User" }, 
         },
       },
       {
@@ -107,12 +104,12 @@ export const getConsultantLists = async (req, res, next) => {
       { $sort: { creationDate: -1 } },
     ]);
 
-    // Step 4: Mark consultants as favorites
+    
     const formattedConsultants = consultants.map((consultant) => {
-      // Check if the consultant is in the customer's favorites
+
       const isFav = favoriteConsultantIds.includes(consultant._id.toString());
       consultant.creationDate = formatDate(consultant.creationDate);
-      consultant.isFav = isFav; // Add isFav field
+      consultant.isFav = isFav; 
       return consultant;
     });
 

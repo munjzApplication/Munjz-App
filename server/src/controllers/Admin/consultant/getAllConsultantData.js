@@ -4,7 +4,7 @@ import BankDetails from "../../../models/Consultant/ProfileModel/bankDetails.js"
 import consultantProfile from "../../../models/Consultant/ProfileModel/User.js";
 import { formatDate } from "../../../helper/dateFormatter.js";
 
-export const getAllConsultantData = async (req, res , next) => {
+export const getAllConsultantData = async (req, res, next) => {
   try {
     const { status } = req.query;
 
@@ -39,8 +39,8 @@ export const getAllConsultantData = async (req, res , next) => {
       {
         $match: matchStage
       },
-      { 
-        $sort: { "ConsultantProfile.creationDate": -1 } 
+      {
+        $sort: { "ConsultantProfile.creationDate": -1 }
       },
       {
         $project: {
@@ -72,19 +72,19 @@ export const getAllConsultantData = async (req, res , next) => {
     };
 
     consultantData.forEach(consultant => {
-      if (consultant.isBlocked) {  
+      if (consultant.isBlocked) {
         ConsultantDatas.declined.push(consultant);
       } else
-      if (consultant.idProofStatus === "approved") {
-        ConsultantDatas.active.push(consultant);
-      } else if (consultant.idProofStatus === "pending") {
-        ConsultantDatas.pending.push(consultant);
-      } else if (consultant.idProofStatus === "rejected") {
-        ConsultantDatas.declined.push(consultant);
-      }
+        if (consultant.idProofStatus === "approved") {
+          ConsultantDatas.active.push(consultant);
+        } else if (consultant.idProofStatus === "pending") {
+          ConsultantDatas.pending.push(consultant);
+        } else if (consultant.idProofStatus === "rejected") {
+          ConsultantDatas.declined.push(consultant);
+        }
     });
 
-   
+
 
     return res.status(200).json({
       message: "Consultant data fetched successfully.",
@@ -100,33 +100,33 @@ export const getAllConsultantData = async (req, res , next) => {
 export const getConsultantDocs = async (req, res) => {
   try {
     const { consultantId } = req.params;
-    
+
     const consultantDocs = await IdProof.findOne({ consultantId });
 
     // If no documents found, return an error message
     if (!consultantDocs) {
       return res.status(404).json({
-    
+
         message: "Consultant not found.",
       });
     }
 
     // Return the consultant documents if found
     res.status(200).json({
-      
+
       message: "Consultant Documents fetched successfully.",
       consultantDocs,
     });
   } catch (error) {
     next(error);
-    
+
   }
 };
 
-export const getConsultantDocuments = async (req, res) => {
+export const getConsultantDocuments = async (req, res, next) => {
   try {
     const { consultantId } = req.params;
-  
+
 
     // Now proceed with the query since the consultantId is valid
     const consultantDocs = await IdProof.findOne({ consultantId });
@@ -135,49 +135,49 @@ export const getConsultantDocuments = async (req, res) => {
     // If no documents found, return an error message
     if (!consultantDocs) {
       return res.status(404).json({
-      
+
         message: "Consultant not found.",
       });
     }
 
     // Return the consultant documents if found
     res.status(200).json({
-      
+
       message: "Consultant Documents fetched successfully.",
       consultantDocs,
     });
   } catch (error) {
     next(error);
-    
+
   }
 }
 
-export const getConsultantBankDetails = async (req, res) => {
+export const getConsultantBankDetails = async (req, res, next) => {
   try {
     const { consultantId } = req.params;
-   
+
 
     // Now proceed with the query since the consultantId is valid
     const bankDetails = await BankDetails.findOne({ consultantId });
-  
+
 
     // If no documents found, return an error message
     if (!bankDetails) {
       return res.status(404).json({
-        
+
         message: "Consultant not found.",
       });
     }
 
     // Return the consultant documents if found
     res.status(200).json({
-      
+
       message: "Consultant Bank Details fetched successfully.",
       bankDetails,
     });
   } catch (error) {
     next(error);
-    
+
   }
 }
 
@@ -185,23 +185,17 @@ export const getConsultantData = async (req, res, next) => {
   try {
     const { consultantId } = req.params;
 
-   
-
     // Query consultant data excluding the "password" field
     const consultantData = await consultantProfile.findOne({ _id: consultantId }).select(
       "-password -resetOtpHash -resetOtpExpiry"
     );
-    
 
-
-    // If no documents found, return an error message
     if (!consultantData) {
       return res.status(404).json({
         message: "Consultant not found.",
       });
     }
 
-    // Return the consultant documents if found
     res.status(200).json({
       message: "Consultant Data fetched successfully.",
       consultantData,

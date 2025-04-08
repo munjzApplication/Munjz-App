@@ -47,7 +47,7 @@ export const getCustomerServices = async (req, res) => {
       res.status(200).json({ message:"Successfully fetched Datas" ,services });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "Error fetching services", error });
+      next(error);
     }
   };
   

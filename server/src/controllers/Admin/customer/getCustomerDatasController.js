@@ -1,7 +1,7 @@
 import customerProfile from "../../../models/Customer/customerModels/customerModel.js";
 import { formatDate } from "../../../helper/dateFormatter.js";
 
-export const getAllCustomerData = async (req, res) => {
+export const getAllCustomerData = async (req, res, next) => {
   try {
     const customerData = await customerProfile.aggregate([
       {
@@ -47,8 +47,8 @@ export const getAllCustomerData = async (req, res) => {
 
       const formattedCustomer = {
         ...customer,
-        creationDate: formatDate(customer.creationDate), // Format date
-        walletBalance: `${whole}:${decimal}`, // Convert to "0:00" format
+        creationDate: formatDate(customer.creationDate), 
+        walletBalance: `${whole}:${decimal}`, 
       };
 
       if (!customer.isBlocked) {
@@ -65,6 +65,6 @@ export const getAllCustomerData = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching customer data:", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    next(error);
   }
 };
