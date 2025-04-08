@@ -52,6 +52,16 @@ const buildTransactionAggregation = (statusFilter) => ([
                     ],
                     default: null
                 }
+            },
+            serviceName: {
+                $switch: {
+                    branches: [
+                        { case: { $eq: ["$caseType", "CourtService_Case"] }, then: { $arrayElemAt: ["$courtCase.serviceName", 0] } },
+                        { case: { $eq: ["$caseType", "NotaryService_Case"] }, then: { $arrayElemAt: ["$notaryCase.serviceName", 0] } },
+                        { case: { $eq: ["$caseType", "Translation_Case"] }, then: { $arrayElemAt: ["$translationCase.serviceName", 0] } }
+                    ],
+                    default: null
+                }
             }
         }
     },
@@ -74,7 +84,8 @@ const buildTransactionAggregation = (statusFilter) => ([
             customerEmail: "$customer.email",
             customerUniqueId: "$customer.customerUniqueId",
             customerName: "$customer.Name",
-            serviceUniqueID: 1
+            serviceUniqueID: 1,
+            serviceName: 1 
         }
     }
 ]);
