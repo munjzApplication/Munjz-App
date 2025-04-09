@@ -1,6 +1,5 @@
 import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
 import bcrypt from "bcrypt";
-import passport from "passport";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { sendVerificationEmail } from "../../utils/email.js";

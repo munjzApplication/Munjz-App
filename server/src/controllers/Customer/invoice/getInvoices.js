@@ -1,122 +1,348 @@
-import CustomerTransaction from "../../../models/Customer/customerModels/transaction.js";
-import CustomerAdditionalTransaction from "../../../models/Customer/customerModels/additionalTransaction.js";
-import mongoose from "mongoose";
-import { formatDate } from "../../../helper/dateFormatter.js";
-
-const buildTransactionAggregation = () => ([
-  {
-    $lookup: {
-      from: "customer_profiles",
-      localField: "customerId",
-      foreignField: "_id",
-      as: "customer"
-    }
-  },
-  { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
-  {
-    $lookup: {
-      from: "courtservice_cases",
-      localField: "caseId",
-      foreignField: "_id",
-      as: "courtCase"
-    }
-  },
-  {
-    $lookup: {
-      from: "notaryservice_cases",
-      localField: "caseId",
-      foreignField: "_id",
-      as: "notaryCase"
-    }
-  },
-  {
-    $lookup: {
-      from: "translation_cases",
-      localField: "caseId",
-      foreignField: "_id",
-      as: "translationCase"
-    }
-  },
-  {
-    $addFields: {
-      serviceUniqueID: {
-        $switch: {
-          branches: [
-            {
-              case: { $eq: ["$caseType", "CourtService_Case"] },
-              then: { $arrayElemAt: ["$courtCase.courtServiceID", 0] }
-            },
-            {
-              case: { $eq: ["$caseType", "NotaryService_Case"] },
-              then: { $arrayElemAt: ["$notaryCase.notaryServiceID", 0] }
-            },
-            {
-              case: { $eq: ["$caseType", "Translation_Case"] },
-              then: { $arrayElemAt: ["$translationCase.translationServiceID", 0] }
-            }
-          ],
-          default: null
-        }
-      }
-    }
-  },
-  {
-    $project: {
-      _id: 1,
-      customerId: 1,
-      caseId: 1,
-      serviceType: 1,
-      amount: { $ifNull: ["$amountPaid", "$amount"] },
-      currency: { $ifNull: ["$currency", "$paidCurrency"] },
-      requestReason: 1,
-      dueDate: 1,
-      status: 1,
-      paymentDate: 1,
-      requestedAt: 1,
-      createdAt: 1,
-      serviceUniqueID: 1
-    }
-  },
-  { $sort: { createdAt: -1 } }
-]);
+import CourtCase from "../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
+import NotaryCase from "../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
+import TranslationCase from "../../../models/Customer/translationModel/translationDetails.js";
+import { formatDatewithmonth } from "../../../helper/dateFormatter.js";
 
 export const getCustomerInvoices = async (req, res, next) => {
   try {
-    const customerId = new mongoose.Types.ObjectId(req.user._id);
-    const statusFilter = req.query.status || "AllStatus";
+    const customerId = req.user._id;
 
-    const baseMatch = { customerId };
-    if (statusFilter !== "AllStatus") {
-      baseMatch.status = statusFilter;
-    }
+    // Run all three aggregation queries in parallel
+    const [courtCases, notaryCases, translationCases] = await Promise.all([
+      CourtCase.aggregate([
+        { $match: { customerId } },
+        { $sort: { createdAt: -1 } },
+        {
+          $lookup: {
+            from: "customer_additionatransactions",
+            localField: "_id",
+            foreignField: "caseId",
+            as: "requestpayments"
+          }
+        },
+        {
+          $lookup: {
+            from: "courtservice_documents",
+            localField: "_id",
+            foreignField: "courtServiceCase",
+            as: "requestdocuments"
+          }
+        },
+        {
+          $addFields: {
+            hasAdminRequestedPayment: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$requestpayments",
+                      as: "payment",
+                      cond: { $eq: ["$$payment.status", "pending"] }
+                    }
+                  }
+                },
+                0
+              ]
+            },
+            hasAdminRequestedDocument: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$requestdocuments",
+                      as: "document",
+                      cond: {
+                        $and: [
+                          { $eq: ["$$document.status", "pending"] },
+                          { $eq: ["$$document.documentType", "admin-request"] }
+                        ]
+                      }
+                    }
+                  }
+                },
+                0
+              ]
+            },
+            hasAdminUploadDocument: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$requestdocuments",
+                      as: "document",
+                      cond: {
+                        $and: [
+                          { $eq: ["$$document.status", "submitted"] },
+                          { $eq: ["$$document.documentType", "admin-upload"] }
+                        ]
+                      }
+                    }
+                  }
+                },
+                0
+              ]
+            }
+          }
+        },
+        {
+          $addFields: {
+            hasAdminAction: {
+              $or: [
+                "$hasAdminRequestedPayment",
+                "$hasAdminRequestedDocument",
+                "$hasAdminUploadDocument"
+              ]
+            }
+          }
+        },
+        {
+          $project: {
+            createdAt: 1,
+            caseType: { $literal: "court" },
+            caseId: "$_id",
+            serviceID: "$courtServiceID",
+            serviceName: 1,
+            selectedServiceCountry: 1,
+            caseDescription: 1,
+            casePaymentStatus: 1,
+            follower: 1,
+            status: 1,
+            amount: "$totalAmountPaid",
+            paidCurrency: 1,
+            hasAdminAction: 1
+          }
+        }
+      ]),
 
-    const fullAggregation = [
-      { $match: baseMatch },
-      ...buildTransactionAggregation()
-    ];
+      NotaryCase.aggregate([
+        { $match: { customerId } },
+        { $sort: { createdAt: -1 } },
+        {
+          $lookup: {
+            from: "customer_additionatransactions",
+            localField: "_id",
+            foreignField: "caseId",
+            as: "requestpayments"
+          }
+        },
+        {
+          $lookup: {
+            from: "NotaryService_Document",
+            localField: "_id",
+            foreignField: "notaryServiceCase",
+            as: "requestdocuments"
+          }
+        },
+        {
+          $addFields: {
+            hasAdminRequestedPayment: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$requestpayments",
+                      as: "payment",
+                      cond: { $eq: ["$$payment.status", "pending"] }
+                    }
+                  }
+                },
+                0
+              ]
+            },
+            hasAdminRequestedDocument: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$requestdocuments",
+                      as: "document",
+                      cond: {
+                        $and: [
+                          { $eq: ["$$document.status", "pending"] },
+                          { $eq: ["$$document.documentType", "admin-request"] }
+                        ]
+                      }
+                    }
+                  }
+                },
+                0
+              ]
+            },
+            hasAdminUploadDocument: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$requestdocuments",
+                      as: "document",
+                      cond: {
+                        $and: [
+                          { $eq: ["$$document.status", "submitted"] },
+                          { $eq: ["$$document.documentType", "admin-upload"] }
+                        ]
+                      }
+                    }
+                  }
+                },
+                0
+              ]
+            }
+          }
+        },
+        {
+          $addFields: {
+            hasAdminAction: {
+              $or: [
+                "$hasAdminRequestedPayment",
+                "$hasAdminRequestedDocument",
+                "$hasAdminUploadDocument"
+              ]
+            }
+          }
+        },
+        {
+          $project: {
+            createdAt: 1,
+            caseType: { $literal: "notary" },
+            caseId: "$_id",
+            serviceID: "$notaryServiceID",
+            serviceName: 1,
+            selectedServiceCountry: 1,
+            caseDescription: 1,
+            casePaymentStatus: 1,
+            follower: 1,
+            status: 1,
+            amount: "$totalAmountPaid",
+            paidCurrency: 1,
+            hasAdminAction: 1
+          }
+        }
+      ]),
 
-    const [invoices, additionalInvoices] = await Promise.all([
-      CustomerTransaction.aggregate(fullAggregation),
-      CustomerAdditionalTransaction.aggregate(fullAggregation)
+      TranslationCase.aggregate([
+        { $match: { customerId } },
+        { $sort: { createdAt: -1 } },
+        {
+          $lookup: {
+            from: "customer_additionatransactions",
+            localField: "_id",
+            foreignField: "caseId",
+            as: "requestpayments"
+          }
+        },
+        {
+          $lookup: {
+            from: "translation_documents",
+            localField: "_id",
+            foreignField: "translationCase",
+            as: "requestdocuments"
+          }
+        },
+        {
+          $addFields: {
+            hasAdminRequestedPayment: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$requestpayments",
+                      as: "payment",
+                      cond: { $eq: ["$$payment.status", "pending"] }
+                    }
+                  }
+                },
+                0
+              ]
+            },
+            hasAdminRequestedDocument: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$requestdocuments",
+                      as: "document",
+                      cond: {
+                        $and: [
+                          { $eq: ["$$document.status", "pending"] },
+                          { $eq: ["$$document.documentType", "admin-request"] }
+                        ]
+                      }
+                    }
+                  }
+                },
+                0
+              ]
+            },
+            hasAdminUploadDocument: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$requestdocuments",
+                      as: "document",
+                      cond: {
+                        $and: [
+                          { $eq: ["$$document.status", "submitted"] },
+                          { $eq: ["$$document.documentType", "admin-upload"] }
+                        ]
+                      }
+                    }
+                  }
+                },
+                0
+              ]
+            }
+          }
+        },
+        {
+          $addFields: {
+            hasAdminAction: {
+              $or: [
+                "$hasAdminRequestedPayment",
+                "$hasAdminRequestedDocument",
+                "$hasAdminUploadDocument"
+              ]
+            }
+          }
+        },
+        {
+          $project: {
+            createdAt: 1,
+            caseType: { $literal: "translation" },
+            caseId: "$_id",
+            serviceID: "$translationServiceID",
+            serviceName: {
+              $concat: [
+                "Translation from ",
+                "$documentLanguage",
+                " to ",
+                "$translationLanguage"
+              ]
+            },
+            selectedServiceCountry: { $literal: "UAE" },
+            caseDescription: { $literal: "Translation Service" },
+            casePaymentStatus: "$PaymentStatus",
+            follower: 1,
+            status: 1,
+            amount: "$totalAmountPaid",
+            paidCurrency: { $ifNull: ["$paidCurrency", "AED"] },
+            hasAdminAction: 1
+          }
+        }
+      ])
     ]);
 
-    let allInvoices = [...invoices, ...additionalInvoices];
+    // Combine and sort all cases
+    const allCases = [...courtCases, ...notaryCases, ...translationCases].map(caseItem => ({
+      ...caseItem,
+      createdAt: formatDatewithmonth(caseItem.createdAt)
+    })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    // Format date fields
-    allInvoices = allInvoices.map((inv) => ({
-      ...inv,
-      createdAt: inv.createdAt ? formatDate(inv.createdAt) : null,
-      paymentDate: inv.paymentDate ? formatDate(inv.paymentDate) : null,
-      dueDate: inv.dueDate ? formatDate(inv.dueDate) : null,
-      requestedAt: inv.requestedAt ? formatDate(inv.requestedAt) : null
-    }));
-
-    res.status(200).json({
-      message: "Customer invoices retrieved successfully",
-      data: allInvoices
+    return res.status(200).json({
+      message: "All cases fetched successfully",
+      cases: allCases
     });
   } catch (error) {
-    console.error("Error getting invoices:", error);
     next(error);
   }
 };
