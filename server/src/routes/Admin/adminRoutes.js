@@ -24,6 +24,7 @@ import getConsultationRoute from "./services/consultation/consultationRoute.js";
 import uploadimage from "./adminRoutes/uploadimage.js";
 import notifyAdminOnCustomerChatRoute from "./notification/admin-notifyRoute.js"; 
 import getAllServicesRoute from "./services/getAllServices/getAllServicesRoutes.js";
+import promotionsRoute from "./adminRoutes/promotionRoutes.js";
 import { protectAdmin } from "../../middlewares/adminMiddleware.js";
 
 
@@ -75,5 +76,6 @@ router.use("/upload-icon", uploadimage);
 router.use("/notify-admin", notifyAdminOnCustomerChatRoute);
 
 router.use("/get-services",getAllServicesRoute);
+router.use("/promotions",promotionsRoute)
 
 export default router;
