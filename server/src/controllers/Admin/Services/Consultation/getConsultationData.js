@@ -38,8 +38,8 @@ export const getAllConsultationDatas = async (req, res, next) => {
           consultationDuration: 1,
           consultantShare: 1,
           consultationRating: 1,
-          stringFeedback:1,
-          consultantCountryCode: "$consultant.countryCode", 
+          stringFeedback: 1,
+          consultantCountryCode: "$consultant.countryCode",
           CustomerId: "$customer._id",
           CustomerName: "$customer.Name",
           ConsultantId: "$consultant._id",
@@ -56,7 +56,7 @@ export const getAllConsultationDatas = async (req, res, next) => {
     const formattedConsultationDatas = await Promise.all(
       consultationDatas.map(async ({ consultantCountryCode, ...item }) => {
         const consultantCurrency = await getCurrencyFromCountryCode(consultantCountryCode || "");
-      
+
 
         return {
           ...item,
@@ -79,3 +79,82 @@ export const getAllConsultationDatas = async (req, res, next) => {
     next(error);
   }
 };
+
+
+export const getConsultationDataById = async (req, res, next) => {
+  try {
+    const ConsultantId = req.params.id;
+
+    const totalConsultations = await consultationDetails.countDocuments({ consultantId: ConsultantId });
+
+    const consultationDatas = await consultationDetails.aggregate([
+
+      {
+
+        $match: {
+          consultantId: ConsultantId
+        }
+      },
+      {
+        $lookup: {
+          from: "customer_profiles",
+          localField: "customerId",
+          foreignField: "_id",
+          as: "customer"
+        }
+      },
+      { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
+
+      {
+        $lookup: {
+          from: "consultant_profiles",
+          localField: "consultantId",
+          foreignField: "_id",
+          as: "consultant"
+        }
+      },
+      { $unwind: { path: "$consultant", preserveNullAndEmptyArrays: true } },
+
+      {
+        $project: {
+          _id: 1,
+          consultationDate: 1,
+          consultationDuration: 1,
+          consultantShare: 1,
+          consultationRating: 1,
+          stringFeedback: 1,
+          consultantCountryCode: "$consultant.countryCode",
+          CustomerId: "$customer._id",
+          CustomerName: "$customer.Name",
+          ConsultantId: "$consultant._id",
+          ConsultantName: "$consultant.Name"
+        }
+      },
+
+      { $sort: { consultationDate: -1 } },
+     
+    ]);
+
+    // Format data and fetch consultant currency
+    const formattedConsultationDatas = await Promise.all(
+      consultationDatas.map(async ({ consultantCountryCode, ...item }) => {
+        const consultantCurrency = await getCurrencyFromCountryCode(consultantCountryCode || "");
+
+        return {
+          ...item,
+          consultationDate: formatDate(item.consultationDate),
+          consultationDuration: formatMinutesToMMSS(item.consultationDuration / 60),
+          consultantCurrency
+        };
+      })
+    );
+    res.status(200).json({
+      message: "Consultation data retrieved successfully",
+      data: formattedConsultationDatas
+    });
+
+  } catch (error) {
+    console.error("Error fetching consultation data:", error);
+    next(error);
+  }
+}
