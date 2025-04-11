@@ -1,6 +1,7 @@
 import consultationDetails from "../../../../models/Customer/consultationModel/consultationModel.js";
 import { formatDate, formatMinutesToMMSS } from "../../../../helper/dateFormatter.js";
 import { getCurrencyFromCountryCode } from "../../../../helper/customer/currencyHelper.js";
+import mongoose from "mongoose";
 
 export const getAllConsultationDatas = async (req, res, next) => {
   try {
@@ -81,18 +82,16 @@ export const getAllConsultationDatas = async (req, res, next) => {
 };
 
 
+
+
 export const getConsultationDataById = async (req, res, next) => {
   try {
-    const ConsultantId = req.params.id;
-
-    const totalConsultations = await consultationDetails.countDocuments({ consultantId: ConsultantId });
+    const consultantId = new mongoose.Types.ObjectId(req.params.ConsultantId);
 
     const consultationDatas = await consultationDetails.aggregate([
-
       {
-
         $match: {
-          consultantId: ConsultantId
+          consultantId: consultantId
         }
       },
       {
@@ -124,18 +123,16 @@ export const getConsultationDataById = async (req, res, next) => {
           consultationRating: 1,
           stringFeedback: 1,
           consultantCountryCode: "$consultant.countryCode",
-          CustomerId: "$customer._id",
-          CustomerName: "$customer.Name",
-          ConsultantId: "$consultant._id",
-          ConsultantName: "$consultant.Name"
+          customerId: "$customer._id",
+          customerName: "$customer.Name",
+          consultantId: "$consultant._id",
+          consultantName: "$consultant.Name"
         }
       },
 
       { $sort: { consultationDate: -1 } },
-     
     ]);
 
-    // Format data and fetch consultant currency
     const formattedConsultationDatas = await Promise.all(
       consultationDatas.map(async ({ consultantCountryCode, ...item }) => {
         const consultantCurrency = await getCurrencyFromCountryCode(consultantCountryCode || "");
@@ -148,6 +145,7 @@ export const getConsultationDataById = async (req, res, next) => {
         };
       })
     );
+
     res.status(200).json({
       message: "Consultation data retrieved successfully",
       data: formattedConsultationDatas
@@ -157,4 +155,4 @@ export const getConsultationDataById = async (req, res, next) => {
     console.error("Error fetching consultation data:", error);
     next(error);
   }
-}
+};
