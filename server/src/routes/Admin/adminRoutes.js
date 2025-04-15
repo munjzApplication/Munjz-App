@@ -34,48 +34,48 @@ const router = express.Router();
 router.use("/auth", authRoute);
 
 // Pricing and Dividend Routes
-router.use("/pricing", pricingRoute);
-router.use("/dividend", dividendRoute);
+router.use("/pricing",protectAdmin, pricingRoute);
+router.use("/dividend",protectAdmin, dividendRoute);
 
 
 // consultant Routes
-router.use("/document-check", documentCheckRoute);
-router.use("/manageConsultant", blockConsultantRoute);
+router.use("/document-check",protectAdmin, documentCheckRoute);
+router.use("/manageConsultant",protectAdmin, blockConsultantRoute);
 
 // customer Routes
-router.use("/manageCustomer", customerRoutes);
+router.use("/manageCustomer",protectAdmin, customerRoutes);
 
 // Withdraw Request Route
-router.use("/withdrawals", withdrawRequestRoute);
+router.use("/withdrawals",protectAdmin, withdrawRequestRoute);
 
 // Court Services Routes
-router.use("/court-services", courtServiceRoute);
-router.use("/court-service-requests", courtServiceRequestRoute);
-router.use("/court-case", courtCaseRoute);
+router.use("/court-services",protectAdmin, courtServiceRoute);
+router.use("/court-service-requests",protectAdmin, courtServiceRequestRoute);
+router.use("/court-case",protectAdmin, courtCaseRoute);
 
 // Notary Services Routes
-router.use("/notary-services", notaryServiceRoute);
-router.use("/notary-service-requests", notaryServiceRequestRoute);
-router.use("/notary-case", notaryCaseRoute);
+router.use("/notary-services",protectAdmin, notaryServiceRoute);
+router.use("/notary-service-requests",protectAdmin, notaryServiceRequestRoute);
+router.use("/notary-case",protectAdmin, notaryCaseRoute);
 
 // Translation Routes
-router.use("/translations", translationRoute);
-router.use("/translation", translationCaseRoute);
+router.use("/translations",protectAdmin, translationRoute);
+router.use("/translation", protectAdmin,translationCaseRoute);
 
 // Payment and Invoice Routes
-router.use("/getDatas", getAllConsultantDatasRoute);
-router.use("/invoice", invoiceRoute);
+router.use("/getDatas",protectAdmin, getAllConsultantDatasRoute);
+router.use("/invoice",protectAdmin, invoiceRoute);
 
 // Admin-related Routes
-router.use("/get-data", getAdminEarningsRoutes)
-router.use("/admin/follower-update", adminFollowerUpdateRoute);
-router.use("/notifications", adminNotificationRoutes);
-router.use("/news", adminNewsRoutes);
-router.use("/get-datas", getConsultationRoute)
-router.use("/upload-icon", uploadimage);
-router.use("/notify-admin", notifyAdminOnCustomerChatRoute);
+router.use("/get-data", protectAdmin,getAdminEarningsRoutes)
+router.use("/admin/follower-update", protectAdmin,adminFollowerUpdateRoute);
+router.use("/notifications",protectAdmin, adminNotificationRoutes);
+router.use("/news", protectAdmin,adminNewsRoutes);
+router.use("/get-datas",protectAdmin, getConsultationRoute)
+router.use("/upload-icon",protectAdmin, uploadimage);
+router.use("/notify-admin",protectAdmin, notifyAdminOnCustomerChatRoute);
 
-router.use("/get-services",getAllServicesRoute);
-router.use("/promotions",promotionsRoute)
+router.use("/get-services",protectAdmin,getAllServicesRoute);
+router.use("/promotions",protectAdmin,promotionsRoute)
 
 export default router;
