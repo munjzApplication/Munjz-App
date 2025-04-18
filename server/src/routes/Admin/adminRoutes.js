@@ -75,7 +75,7 @@ router.use("/get-datas",protectAdmin, getConsultationRoute)
 router.use("/upload-icon",protectAdmin, uploadimage);
 router.use("/notify-admin",protectAdmin, notifyAdminOnCustomerChatRoute);
 
-router.use("/get-services",protectAdmin,getAllServicesRoute);
+router.use("/get-services",getAllServicesRoute);
 router.use("/promotions",protectAdmin,promotionsRoute)
 
 export default router;
