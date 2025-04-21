@@ -9,48 +9,55 @@ import mongoose from "mongoose";
 
 export const getConsultantProfile = async (req, res) => {
   try {
-    // Ensure the user is authenticated
-    if (!req.user || !req.user._id) {
-      return res
-        .status(401)
-        .json({ message: "User not authenticated. Please log in." });
+    // 1. Ensure user is authenticated
+    const userId = req?.user?._id;
+    if (!userId) {
+      return res.status(401).json({
+        message: "User not authenticated. Please log in.",
+      });
     }
 
-    const userId = req.user._id;
+    // 2. Fetch consultant profile (excluding sensitive fields)
+    const consultantProfile = await ConsultantProfile.findById(userId)
+      .select("-password -resetOtpHash -resetOtpExpiry")
+      .lean();
 
-    // Fetch consultant profile (exclude password, resetOtpHash, and resetOtpExpiry)
-    const profile = await ConsultantProfile.findById(userId).select(
-      "-password -resetOtpHash -resetOtpExpiry"
-    );
-    if (!profile) {
-      return res.status(404).json({ message: "Consultant profile not found." });
+    if (!consultantProfile) {
+      return res.status(404).json({
+        message: "Consultant profile not found.",
+      });
     }
 
-    // Fetch personal details (profilePic and country)
-    const personalDetails = await PersonalDetails.findOne({
-      consultantId: userId
-    }).select("profilePicture country");
+    // 3. Fetch personal details (include profilePicture, country, and countryCode)
+    const personalDetails = await PersonalDetails.findOne({ consultantId: userId })
+      .select("profilePicture country countryCode")
+      .lean();
 
     if (!personalDetails) {
-      return res.status(404).json({ message: "Personal details not found." });
+      return res.status(404).json({
+        message: "Personal details not found.",
+      });
     }
 
-    // Combine both results into a single response
+    // 4. Combine profile and personal details
     const combinedProfile = {
-      ...profile.toObject(), // Convert Mongoose document to plain JavaScript object
+      ...consultantProfile,
       profilePicture: personalDetails.profilePicture,
-      country: personalDetails.country
+      country: personalDetails.country,
+      countryCode: personalDetails.countryCode,
     };
 
-    res.status(200).json({
+    // 5. Send response
+    return res.status(200).json({
       message: "Profile fetched successfully",
-      profile: combinedProfile
+      profile: combinedProfile,
     });
+
   } catch (error) {
     console.error("Error fetching consultant profile:", error);
-    res
-      .status(500)
-      .json({ message: "An error occurred while fetching the profile." });
+    return res.status(500).json({
+      message: "An error occurred while fetching the profile.",
+    });
   }
 };
 
