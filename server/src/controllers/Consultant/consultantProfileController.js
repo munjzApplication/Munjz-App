@@ -65,6 +65,8 @@ export const addPhoneNumber = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const { phoneNumber ,countryCode } = req.body;
+    console.log("req.body", req.body);
+    
 
     if (!phoneNumber) {
       return res.status(400).json({ message: "Phone number is required." });
@@ -79,9 +81,13 @@ export const addPhoneNumber = async (req, res, next) => {
     profile.countryCode = countryCode || profile.countryCode; // Use existing countryCode if not provided
     await profile.save();
 
+    console.log("Phone number added successfully:", profile);
+    
+
     res.status(200).json({ 
       message: "Phone number added successfully.",
-      phoneNumber
+      phoneNumber,
+      countryCode
      });
   } catch (error) {
     next(error);
