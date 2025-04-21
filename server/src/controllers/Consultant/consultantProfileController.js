@@ -64,7 +64,7 @@ export const getConsultantProfile = async (req, res) => {
 export const addPhoneNumber = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const { phoneNumber } = req.body;
+    const { phoneNumber ,countryCode } = req.body;
 
     if (!phoneNumber) {
       return res.status(400).json({ message: "Phone number is required." });
@@ -76,6 +76,7 @@ export const addPhoneNumber = async (req, res, next) => {
     }
 
     profile.phoneNumber = phoneNumber;
+    profile.countryCode = countryCode || profile.countryCode; // Use existing countryCode if not provided
     await profile.save();
 
     res.status(200).json({ 
