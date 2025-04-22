@@ -7,12 +7,11 @@ import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import { notificationService } from "../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 
-export const getConsultantProfile = async (req, res) => {
+export const getConsultantProfile = async (req, res, next) => {
   try {
     // 1. Ensure user is authenticated
     const userId = req?.user?._id;
-    console.log("userId", userId);
-    
+
     if (!userId) {
       return res.status(401).json({
         message: "User not authenticated. Please log in.",
@@ -23,7 +22,6 @@ export const getConsultantProfile = async (req, res) => {
     const consultantProfile = await ConsultantProfile.findById(userId)
       .select("-password -resetOtpHash -resetOtpExpiry")
       .lean();
-console.log("consultantProfile", consultantProfile);
 
     if (!consultantProfile) {
       return res.status(404).json({
@@ -48,9 +46,8 @@ console.log("consultantProfile", consultantProfile);
       profilePicture: personalDetails.profilePicture,
       country: personalDetails.country,
       countryCode: consultantProfile.countryCode,
-      
+
     };
-console.log("combinedProfile", combinedProfile);
 
     // 5. Send response
     return res.status(200).json({
@@ -60,18 +57,16 @@ console.log("combinedProfile", combinedProfile);
 
   } catch (error) {
     console.error("Error fetching consultant profile:", error);
-    return res.status(500).json({
-      message: "An error occurred while fetching the profile.",
-    });
+    next(error);
   }
 };
 
 export const addPhoneNumber = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const { phoneNumber ,countryCode } = req.body;
+    const { phoneNumber, countryCode } = req.body;
     console.log("req.body", req.body);
-    
+
 
     if (!phoneNumber) {
       return res.status(400).json({ message: "Phone number is required." });
@@ -87,13 +82,13 @@ export const addPhoneNumber = async (req, res, next) => {
     await profile.save();
 
     console.log("Phone number added successfully:", profile);
-    
 
-    res.status(200).json({ 
+
+    res.status(200).json({
       message: "Phone number added successfully.",
       phoneNumber,
       countryCode
-     });
+    });
   } catch (error) {
     next(error);
   }
@@ -206,7 +201,7 @@ export const updateProfilePicture = async (req, res, next) => {
         consultantId,
         "Profile Picture Updated",
         "Your profile picture has been updated successfully. You can view the changes in your profile.",
-    
+
       );
     } catch (pushError) {
       console.error(
