@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+
 import Consultant from "./../models/Consultant/ProfileModel/User.js";
 
 export const setupSocket = (server) => {
