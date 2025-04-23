@@ -72,7 +72,9 @@ const consultantProfileSchema = new mongoose.Schema({
     deletedAt: {
       type: Date,
       default: null // NULL means the account is active
-    }
+    },
+    
+    isOnline: { type: Boolean, default: false },
 
 });
 
