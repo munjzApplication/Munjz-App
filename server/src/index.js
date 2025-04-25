@@ -23,6 +23,11 @@ app.use(express.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 3000;
 
+// ✅ Root Route for testing
+app.get("/", (req, res) => {
+  res.send("Munjz Backend is Running ✅");
+});
+
 
 // Routes
 app.use("/api/consultant", consultantRoute);
