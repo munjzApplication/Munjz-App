@@ -4,11 +4,15 @@ import Consultant from "./../models/Consultant/ProfileModel/User.js";
 
 export const setupSocket = (server) => {
     const io = new Server(server, {
-        cors: { origin: "*" },
+        cors: {
+            origin: process.env.CLIENT_URL,
+            methods: ["GET", "POST"],
+            credentials: true,
+          },
     });
 
     io.on("connection", (socket) => {
-        console.log("🟢 Socket connected:", socket.id);
+        console.log("Socket connected:", socket.id);
 
         socket.on("consultant-online", async (consultantId) => {
             try {
@@ -20,17 +24,17 @@ export const setupSocket = (server) => {
                     return;
                 }
 
-                // Save to socket memory
+
                 socket.consultantId = consultantId;
 
-                // Update MongoDB only if the consultant was previously offline
+
                 if (!consultant.isOnline) {
                     await Consultant.findByIdAndUpdate(consultantId, {
                         isOnline: true,
                     });
                 }
 
-                // Emit the status update
+
                 io.emit("consultant-status-update", {
                     consultantId,
                     isOnline: true,
@@ -47,20 +51,20 @@ export const setupSocket = (server) => {
 
                 const consultant = await Consultant.findById(consultantId);
                 if (consultant && consultant.isOnline) {
-                    // Update MongoDB to set isOnline to false and track lastSeen time
+
                     await Consultant.findByIdAndUpdate(consultantId, {
                         isOnline: false,
                         lastSeen: new Date(),
                     });
 
-                    // Emit the status update
+
                     io.emit("consultant-status-update", {
                         consultantId,
                         isOnline: false,
                     });
                 }
 
-                console.log(`🔴 Socket disconnected: ${socket.id}, Reason: ${reason}`);
+                console.log(`Socket disconnected: ${socket.id}, Reason: ${reason}`);
             } catch (err) {
                 console.error("Disconnect socket error:", err);
             }
