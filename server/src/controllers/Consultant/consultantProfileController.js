@@ -78,7 +78,7 @@ export const addPhoneNumber = async (req, res, next) => {
     }
 
     profile.phoneNumber = phoneNumber;
-    profile.countryCode = countryCode || profile.countryCode; // Use existing countryCode if not provided
+    profile.countryCode = countryCode || profile.countryCode; 
     await profile.save();
 
 
