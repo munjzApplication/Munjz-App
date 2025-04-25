@@ -6,7 +6,8 @@ import { connectDB } from "./config/db.js";
 import consultantRoute from "./routes/Consultant/consultantRoute.js";
 import customerRoute from "./routes/Customer/customerRoutes.js";
 import adminRoute from "./routes/Admin/adminRoutes.js";
-import http from "http";
+import https from "https";
+import fs from "fs";
 import { setupSocket } from "./socket/socketController.js";
 
 
@@ -14,7 +15,20 @@ dotenv.config();
 
 const app = express();
 
-const server = http.createServer(app);
+// SSL configuration using environment variables
+let sslOptions;
+try {
+  sslOptions = {
+    key: fs.readFileSync(process.env.SSL_KEY_PATH),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH),
+  };
+} catch (err) {
+  console.error("Failed to load SSL files:", err);
+  process.exit(1);
+}
+
+// Create HTTPS server
+const server = https.createServer(sslOptions, app);
 
 app.use(cors());
 app.use(express.json());
