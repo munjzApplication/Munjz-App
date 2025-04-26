@@ -47,8 +47,8 @@ app.use((err, req, res, next) => {
 // 🔌 Setup Socket.io
 setupSocket(server);
 
-app.listen(PORT, () => {
+
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  // Database connection
   connectDB();
 });
