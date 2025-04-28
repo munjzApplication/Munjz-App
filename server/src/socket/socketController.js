@@ -4,14 +4,14 @@ import Consultant from "./../models/Consultant/ProfileModel/User.js";
 
 export const setupSocket = (server) => {
     console.log("Setting up socket.io...");
-    console.log("env", process.env.CLIENT_URL);
-    
+
+
     const io = new Server(server, {
         cors: {
             origin: process.env.CLIENT_URL,
             methods: ["GET", "POST"],
             credentials: true,
-          },
+        },
     });
 
     io.on("connection", (socket) => {

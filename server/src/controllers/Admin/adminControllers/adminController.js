@@ -2,17 +2,14 @@ import Admin from "../../../models/Admin/adminModels/adminModel.js";
 import jwt from "jsonwebtoken";
 
 export const Login = async (req, res, next) => {
-  const { username, password } = req.body;
+  const { user, password } = req.body;
 
   try {
-    const admin = await Admin.findOne({ username });
+    const admin = await Admin.findOne({ user });
 
 
     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
-    if (admin.username !== username) {
-      return res.status(401).json({ message: "Invalid username" });
-    }
 
     if (admin.password !== password) {
       return res.status(401).json({ message: "Invalid password" });

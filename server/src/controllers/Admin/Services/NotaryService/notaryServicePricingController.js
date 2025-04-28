@@ -11,7 +11,7 @@ export const addNotaryServicePricing = async (req, res, next) => {
     }
     const existingService = await NotaryService.findById(service);
     if (!existingService) {
-      return res.status(404).json({ message: "Court service not found" });
+      return res.status(404).json({ message: "Notary Service not found" });
     }
 
     const existingPricing = await NotaryServicePricing.findOne({
