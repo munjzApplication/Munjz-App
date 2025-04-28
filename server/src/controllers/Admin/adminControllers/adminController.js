@@ -10,6 +10,10 @@ export const Login = async (req, res, next) => {
 
     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
+    if (admin.username !== username) {
+      return res.status(401).json({ message: "Invalid username" });
+    }
+
     if (admin.password !== password) {
       return res.status(401).json({ message: "Invalid password" });
     }

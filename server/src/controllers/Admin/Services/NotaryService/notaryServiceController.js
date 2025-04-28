@@ -4,7 +4,7 @@ export const addNotaryService = async (req, res, next) => {
   try {
     const { ServiceNameArabic, ServiceNameEnglish } = req.body;
 
-    const existingService = await CourtService.findOne({
+    const existingService = await NotaryService.findOne({
       $or: [{ ServiceNameEnglish }, { ServiceNameArabic }]
     }).lean();
 
@@ -12,9 +12,9 @@ export const addNotaryService = async (req, res, next) => {
       return res.status(400).json({ message: "Notary Service already exists" });
     }
 
-    const serviceNo = (await CourtService.estimatedDocumentCount()) + 1;
+    const serviceNo = (await NotaryService.estimatedDocumentCount()) + 1;
 
-    const newService = await CourtService.create({
+    const newService = await NotaryService.create({
       ServiceNameArabic,
       ServiceNameEnglish,
       serviceNo
