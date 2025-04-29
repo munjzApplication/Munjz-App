@@ -7,6 +7,7 @@ export const Login = async (req, res, next) => {
   try {
     const admin = await Admin.findOne({ user });
 
+console.log("Admin found:", admin); // Debugging line
 
     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
