@@ -176,7 +176,7 @@ export const requestAdditionalPayment = async (req, res, next) => {
     );
 
     // Emit Socket Event for Real-Time Update
-    io.to(customerId).emit("court-payment-Request", {
+    io.to(customerId).emit("court-payment-request", {
       message: `New payment request for your case: ${courtCase.courtServiceID}`,
       additionalPayment: newAdditionalPayment
     });
@@ -251,7 +251,7 @@ export const adminSubmittedDoc = async (req, res, next) => {
     );
 
     // Emit Socket Event for Real-Time Update
-    io.to(customerId).emit("court-doc-Uploaded", {
+    io.to(customerId).emit("court-doc-uploaded", {
       message: "New documents uploaded for your case.",
       document: newAdminDocument[0]
     });
