@@ -2,10 +2,10 @@ import Admin from "../../../models/Admin/adminModels/adminModel.js";
 import jwt from "jsonwebtoken";
 
 export const Login = async (req, res, next) => {
-  const { user, password } = req.body;
+  const { username, password } = req.body;
 
   try {
-    const admin = await Admin.findOne({ user });
+    const admin = await Admin.findOne({ username });
 
 console.log("Admin found:", admin); // Debugging line
 
