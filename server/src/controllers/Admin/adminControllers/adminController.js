@@ -3,9 +3,10 @@ import jwt from "jsonwebtoken";
 
 export const Login = async (req, res, next) => {
   const { username, password } = req.body;
+  console.log("Req body:", req.body);
 
   try {
-    const admin = await Admin.findOne({ user: username });
+    const admin = await Admin.findOne({username });
 
     console.log("Admin found:", admin);
 
