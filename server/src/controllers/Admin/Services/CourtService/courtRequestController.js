@@ -11,13 +11,13 @@ export const requestDocument = async (req, res) => {
   session.startTransaction();
 
   try {
+    session.startTransaction();
     const { caseId } = req.params;
     const { reason } = req.body;
 
     const courtCase = await CourtCase.findById(caseId).session(session);
     if (!courtCase) {
       await session.abortTransaction();
-      session.endSession();
       return res.status(404).json({ message: "Court case not found." });
     }
 
@@ -25,7 +25,6 @@ export const requestDocument = async (req, res) => {
     const customerId = courtCase.customerId;
     if (!customerId) {
       await session.abortTransaction();
-      session.endSession();
       return res
         .status(400)
         .json({ message: "Customer ID is missing for this court case." });
@@ -37,7 +36,6 @@ export const requestDocument = async (req, res) => {
 
     if (existingRequest) {
       await session.abortTransaction();
-      session.endSession();
       return res
         .status(400)
         .json({ message: "A pending document request already exists." });
@@ -58,7 +56,7 @@ export const requestDocument = async (req, res) => {
     );
 
     await session.commitTransaction();
-    session.endSession();
+
     // Notify Customer
     await notificationService.sendToCustomer(
       customerId,
@@ -67,7 +65,8 @@ export const requestDocument = async (req, res) => {
     );
 
     // Emit Socket Event for Real-Time Update
-    io.to(customerId).emit("court-doc-request", {
+    const customerNamespace = io.of("/customer");
+      customerNamespace.to(customerId.toString()).emit("court-doc-request", {
       message: "New document request pending for your case.",
       documentRequest: documentRequest[0]
     });
@@ -77,12 +76,13 @@ export const requestDocument = async (req, res) => {
     });
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
 
     res.status(500).json({
       message: "Failed to create document request.",
       error: error.message
     });
+  } finally {
+    session.endSession();
   }
 };
 export const getReqDocumentDetails = async (req, res, next) => {
@@ -117,7 +117,9 @@ export const getReqDocumentDetails = async (req, res, next) => {
 };
 
 export const requestAdditionalPayment = async (req, res, next) => {
+  const session = await mongoose.startSession();
   try {
+    session.startTransaction();
     const { caseId } = req.params;
     const { amount, paidCurrency, requestReason, dueDate } = req.body;
 
@@ -139,7 +141,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
     const customerId = courtCase.customerId;
     if (!customerId) {
       await session.abortTransaction();
-      session.endSession();
       return res
         .status(400)
         .json({ message: "Customer ID is missing for this court case." });
@@ -176,7 +177,8 @@ export const requestAdditionalPayment = async (req, res, next) => {
     );
 
     // Emit Socket Event for Real-Time Update
-    io.to(customerId).emit("court-payment-request", {
+    const customerNamespace = io.of("/customer");
+    customerNamespace.to(customerId.toString()).emit("court-payment-request", {
       message: `New payment request for your case: ${courtCase.courtServiceID}`,
       additionalPayment: newAdditionalPayment
     });
@@ -186,34 +188,35 @@ export const requestAdditionalPayment = async (req, res, next) => {
       additionalPayment: newAdditionalPayment
     });
   } catch (error) {
+    await session.abortTransaction();
     next(error);
+  } finally {
+    session.endSession();
   }
 };
 export const adminSubmittedDoc = async (req, res, next) => {
   const session = await mongoose.startSession();
-  session.startTransaction();
+ 
 
   try {
+    session.startTransaction();
     const { caseId } = req.params;
     const files = req.files;
     const { description } = req.body;
 
     if (!files || files.length === 0) {
       await session.abortTransaction();
-      session.endSession();
       return res.status(400).json({ message: "No files uploaded." });
     }
 
     const courtCase = await CourtCase.findById(caseId).session(session);
     if (!courtCase) {
       await session.abortTransaction();
-      session.endSession();
       return res.status(404).json({ message: "Court case not found." });
     }
     const customerId = courtCase.customerId;
     if (!customerId) {
       await session.abortTransaction();
-      session.endSession();
       return res
         .status(400)
         .json({ message: "Customer ID is missing for this court case." });
@@ -241,7 +244,7 @@ export const adminSubmittedDoc = async (req, res, next) => {
     );
 
     await session.commitTransaction();
-    session.endSession();
+
 
     // ✅ Notify Customer
     await notificationService.sendToCustomer(
@@ -251,7 +254,8 @@ export const adminSubmittedDoc = async (req, res, next) => {
     );
 
     // Emit Socket Event for Real-Time Update
-    io.to(customerId).emit("court-doc-uploaded", {
+    const customerNamespace = io.of("/customer");
+    customerNamespace.to(customerId.toString()).emit("court-doc-uploaded", {
       message: "New documents uploaded for your case.",
       document: newAdminDocument[0]
     });
@@ -261,6 +265,9 @@ export const adminSubmittedDoc = async (req, res, next) => {
       document: newAdminDocument[0]
     });
   } catch (error) {
+    await session.abortTransaction();
     next(error);
+  } finally {
+    session.endSession();
   }
 };

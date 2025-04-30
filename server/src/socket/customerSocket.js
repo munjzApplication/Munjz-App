@@ -12,6 +12,7 @@ const customerHandlers = (io, socket) => {
       }
 
       socket.customerId = customerId;
+      socket.join(customerId.toString());
 
       if (!customer.isOnline) {
         await Customer.findByIdAndUpdate(customerId, {
