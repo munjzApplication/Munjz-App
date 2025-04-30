@@ -1,8 +1,8 @@
-import Consultant from "./../models/Consultant/ProfileModel/User.js";
+import Consultant from "../models/Consultant/ProfileModel/User.js";
 
 const consultantHandlers = (io, socket) => {
-  // When a consultant goes online
-  socket.on("consultant-online", async consultantId => {
+  // Consultant comes online
+  socket.on("consultant-online", async (consultantId) => {
     try {
       if (!consultantId) return;
 
@@ -16,44 +16,43 @@ const consultantHandlers = (io, socket) => {
 
       if (!consultant.isOnline) {
         await Consultant.findByIdAndUpdate(consultantId, {
-          isOnline: true
+          isOnline: true,
         });
       }
 
       io.emit("consultant-status-update", {
         consultantId,
-        isOnline: true
+        isOnline: true,
       });
     } catch (err) {
-      console.error("Login socket error:", err);
+      console.error("Consultant online error:", err);
     }
   });
-  // When the consultant disconnects
+
+  // Consultant disconnects
   socket.on("disconnect", async (reason) => {
     try {
-        const consultantId = socket.consultantId;
-        if (!consultantId) return;
+      const consultantId = socket.consultantId;
+      if (!consultantId) return;
 
-        const consultant = await Consultant.findById(consultantId);
-        if (consultant && consultant.isOnline) {
+      const consultant = await Consultant.findById(consultantId);
+      if (consultant?.isOnline) {
+        await Consultant.findByIdAndUpdate(consultantId, {
+          isOnline: false,
+          lastSeen: new Date(),
+        });
 
-            await Consultant.findByIdAndUpdate(consultantId, {
-                isOnline: false,
-                lastSeen: new Date(),
-            });
+        io.emit("consultant-status-update", {
+          consultantId,
+          isOnline: false,
+        });
+      }
 
-
-            io.emit("consultant-status-update", {
-                consultantId,
-                isOnline: false,
-            });
-        }
-
-        console.log(`Socket disconnected: ${socket.id}, Reason: ${reason}`);
+      console.log(`Consultant disconnected: ${socket.id}, Reason: ${reason}`);
     } catch (err) {
-        console.error("Disconnect socket error:", err);
+      console.error("Consultant disconnect error:", err);
     }
-});
+  });
 };
 
 export default consultantHandlers;
