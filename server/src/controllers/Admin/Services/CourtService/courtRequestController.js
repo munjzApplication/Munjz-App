@@ -8,7 +8,6 @@ import { io } from "../../../../socket/socketController.js";
 
 export const requestDocument = async (req, res) => {
   const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
     session.startTransaction();
