@@ -2,6 +2,7 @@ import IDProof from "../../../models/Consultant/ProfileModel/idProof.js";
 import Consultant from "../../../models/Consultant/ProfileModel/User.js";
 import mongoose from "mongoose";
 import { notificationService } from "../../../service/sendPushNotification.js";
+import { io } from "../../../socket/socketController.js";
 
 export const handleDocumentStatus = async (req, res, next) => {
   const { documentType, action } = req.body;
@@ -81,6 +82,14 @@ export const handleDocumentStatus = async (req, res, next) => {
       "Document Verification Update",
       responseMessage
     );
+
+    // Emit Socket Event for Real-Time Update
+    const consultantNamespace = io.of("/consultant");
+    consultantNamespace.to(consultantId.toString()).emit("consultant-doc-status-update", {
+      message: responseMessage,
+      status: newStatus,
+      documentStatus: idProof.documentStatus
+    });
 
 
     return res.status(200).json({

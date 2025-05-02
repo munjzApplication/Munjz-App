@@ -65,7 +65,7 @@ export const requestDocument = async (req, res) => {
 
     // Emit Socket Event for Real-Time Update
     const customerNamespace = io.of("/customer");
-      customerNamespace.to(customerId.toString()).emit("court-doc-request", {
+    customerNamespace.to(customerId.toString()).emit("court-doc-request", {
       message: "New document request pending for your case.",
       documentRequest: documentRequest[0]
     });
@@ -195,7 +195,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
 };
 export const adminSubmittedDoc = async (req, res, next) => {
   const session = await mongoose.startSession();
- 
 
   try {
     session.startTransaction();
@@ -243,7 +242,6 @@ export const adminSubmittedDoc = async (req, res, next) => {
     );
 
     await session.commitTransaction();
-
 
     // ✅ Notify Customer
     await notificationService.sendToCustomer(

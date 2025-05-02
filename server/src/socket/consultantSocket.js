@@ -13,6 +13,7 @@ const consultantHandlers = (io, socket) => {
       }
 
       socket.consultantId = consultantId;
+      socket.join(consultantId.toString());
 
       if (!consultant.isOnline) {
         await Consultant.findByIdAndUpdate(consultantId, {
