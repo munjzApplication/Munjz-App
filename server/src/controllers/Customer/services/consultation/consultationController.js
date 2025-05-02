@@ -168,7 +168,7 @@ export const handleConsultationDetails = async (req, res, next) => {
     const customerNotificationMessage = `Your consultation with ${consultant.email} has been completed successfully. Thank you for your feedback.`;
     const adminNotificationMessage = `A consultation between ${consultant.email} (Consultant) and ${customer.email} (Customer) has been completed.`;
 
-    await Promise.all([
+    const notificationResults = await Promise.allSettled([
       notificationService.sendToConsultant(
         consultantID,
         "Consultation Completed",
@@ -184,6 +184,18 @@ export const handleConsultationDetails = async (req, res, next) => {
         adminNotificationMessage
       )
     ]);
+    
+    const recipients = ["Consultant", "Customer", "Admin"];
+    notificationResults.forEach((result, index) => {
+      const who = recipients[index];
+      if (result.status === "fulfilled") {
+        console.log(`✅ ${who} notification sent successfully.`);
+      } else {
+        console.error(`❌ ${who} notification failed:`, result.reason);
+        // Optional: retryNotification(who, ...);
+      }
+    });
+    
 
     return res.status(201).json({
       message: "Consultation details saved successfully.",
