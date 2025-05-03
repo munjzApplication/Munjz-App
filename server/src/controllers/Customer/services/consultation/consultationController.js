@@ -184,19 +184,7 @@ export const handleConsultationDetails = async (req, res, next) => {
         adminNotificationMessage
       )
     ]);
-    
-    const recipients = ["Consultant", "Customer", "Admin"];
-    notificationResults.forEach((result, index) => {
-      const who = recipients[index];
-      if (result.status === "fulfilled") {
-        console.log(`✅ ${who} notification sent successfully.`);
-      } else {
-        console.error(`❌ ${who} notification failed:`, result.reason);
-        // Optional: retryNotification(who, ...);
-      }
-    });
-    
-
+        
     return res.status(201).json({
       message: "Consultation details saved successfully.",
       data: newConsultationDetails
