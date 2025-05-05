@@ -1,5 +1,5 @@
 import DividendModel from "../../models/Admin/adminModels/dividendModel.js";
-
+// commission
 export const checkCountry = async (req, res, next) => {
   try {
     const { countryCode } = req.body;

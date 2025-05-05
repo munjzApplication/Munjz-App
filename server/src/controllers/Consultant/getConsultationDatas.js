@@ -1,8 +1,8 @@
 import consultationDetails from "../../models/Customer/consultationModel/consultationModel.js";
 import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
-import customerProfile from "../../models/Customer/customerModels/customerModel.js";
-import mongoose from "mongoose";
-import { formatDate, formatMinutesToMMSS } from "../../helper/dateFormatter.js";
+import { formatMinutesToMMSS } from "../../helper/dateFormatter.js";
+import { io } from "../../socket/socketController.js";
+
 
 export const getConsultationDetails = async (req, res, next) => {
   try {
@@ -140,6 +140,13 @@ export const getConsultationDataByDate = async (req, res, next) => {
       ...item,
       consultationDuration: formatMinutesToMMSS(item.consultationDuration / 60) // Assuming it's in seconds
     }));
+
+    const consultantNamespace = io.of("/consultant");
+    consultantNamespace.to(consultantId.toString()).emit("consultation-appointments", {
+      message: "Consultation data retrieved successfully",
+      consultantId: consultantId,
+      data: formattedConsultationDatas
+    });
 
     return res.status(200).json({
       message: "Consultation data retrieved successfully",
