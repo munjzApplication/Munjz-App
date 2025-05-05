@@ -5,6 +5,8 @@ import breakDetails from "../../../models/Consultant/ProfileModel/bankDetails.js
 import WithhdrawalActivity from "../../../models/Consultant/consultantModel/withdrawalActivity .js";
 import { notificationService } from "../../../service/sendPushNotification.js";
 import { formatDate } from "../../../helper/dateFormatter.js";
+import { io } from "../../../socket/socketController.js";
+
 export const getWithdrawalDatas = async (req, res, next) => {
   try {
     const withdrawals = await WithdrawalRequest.aggregate([
@@ -31,7 +33,7 @@ export const getWithdrawalDatas = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "consultant_bankdetails", 
+          from: "consultant_bankdetails",
           localField: "consultantId",
           foreignField: "consultantId",
           as: "bankDetails"
@@ -144,14 +146,22 @@ export const updateWithdrawalStatus = async (req, res, next) => {
 
     await withdrawalActivity.save();
 
-       // Send notification to consultant
-       const notificationMessage = `Your withdrawal request of ${withdrawal.amount} AED has been marked as ${status}.`;
-       await notificationService.sendToConsultant(
-         withdrawal.consultantId,
-         "Withdrawal Update",
-         notificationMessage
-       );
-   
+    // Send notification to consultant
+    const notificationMessage = `Your withdrawal request of ${withdrawal.amount} AED has been marked as ${status}.`;
+    await notificationService.sendToConsultant(
+      withdrawal.consultantId,
+      "Withdrawal Update",
+      notificationMessage
+    );
+
+    // Emit Socket Event for Real-Time Update
+    const consultantNamespace = io.of("/consultant");
+    consultantNamespace.to(withdrawal.consultantId.toString()).emit("withdrawal-status-update", {
+      consultantId: withdrawal.consultantId,
+      message: `Withdrawal request updated to ${status}`,
+      withdrawal,
+    });
+
 
     res.status(200).json({
       message: `Withdrawal request updated to ${status}`,

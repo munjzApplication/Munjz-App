@@ -95,8 +95,6 @@ export const getAllConsultantData = async (req, res, next) => {
   }
 };
 
-
-
 export const getConsultantDocs = async (req, res) => {
   try {
     const { consultantId } = req.params;

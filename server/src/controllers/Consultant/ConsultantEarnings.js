@@ -43,8 +43,8 @@ export const getConsultantEarnings = async (req, res, next) => {
       { $unwind: { path: "$customerDetails", preserveNullAndEmptyArrays: true } },
       {
         $project: {
-          type: { $literal: "Consultation" }, // Label activity type
-          customerId: "$customerId", // Include customerId
+          type: { $literal: "Consultation" },
+          customerId: "$customerId", 
           amount: 1,
           date: 1,
           currency: 1,
@@ -93,8 +93,6 @@ export const getConsultantEarnings = async (req, res, next) => {
     next(error);   
   } 
 };
-
-
 
 
 export const convertEarningsToLocalCurrency = async (req, res, next) => {

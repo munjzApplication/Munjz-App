@@ -8,6 +8,8 @@ import ConsultationActivity from "../../../../models/Consultant/consultantModel/
 import PersonalDetails from "../../../../models/Consultant/ProfileModel/personalDetails.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
+import { io } from "../../../../socket/socketController.js";
+import { formatDate } from "../../../../helper/dateFormatter.js";
 import {
   getCurrencyFromCountryCode,
   getExchangeRate
@@ -45,8 +47,8 @@ export const handleConsultationDetails = async (req, res, next) => {
       customer,
       consultantPersonalDetails
     ] = await Promise.all([
-      Consultant.findById(consultantID).select("email countryCode"),
-      Customer.findById(customerID).select("email"),
+      Consultant.findById(consultantID).select("email countryCode Name"),
+      Customer.findById(customerID).select("email Name"),
       PersonalDetails.findOne({ consultantId: consultantID }).select("country")
     ]);
 
@@ -90,7 +92,7 @@ export const handleConsultationDetails = async (req, res, next) => {
     // If the dividend is not in AED, convert the consultant's share to AED
     if (dividend.countryCode !== "AE") {
       const localCurrency = await getCurrencyFromCountryCode(countryCode);
-   
+
       const conversionRate = await getExchangeRate(localCurrency, "AED");
       consultantShare *= conversionRate;
       consultantShare = parseFloat(consultantShare.toFixed(2)); // Round the converted share
@@ -144,6 +146,25 @@ export const handleConsultationDetails = async (req, res, next) => {
     earnings.totalEarnings = parseFloat(earnings.totalEarnings.toFixed(2));
     await earnings.save({ session });
 
+    // Emit real-time earnings update to consultant
+    const consultantNamespace = io.of("/consultant");
+    consultantNamespace.to(consultantID.toString()).emit("consultant-earnings", {
+      consultantId: consultantID,
+      consultantName: consultant.Name,
+      totalEarnings: earnings.totalEarnings,
+      currency: earnings.currency || "AED",
+      activity: {
+        type: "Consultation",
+        amount: consultantShare,
+        date: formatDate(new Date()),
+        currency: "AED",
+        status: "completed",
+        customerId: customerID,
+        customerName: customer.Name
+      }
+    });
+
+
     // Create a new consultation activity entry
     const consultationActivity = new ConsultationActivity({
       consultantId: consultantID,
@@ -184,7 +205,7 @@ export const handleConsultationDetails = async (req, res, next) => {
         adminNotificationMessage
       )
     ]);
-        
+
     return res.status(201).json({
       message: "Consultation details saved successfully.",
       data: newConsultationDetails
