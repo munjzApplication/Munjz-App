@@ -142,7 +142,7 @@ export const getConsultationDataByDate = async (req, res, next) => {
     }));
 
     const consultantNamespace = io.of("/consultant");
-    consultantNamespace.to(consultantId.toString()).emit("consultation-appointments", {
+    consultantNamespace.to(consultantId.toString()).emit("consultant-consultation-datas", {
       message: "Consultation data retrieved successfully",
       consultantId: consultantId,
       data: formattedConsultationDatas
