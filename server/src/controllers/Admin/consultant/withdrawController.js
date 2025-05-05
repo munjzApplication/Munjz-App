@@ -159,6 +159,13 @@ export const updateWithdrawalStatus = async (req, res, next) => {
     consultantNamespace.to(withdrawal.consultantId.toString()).emit("withdrawal-status-update", {
       consultantId: withdrawal.consultantId,
       message: `Withdrawal request updated to ${status}`,
+      activity: {
+        type: "Withdrawal",
+        amount: withdrawal.amount,
+        date: formatDate(new Date()),
+        currency: "AED",
+        status: withdrawal.currentStatus,
+      },
       withdrawal,
     });
 
