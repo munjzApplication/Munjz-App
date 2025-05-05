@@ -150,6 +150,7 @@ export const getConsultationDataByDate = async (req, res, next) => {
 
     return res.status(200).json({
       message: "Consultation data retrieved successfully",
+      consultantId: consultantId,
       data: formattedConsultationDatas
     });
   } catch (error) {
