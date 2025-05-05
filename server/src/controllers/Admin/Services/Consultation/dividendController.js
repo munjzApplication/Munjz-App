@@ -1,4 +1,5 @@
 import DividendModel from "../../../../models/Admin/adminModels/dividendModel.js";
+import { io } from "../../../../socket/socketController.js";
 
 export const checkCountry = async (req, res, next) => {
   try {
@@ -47,7 +48,13 @@ export const createDividend = async (req, res, next) => {
     });
 
     await dividendData.save();
-
+ 
+    const consultantNamespace = io.of("/consultant");
+    consultantNamespace.emit("dividendUpdated", {
+      message: "Dividend data updated",
+      data: dividendData
+    });
+    
     res.status(201).json({
       success: true,
       message: "Dividend data successfully saved!",
@@ -72,6 +79,13 @@ export const editDividend = async (req, res, next) => {
         message: "Dividend data for this country not found."
       });
     }
+
+    const consultantNamespace = io.of("/consultant");
+    consultantNamespace.emit("dividendUpdated", {
+      message: "Dividend data updated",
+      data: dividendData
+    });
+
     res.status(200).json({
       message: "Dividend data successfully updated!",
       data: dividendData
