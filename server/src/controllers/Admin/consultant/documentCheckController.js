@@ -91,6 +91,14 @@ export const handleDocumentStatus = async (req, res, next) => {
       documentStatus: idProof.documentStatus
     });
 
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("consultant-doc-status-update", {
+      consultantId: consultantId,
+      message: responseMessage,
+      status: newStatus,
+      documentStatus: idProof.documentStatus
+    });
+
 
     return res.status(200).json({
       message: responseMessage,
