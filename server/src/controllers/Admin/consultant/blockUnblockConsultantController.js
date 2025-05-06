@@ -51,12 +51,23 @@ export const blockUnblockConsultant = async (req, res, next) => {
       isBlockedStatus: consultant.isBlocked,
     });
 
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("consultant-block-status", {
+      consultantId,
+      message: consultant.isBlocked
+        ? "Consultant has been blocked."
+        : "Consultant has been unblocked.",
+      isBlockedStatus: consultant.isBlocked,
+    });
+
     return res.status(200).json({
       message: consultant.isBlocked
         ? "Consultant has been blocked."
         : "Consultant has been unblocked.",
       isBlockedStatus: consultant.isBlocked,
     });
+
+    
   } catch (error) {
     console.error("Error in isBlockedckConsultant:", error.message);
     next(error);
