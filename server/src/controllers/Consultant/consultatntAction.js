@@ -5,6 +5,8 @@ import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetail
 import BankDetails from "../../models/Consultant/ProfileModel/bankDetails.js";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import { notificationService } from "../../service/sendPushNotification.js";
+import { formatDate } from "../../helper/dateFormatter.js";
+import { io } from "../../socket/socketController.js";
 
 export const handleConsultantAction = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -171,6 +173,42 @@ export const handleConsultantAction = async (req, res, next) => {
       `A new Consultant has registered: ${existingProfile.Name} (${existingProfile.email}).`
     );
 
+    // Emit real-time data to admin dashboard
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("new-consultant-registered", {
+      _id: consultantId,
+      ConsultantId: existingProfile.ConsultantId,  
+      Name: existingProfile.Name,
+      email: existingProfile.email,
+      creationDate: formatDate(new Date()),
+      phoneNumber: existingProfile.phoneNumber,  
+      country: personalDetails.country,
+      profilePicture: profilePictureUrl,
+      idProofStatus: "pending",
+      isBlocked: existingProfile.isBlocked
+    });
+
+    adminNamespace.emit("new-consultant-docs",{
+      message: "Consultant Documents fetched successfully.",
+      consultantDocs: {
+        documentStatus: {
+          frontsideId: "pending",
+          backsideId: "pending",
+          educationalCertificates: "pending",
+          experienceCertificates: "pending"
+        },
+        _id: savedIDProof._id,
+        consultantId: consultantId,
+        nationalId: savedIDProof.nationalId,
+        frontsideId: savedIDProof.frontsideId,
+        backsideId: savedIDProof.backsideId,
+        educationalCertificates: savedIDProof.educationalCertificates,
+        experienceCertificates: savedIDProof.experienceCertificates,
+        status: "pending",
+        creationDate: savedIDProof.createdAt
+      }
+    })
+ 
     res.status(201).json({
       message: "Consultant Registered successfully.",
       user:{

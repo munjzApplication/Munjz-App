@@ -1,8 +1,6 @@
 const adminHandlers = (io, socket) => {
-    console.log("Admin socket initialized:", socket.id);
-  
-    // Add admin-specific events here
-  
+    console.log("Admin socket connected:", socket.id);
+
     socket.on("disconnect", () => {
       console.log("Admin disconnected:", socket.id);
     });
