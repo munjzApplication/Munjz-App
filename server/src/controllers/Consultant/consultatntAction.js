@@ -174,37 +174,37 @@ export const handleConsultantAction = async (req, res, next) => {
     );
 
     // Emit real-time data to admin dashboard
-    const adminNamespace = io.of("/admin");
-    adminNamespace.emit("consultant-registered", {
-      profile: {
-        _id: consultantId,
-        ConsultantId: existingProfile.ConsultantId,
-        Name: existingProfile.Name,
-        email: existingProfile.email,
-        creationDate: formatDate(new Date()),
-        phoneNumber: existingProfile.phoneNumber,
-        country: personalDetails.country,
-        profilePicture: profilePictureUrl,
-        isBlocked: existingProfile.isBlocked
-      },
-      documents: {
-        _id: savedIDProof._id,
-        consultantId: consultantId,
-        nationalId: savedIDProof.nationalId,
-        frontsideId: savedIDProof.frontsideId,
-        backsideId: savedIDProof.backsideId,
-        educationalCertificates: savedIDProof.educationalCertificates,
-        experienceCertificates: savedIDProof.experienceCertificates,
-        status: "pending",
-        creationDate: savedIDProof.createdAt,
-        documentStatus: {
-          frontsideId: "pending",
-          backsideId: "pending",
-          educationalCertificates: "pending",
-          experienceCertificates: "pending"
-        }
-      }
-    });
+    // const adminNamespace = io.of("/admin");
+    // adminNamespace.emit("consultant-registered", {
+    //   profile: {
+    //     _id: consultantId,
+    //     ConsultantId: existingProfile.ConsultantId,
+    //     Name: existingProfile.Name,
+    //     email: existingProfile.email,
+    //     creationDate: formatDate(new Date()),
+    //     phoneNumber: existingProfile.phoneNumber,
+    //     country: personalDetails.country,
+    //     profilePicture: profilePictureUrl,
+    //     isBlocked: existingProfile.isBlocked
+    //   },
+    //   documents: {
+    //     _id: savedIDProof._id,
+    //     consultantId: consultantId,
+    //     nationalId: savedIDProof.nationalId,
+    //     frontsideId: savedIDProof.frontsideId,
+    //     backsideId: savedIDProof.backsideId,
+    //     educationalCertificates: savedIDProof.educationalCertificates,
+    //     experienceCertificates: savedIDProof.experienceCertificates,
+    //     status: "pending",
+    //     creationDate: savedIDProof.createdAt,
+    //     documentStatus: {
+    //       frontsideId: "pending",
+    //       backsideId: "pending",
+    //       educationalCertificates: "pending",
+    //       experienceCertificates: "pending"
+    //     }
+    //   }
+    // });
     
  
     res.status(201).json({
