@@ -173,76 +173,38 @@ export const handleConsultantAction = async (req, res, next) => {
       `A new Consultant has registered: ${existingProfile.Name} (${existingProfile.email}).`
     );
 
-        // Emit real-time data to admin dashboard
-        const adminNamespace = io.of("/admin");
-
-        // Log the data being emitted for debugging
-        console.log("Emitting 'consultant-registered' event with the following data:", {
-          profile: {
-            _id: consultantId,
-            ConsultantId: existingProfile.ConsultantId,
-            Name: existingProfile.Name,
-            email: existingProfile.email,
-            creationDate: formatDate(new Date()),
-            phoneNumber: existingProfile.phoneNumber,
-            country: personalDetails.country,
-            profilePicture: profilePictureUrl,
-            isBlocked: existingProfile.isBlocked
-          },
-          documents: {
-            _id: savedIDProof._id,
-            consultantId: consultantId,
-            nationalId: savedIDProof.nationalId,
-            frontsideId: savedIDProof.frontsideId,
-            backsideId: savedIDProof.backsideId,
-            educationalCertificates: savedIDProof.educationalCertificates,
-            experienceCertificates: savedIDProof.experienceCertificates,
-            status: "pending",
-            creationDate: savedIDProof.createdAt,
-            documentStatus: {
-              frontsideId: "pending",
-              backsideId: "pending",
-              educationalCertificates: "pending",
-              experienceCertificates: "pending"
-            }
-          }
-        });
-    
-        // Check if the admin namespace is connected before emitting
-        if (adminNamespace.sockets.size > 0) {
-          adminNamespace.emit("consultant-registered", {
-            profile: {
-              _id: consultantId,
-              ConsultantId: existingProfile.ConsultantId,
-              Name: existingProfile.Name,
-              email: existingProfile.email,
-              creationDate: formatDate(new Date()),
-              phoneNumber: existingProfile.phoneNumber,
-              country: personalDetails.country,
-              profilePicture: profilePictureUrl,
-              isBlocked: existingProfile.isBlocked
-            },
-            documents: {
-              _id: savedIDProof._id,
-              consultantId: consultantId,
-              nationalId: savedIDProof.nationalId,
-              frontsideId: savedIDProof.frontsideId,
-              backsideId: savedIDProof.backsideId,
-              educationalCertificates: savedIDProof.educationalCertificates,
-              experienceCertificates: savedIDProof.experienceCertificates,
-              status: "pending",
-              creationDate: savedIDProof.createdAt,
-              documentStatus: {
-                frontsideId: "pending",
-                backsideId: "pending",
-                educationalCertificates: "pending",
-                experienceCertificates: "pending"
-              }
-            }
-          });
-        } else {
-          console.log("No connected sockets to emit data to.");
+    // Emit real-time data to admin dashboard
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("consultant-registered", {
+      profile: {
+        _id: consultantId,
+        ConsultantId: existingProfile.ConsultantId,
+        Name: existingProfile.Name,
+        email: existingProfile.email,
+        creationDate: formatDate(new Date()),
+        phoneNumber: existingProfile.phoneNumber,
+        country: personalDetails.country,
+        profilePicture: profilePictureUrl,
+        isBlocked: existingProfile.isBlocked
+      },
+      documents: {
+        _id: savedIDProof._id,
+        consultantId: consultantId,
+        nationalId: savedIDProof.nationalId,
+        frontsideId: savedIDProof.frontsideId,
+        backsideId: savedIDProof.backsideId,
+        educationalCertificates: savedIDProof.educationalCertificates,
+        experienceCertificates: savedIDProof.experienceCertificates,
+        status: "pending",
+        creationDate: savedIDProof.createdAt,
+        documentStatus: {
+          frontsideId: "pending",
+          backsideId: "pending",
+          educationalCertificates: "pending",
+          experienceCertificates: "pending"
         }
+      }
+    });
     
  
     res.status(201).json({
