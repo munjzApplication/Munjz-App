@@ -5,6 +5,7 @@ import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 import { io } from "../../../../socket/socketController.js";
+import emitAdminRequest from "../../../../socket/emitAdminRequest.js";
 
 export const requestDocument = async (req, res) => {
   const session = await mongoose.startSession();
@@ -63,12 +64,14 @@ export const requestDocument = async (req, res) => {
       `An admin has requested a document for your case: ${courtCase.courtServiceID}. Please upload the required document.`
     );
 
-    // Emit Socket Event for Real-Time Update
-    const customerNamespace = io.of("/customer");
-    customerNamespace.to(customerId.toString()).emit("court-doc-request", {
+    // Emit real-time update to customer
+    emitAdminRequest("court-admin-request", customerId, {
+      type: 'documentRequest',
       message: "New document request pending for your case.",
       documentRequest: documentRequest[0]
+
     });
+
     res.status(201).json({
       message: "Document request created successfully.",
       documentRequest: documentRequest[0]
@@ -84,37 +87,6 @@ export const requestDocument = async (req, res) => {
     session.endSession();
   }
 };
-export const getReqDocumentDetails = async (req, res, next) => {
-  try {
-    const { caseId } = req.params;
-
-    const courtCase = await CourtCase.findById(caseId);
-    if (!courtCase) {
-      return res.status(404).json({ message: "Court case not found." });
-    }
-
-    const requestedDocuments = await Document.find({
-      courtServiceCase: caseId,
-      uploadedBy: "admin",
-      documentType: "admin-request",
-      status: "pending"
-    });
-
-    if (!requestedDocuments.length) {
-      return res
-        .status(404)
-        .json({ message: "No pending admin-requested documents found." });
-    }
-
-    res.status(200).json({
-      message: "Pending admin-requested documents retrieved successfully.",
-      requestedDocuments
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const requestAdditionalPayment = async (req, res, next) => {
   const session = await mongoose.startSession();
   try {
@@ -175,11 +147,13 @@ export const requestAdditionalPayment = async (req, res, next) => {
       `An admin has requested an additional payment of ${amount} ${paidCurrency} for your case: ${courtCase.courtServiceID}. Please complete the payment before ${dueDate}.`
     );
 
-    // Emit Socket Event for Real-Time Update
-    const customerNamespace = io.of("/customer");
-    customerNamespace.to(customerId.toString()).emit("court-payment-request", {
+
+    // Emit real-time update to customer
+    emitAdminRequest("court-admin-request", customerId, {
       message: `New payment request for your case: ${courtCase.courtServiceID}`,
+      type: 'paymentRequest',
       additionalPayment: newAdditionalPayment
+
     });
 
     res.status(201).json({
@@ -250,11 +224,13 @@ export const adminSubmittedDoc = async (req, res, next) => {
       `An admin has uploaded new documents for your case: ${courtCase.courtServiceID}. Please review them.`
     );
 
-    // Emit Socket Event for Real-Time Update
-    const customerNamespace = io.of("/customer");
-    customerNamespace.to(customerId.toString()).emit("court-doc-uploaded", {
+
+    // Emit real-time update to customer
+    emitAdminRequest("court-admin-request", customerId, {
+      type: 'adminUpload',
       message: "New documents uploaded for your case.",
       document: newAdminDocument[0]
+
     });
 
     res.status(201).json({
@@ -266,5 +242,37 @@ export const adminSubmittedDoc = async (req, res, next) => {
     next(error);
   } finally {
     session.endSession();
+  }
+};
+
+
+export const getReqDocumentDetails = async (req, res, next) => {
+  try {
+    const { caseId } = req.params;
+
+    const courtCase = await CourtCase.findById(caseId);
+    if (!courtCase) {
+      return res.status(404).json({ message: "Court case not found." });
+    }
+
+    const requestedDocuments = await Document.find({
+      courtServiceCase: caseId,
+      uploadedBy: "admin",
+      documentType: "admin-request",
+      status: "pending"
+    });
+
+    if (!requestedDocuments.length) {
+      return res
+        .status(404)
+        .json({ message: "No pending admin-requested documents found." });
+    }
+
+    res.status(200).json({
+      message: "Pending admin-requested documents retrieved successfully.",
+      requestedDocuments
+    });
+  } catch (error) {
+    next(error);
   }
 };
