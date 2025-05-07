@@ -1,10 +1,11 @@
 import CustomerProfile from "../../../models/Customer/customerModels/customerModel.js";
 import bcrypt from "bcrypt";
 import { uploadFileToS3 } from "../../../utils/s3Uploader.js";
-import courtServiceDetailsModel from "../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import notaryServiceDetailsModel from "../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import { notificationService } from "../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
+import { io } from "../../../socket/socketController.js";
+import { formatDate } from "../../../helper/dateFormatter.js";
 
 export const profileSetup = async (req, res, next) => {
   try {
@@ -56,6 +57,24 @@ export const profileSetup = async (req, res, next) => {
     } catch (pushError) {
       console.error("Error sending profile setup notification:", pushError);
     }
+
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("customer-registered", {
+      message: "New customer registered",
+      _id: userProfile._id,
+      Name: userProfile.Name,
+      email: userProfile.email,
+      phoneNumber: userProfile.phoneNumber,
+      customerUniqueId: userProfile.customerUniqueId,
+      countryCode: userProfile.countryCode,
+      country: userProfile.country,
+      isBlocked: userProfile.isBlocked,
+      creationDate: formatDate(new Date()),
+      profilePhoto: userProfile.profilePhoto,
+      walletBalance: "0:00"
+    });
+
+
 
     // Respond with success
     res.status(200).json({
