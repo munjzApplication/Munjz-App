@@ -61,21 +61,20 @@ export const profileSetup = async (req, res, next) => {
     const adminNamespace = io.of("/admin");
     adminNamespace.emit("customer-registered", {
       message: "New customer registered",
-      _id: userProfile._id,
-      Name: userProfile.Name,
-      email: userProfile.email,
-      phoneNumber: userProfile.phoneNumber,
-      customerUniqueId: userProfile.customerUniqueId,
-      countryCode: userProfile.countryCode,
-      country: userProfile.country,
-      isBlocked: userProfile.isBlocked,
-      creationDate: formatDate(new Date()),
-      profilePhoto: userProfile.profilePhoto,
-      walletBalance: "0:00"
+      profile: {
+        _id: userProfile._id,
+        Name: userProfile.Name,
+        email: userProfile.email,
+        phoneNumber: userProfile.phoneNumber,
+        customerUniqueId: userProfile.customerUniqueId,
+        countryCode: userProfile.countryCode,
+        country: userProfile.country,
+        isBlocked: userProfile.isBlocked,
+        creationDate: formatDate(new Date()),
+        profilePhoto: userProfile.profilePhoto,
+        walletBalance: "0:00"
+      }
     });
-
-
-
     // Respond with success
     res.status(200).json({
       message: "Welcome to Munjz Application",
