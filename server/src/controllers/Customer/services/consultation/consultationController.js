@@ -207,6 +207,7 @@ export const handleConsultationDetails = async (req, res, next) => {
 
     const adminNamespace = io.of("/admin");
     adminNamespace.emit("new-consultation", {
+      Consultation  :{
       _id: newConsultationDetails._id,
       consultantShare: consultantShare,
       consultationRating: reviewRating,
@@ -218,6 +219,7 @@ export const handleConsultationDetails = async (req, res, next) => {
       customerId: customerID,
       consultantName: consultant.Name,
       consultantCurrency: "AED",
+      }
     });
 
     return res.status(201).json({
