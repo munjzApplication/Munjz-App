@@ -1,13 +1,10 @@
-import { io } from "../socket/socketController.js";  // Import the socket instance
+// emitAdminRequest.js
+import { customerNamespace } from "../socket/socketController.js";
 
-// Emits an event to a specific customer in a given namespace
-const emitAdminRequest = (namespace, event, customerId, data) => {
-    const customerNamespace = io.of(namespace); 
-    const payload = {
-        ...data,  
-    };
-
+const emitAdminRequest = (event, customerId, data) => {
+    const payload = { ...data };
     customerNamespace.to(customerId.toString()).emit(event, payload);
-};
-
-export default emitAdminRequest;
+    console.log(`Event "${event}" sent to customer ${customerId}`, payload);
+  };
+  
+  export default emitAdminRequest;
