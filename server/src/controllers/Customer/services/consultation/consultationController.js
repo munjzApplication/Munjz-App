@@ -206,7 +206,7 @@ export const handleConsultationDetails = async (req, res, next) => {
     ]);
 
     const adminNamespace = io.of("/admin");
-    adminNamespace.emit("consultation-completed", {
+    adminNamespace.emit("new-consultation", {
       _id: newConsultationDetails._id,
       consultantShare: consultantShare,
       consultationRating: reviewRating,
