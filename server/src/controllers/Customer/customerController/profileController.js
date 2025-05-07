@@ -5,7 +5,11 @@ import notaryServiceDetailsModel from "../../../models/Customer/notaryServiceMod
 import { notificationService } from "../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 import { io } from "../../../socket/socketController.js";
-import { formatDate } from "../../../helper/dateFormatter.js";
+import {
+  formatDate,
+  formatMinutesToMMSS
+} from "../../../helper/dateFormatter.js";
+import wallet from "../../../models/Customer/customerModels/walletModel.js";
 
 export const profileSetup = async (req, res, next) => {
   try {
@@ -47,7 +51,7 @@ export const profileSetup = async (req, res, next) => {
       await notificationService.sendToCustomer(
         userProfile._id,
         "Welcome to MUNJZ",
-      "Your registration was successful. Welcome aboard!"
+        "Your registration was successful. Welcome aboard!"
       );
 
       await notificationService.sendToAdmin(
@@ -91,7 +95,6 @@ export const countrySetup = async (req, res, next) => {
     const userId = req.user._id;
     const { country, countryCode, phoneNumber } = req.body;
 
-
     if (!country || !countryCode) {
       return res.status(400).json({
         success: false,
@@ -99,11 +102,10 @@ export const countrySetup = async (req, res, next) => {
       });
     }
 
-    // Ensure phoneNumber is unique if provided
     if (phoneNumber) {
       const isPhoneExists = await CustomerProfile.findOne({
         phoneNumber,
-        _id: { $ne: userId } // Exclude current user
+        _id: { $ne: userId } 
       });
 
       if (isPhoneExists) {
@@ -120,9 +122,9 @@ export const countrySetup = async (req, res, next) => {
       {
         country,
         countryCode,
-        phoneNumber: phoneNumber || null // Ensure null if empty
+        phoneNumber: phoneNumber || null 
       },
-      { new: true, upsert: true, runValidators: true } // Creates if not exists
+      { new: true, upsert: true, runValidators: true } 
     );
 
     // Notify on registration
@@ -255,7 +257,7 @@ export const updateProfilePicture = async (req, res, next) => {
       await notificationService.sendToCustomer(
         userId,
         "Profile Picture Updated",
-        "Your profile picture has been successfully updated. You can view the changes in your profile.",
+        "Your profile picture has been successfully updated. You can view the changes in your profile."
       );
     } catch (notificationError) {
       console.error(
@@ -361,7 +363,6 @@ export const getAllServices = async (req, res) => {
       });
     }
 
-
     res.status(200).json({
       success: true,
       service: courtService
@@ -383,7 +384,6 @@ export const deleteProfile = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    // Find the user first
     const user = await CustomerProfile.findById(userId).session(session);
     if (!user) {
       await session.abortTransaction();
@@ -414,6 +414,7 @@ export const deleteProfile = async (req, res, next) => {
 
     await session.commitTransaction();
     session.endSession();
+
     // Push Notifications
     try {
       // Notify customer
@@ -431,6 +432,23 @@ export const deleteProfile = async (req, res, next) => {
     } catch (pushError) {
       console.error("Error sending account deletion notification:", pushError);
     }
+    const walletBalance = await wallet.findOne({ userId: userId });
+    // Emit event to admin namespace
+    adminNamespace.emit("customer-deleted", {
+      profile: {
+        _id: updatedProfile._id,
+        Name: updatedProfile.Name,
+        email: updatedProfile.email,
+        phoneNumber: updatedProfile.phoneNumber,
+        customerUniqueId: updatedProfile.customerUniqueId,
+        countryCode: updatedProfile.countryCode,
+        country: updatedProfile.country,
+        isBlocked: updatedProfile.isBlocked,
+        creationDate: formatDate(updatedProfile.createdAt),
+        profilePhoto: updatedProfile.profilePhoto,
+        walletBalance: formatMinutesToMMSS(walletBalance?.balance) || "0:00"
+      }
+    });
 
     res.status(200).json({ message: "Profile deleted successfully." });
   } catch (error) {
