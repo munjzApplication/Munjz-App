@@ -64,12 +64,13 @@ export const requestDocument = async (req, res) => {
       `An admin has requested a document for your case: ${courtCase.courtServiceID}. Please upload the required document.`
     );
 
-      // Emit real-time update to customer
-  emitAdminRequest("/customer", "court-admin-request", customerId, {
-    message: "New document request pending for your case.",
-    documentRequest: documentRequest[0]
-   
-  });
+    // Emit real-time update to customer
+    emitAdminRequest("/customer", "court-admin-request", customerId, {
+      type: 'documentRequest',
+      message: "New document request pending for your case.",
+      documentRequest: documentRequest[0]
+
+    });
 
     res.status(201).json({
       message: "Document request created successfully.",
@@ -146,13 +147,14 @@ export const requestAdditionalPayment = async (req, res, next) => {
       `An admin has requested an additional payment of ${amount} ${paidCurrency} for your case: ${courtCase.courtServiceID}. Please complete the payment before ${dueDate}.`
     );
 
-  
-          // Emit real-time update to customer
-  emitAdminRequest("/customer", "court-admin-request", customerId, {
-    message: `New payment request for your case: ${courtCase.courtServiceID}`,
-    additionalPayment: newAdditionalPayment
-   
-  });
+
+    // Emit real-time update to customer
+    emitAdminRequest("/customer", "court-admin-request", customerId, {
+      message: `New payment request for your case: ${courtCase.courtServiceID}`,
+      type: 'paymentRequest',
+      additionalPayment: newAdditionalPayment
+
+    });
 
     res.status(201).json({
       message: "Additional payment requested successfully.",
@@ -223,12 +225,13 @@ export const adminSubmittedDoc = async (req, res, next) => {
     );
 
 
-          // Emit real-time update to customer
-  emitAdminRequest("/customer", "court-admin-request", customerId, {
-    message: "New documents uploaded for your case.",
-    document: newAdminDocument[0]
-   
-  });
+    // Emit real-time update to customer
+    emitAdminRequest("/customer", "court-admin-request", customerId, {
+      type: 'adminUpload',
+      message: "New documents uploaded for your case.",
+      document: newAdminDocument[0]
+
+    });
 
     res.status(201).json({
       message: "Admin document uploaded successfully.",

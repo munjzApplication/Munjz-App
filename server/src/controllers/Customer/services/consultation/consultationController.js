@@ -42,15 +42,15 @@ export const handleConsultationDetails = async (req, res, next) => {
     }
 
     // Fetch consultant, customer, and personal details in parallel
-    const [
-      consultant,
-      customer,
-      consultantPersonalDetails
-    ] = await Promise.all([
-      Consultant.findById(consultantID).select("email countryCode Name"),
-      Customer.findById(customerID).select("email Name"),
-      PersonalDetails.findOne({ consultantId: consultantID }).select("country")
-    ]);
+    const [consultant, customer, consultantPersonalDetails] = await Promise.all(
+      [
+        Consultant.findById(consultantID).select("email countryCode Name"),
+        Customer.findById(customerID).select("email Name"),
+        PersonalDetails.findOne({ consultantId: consultantID }).select(
+          "country"
+        )
+      ]
+    );
 
     const countryCode =
       consultant.countryCode || consultantPersonalDetails.country;
@@ -88,7 +88,6 @@ export const handleConsultationDetails = async (req, res, next) => {
     let consultantShare = callDurationInSecond * consultationAmountPerSecond;
     consultantShare = parseFloat(consultantShare.toFixed(2)); // Round consultant's share
 
-
     // If the dividend is not in AED, convert the consultant's share to AED
     if (dividend.countryCode !== "AE") {
       const localCurrency = await getCurrencyFromCountryCode(countryCode);
@@ -97,7 +96,6 @@ export const handleConsultationDetails = async (req, res, next) => {
       consultantShare *= conversionRate;
       consultantShare = parseFloat(consultantShare.toFixed(2)); // Round the converted share
     }
-
 
     // Save consultation details
     const newConsultationDetails = new consultationDetails({
@@ -148,22 +146,23 @@ export const handleConsultationDetails = async (req, res, next) => {
 
     // Emit real-time earnings update to consultant
     const consultantNamespace = io.of("/consultant");
-    consultantNamespace.to(consultantID.toString()).emit("consultant-earnings", {
-      consultantId: consultantID,
-      consultantName: consultant.Name,
-      totalEarnings: earnings.totalEarnings,
-      currency: earnings.currency || "AED",
-      activity: {
-        type: "Consultation",
-        amount: consultantShare,
-        date: formatDate(new Date()),
-        currency: "AED",
-        status: "completed",
-        customerId: customerID,
-        customerName: customer.Name
-      }
-    });
-
+    consultantNamespace
+      .to(consultantID.toString())
+      .emit("consultant-earnings", {
+        consultantId: consultantID,
+        consultantName: consultant.Name,
+        totalEarnings: earnings.totalEarnings,
+        currency: earnings.currency || "AED",
+        activity: {
+          type: "Consultation",
+          amount: consultantShare,
+          date: formatDate(new Date()),
+          currency: "AED",
+          status: "completed",
+          customerId: customerID,
+          customerName: customer.Name
+        }
+      });
 
     // Create a new consultation activity entry
     const consultationActivity = new ConsultationActivity({
@@ -205,6 +204,21 @@ export const handleConsultationDetails = async (req, res, next) => {
         adminNotificationMessage
       )
     ]);
+
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("consultation-completed", {
+      _id: newConsultationDetails._id,
+      consultantShare: consultantShare,
+      consultationRating: reviewRating,
+      consultationDuration: callDurationInSecond,
+      stringFeedback: reviewText,
+      consultationDate: formatDate(new Date()),
+      customerName: customer.Name,
+      consultantId: consultantID,
+      customerId: customerID,
+      consultantName: consultant.Name,
+      consultantCurrency: "AED",
+    });
 
     return res.status(201).json({
       message: "Consultation details saved successfully.",
