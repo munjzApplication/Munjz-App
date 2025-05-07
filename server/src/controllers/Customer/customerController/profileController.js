@@ -135,6 +135,25 @@ export const countrySetup = async (req, res, next) => {
       "New Customer Registration",
       `A new customer ${customerProfile.Name} (${customerProfile.email}) has registered `
     );
+
+    // Emit event to admin namespace
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("customer-registered", {
+      message: "New customer registered",
+      profile: {
+        _id: customerProfile._id,
+        Name: customerProfile.Name,
+        email: customerProfile.email,
+        phoneNumber: customerProfile.phoneNumber,
+        customerUniqueId: customerProfile.customerUniqueId,
+        countryCode: customerProfile.countryCode,
+        country: customerProfile.country,
+        isBlocked: customerProfile.isBlocked,
+        creationDate: formatDate(new Date()),
+        profilePhoto: customerProfile.profilePhoto,
+        walletBalance: "0:00"
+      }
+    });
     res.status(200).json({
       message: "Country updated successfully."
     });
