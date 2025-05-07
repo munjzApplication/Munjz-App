@@ -4,7 +4,6 @@ import customerHandlers from "./customerSocket.js";
 import adminHandlers from "./adminSocket.js"; 
 
 let io;
-let customerNamespace;
 
 export const setupSocket = (server) => {
   console.log("Setting up Socket.IO...");
@@ -39,4 +38,4 @@ export const setupSocket = (server) => {
   });
 };
 
-export { io , customerNamespace  };
+export { io };
