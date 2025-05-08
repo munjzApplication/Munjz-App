@@ -151,8 +151,22 @@ export const requestAdditionalPayment = async (req, res, next) => {
     // Emit real-time update to customer
     emitAdminRequest("court-admin-request", customerId, {
       message: `New payment request for your case: ${courtCase.courtServiceID}`,
-      type: 'paymentRequest',
-      additionalPayment: newAdditionalPayment
+      notifications: {
+        _id: newAdditionalPayment._id,
+        customerId: newAdditionalPayment.customerId,
+        caseId: newAdditionalPayment.caseId,
+        caseType: newAdditionalPayment.caseType,
+        serviceType: newAdditionalPayment.serviceType,
+        amount: newAdditionalPayment.amount,
+        paidCurrency: newAdditionalPayment.paidCurrency,
+        requestReason: newAdditionalPayment.requestReason,
+        dueDate: newAdditionalPayment.dueDate,
+        status: newAdditionalPayment.status,
+        requestedAt: formatDate(newAdditionalPayment.requestedAt),
+        paymentDate: formatDate(newAdditionalPayment.paymentDate),
+        createdAt: formatDate(newAdditionalPayment.createdAt),
+        updatedAt: formatDate(newAdditionalPayment.updatedAt)
+      }
 
     });
 

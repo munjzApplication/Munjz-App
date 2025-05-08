@@ -1,6 +1,7 @@
 import WithdrawalRequest from "../../models/Consultant/consultantModel/WithdrawRequest.js";
 import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
 import Earnings from "../../models/Consultant/consultantModel/consultantEarnings.js";
+import BankDetails from "../../models/Consultant/ProfileModel/bankDetails.js";
 import { notificationService } from "../../service/sendPushNotification.js";
 import { io } from "../../socket/socketController.js"
 import { formatDate } from "../../helper/dateFormatter.js";
@@ -83,6 +84,8 @@ export const requestWithdrawal = async (req, res, next) => {
 
     await withdrawal.save();
 
+    const bankDetails = await BankDetails.findOne({ consultantId });
+
     // Notify Consultant
     await notificationService.sendToConsultant(
       consultantId,
@@ -103,7 +106,7 @@ export const requestWithdrawal = async (req, res, next) => {
       consultantId,
       amount,
       currentStatus: "pending",
-      time: formatDate(new Date())
+      time: formatDate(new Date()),
     });
 
     res
