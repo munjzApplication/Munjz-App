@@ -1,8 +1,9 @@
 import WithdrawalRequest from "../../models/Consultant/consultantModel/WithdrawRequest.js";
 import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
-import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetails.js";
 import Earnings from "../../models/Consultant/consultantModel/consultantEarnings.js";
 import { notificationService } from "../../service/sendPushNotification.js";
+import { io } from "../../socket/socketController.js"
+import { formatDate } from "../../helper/dateFormatter.js";
 
 export const getWithdrawalDatas = async (req, res, next) => {
   try {
@@ -94,6 +95,16 @@ export const requestWithdrawal = async (req, res, next) => {
       "New Withdrawal Request",
       `${consultant.Name} has requested a withdrawal of ${amount} AED. Please review and process the request.`
     );
+
+    // Emit event to admin
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("new-withdrawal-request", {
+      message: "Withdrawal request submitted",
+      consultantId,
+      amount,
+      currentStatus: "pending",
+      time: formatDate(new Date())
+    });
 
     res
       .status(201)
