@@ -66,21 +66,24 @@ export const requestDocument = async (req, res) => {
     );
 
     // Emit real-time update to customer
+    const doc = documentRequest[0]; // 👈 get the actual document object
+
     emitAdminRequest("court-admin-request", customerId, {
-      message: "New document request pending for your case.",
+      message: `New document request pending for your case: ${courtCase.courtServiceID}`,
       notifications: {
-        _id: documentRequest._id,
-        courtServiceCase: documentRequest.caseId,
-        uploadedBy: documentRequest.customerId,
-        documentType: documentRequest.documentType,
-        status: documentRequest.status,
-        requestedAt: documentRequest.requestedAt,
-        requestReason: documentRequest.requestReason,
-        documents: documentRequest.documents,
-        uploadedAt: formatDate(documentRequest.createdAt),
-        createdAt: formatDate(documentRequest.createdAt)
+        _id: doc._id,
+        courtServiceCase: doc.courtServiceCase,
+        uploadedBy: doc.uploadedBy,
+        documentType: doc.documentType,
+        status: doc.status,
+        requestedAt: formatDate(doc.requestedAt),
+        requestReason: doc.requestReason,
+        documents: doc.documents,
+        uploadedAt: formatDate(doc.uploadedAt),
+        createdAt: formatDate(doc.createdAt)
       }
     });
+    
 
     res.status(201).json({
       message: "Document request created successfully.",
@@ -247,21 +250,22 @@ export const adminSubmittedDoc = async (req, res, next) => {
     );
 
     // Emit real-time update to customer
-    emitAdminRequest("court-admin-request", customerId, {
-      message: "New documents uploaded for your case.",
-      notifications: {
-        _id: newAdminDocument._id,
-        courtServiceCase: newAdminDocument.courtServiceCase,
-        uploadedBy: newAdminDocument.uploadedBy,
-        documentType: newAdminDocument.documentType,
-        status: newAdminDocument.status,
-        requestedAt: newAdminDocument.requestedAt,
-        requestReason: newAdminDocument.requestReason,
-        documents: newAdminDocument.documents,
-        uploadedAt: formatDate(newAdminDocument.uploadedAt),
-        createdAt: formatDate(newAdminDocument.createdAt)
-      }
-    });
+emitAdminRequest("court-admin-request", customerId, {
+  message: "New documents uploaded for your case.",
+  notifications: {
+    _id: newAdminDocument[0]._id,
+    courtServiceCase: newAdminDocument[0].courtServiceCase,
+    uploadedBy: newAdminDocument[0].uploadedBy,
+    documentType: newAdminDocument[0].documentType,
+    status: newAdminDocument[0].status,
+    requestedAt: newAdminDocument[0].requestedAt,
+    requestReason: newAdminDocument[0].requestReason,
+    documents: newAdminDocument[0].documents,
+    uploadedAt: formatDate(newAdminDocument[0].uploadedAt),
+    createdAt: formatDate(newAdminDocument[0].createdAt)
+  }
+});
+
 
     res.status(201).json({
       message: "Admin document uploaded successfully.",
