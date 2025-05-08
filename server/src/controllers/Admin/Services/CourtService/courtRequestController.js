@@ -6,6 +6,7 @@ import { notificationService } from "../../../../service/sendPushNotification.js
 import mongoose from "mongoose";
 import { io } from "../../../../socket/socketController.js";
 import emitAdminRequest from "../../../../socket/emitAdminRequest.js";
+import { formatDate } from "../../../../helper/dateFormatter.js";
 
 export const requestDocument = async (req, res) => {
   const session = await mongoose.startSession();
@@ -66,10 +67,19 @@ export const requestDocument = async (req, res) => {
 
     // Emit real-time update to customer
     emitAdminRequest("court-admin-request", customerId, {
-      type: 'documentRequest',
       message: "New document request pending for your case.",
-      documentRequest: documentRequest[0]
-
+      notifications: {
+        _id: documentRequest._id,
+        courtServiceCase: documentRequest.caseId,
+        uploadedBy: documentRequest.customerId,
+        documentType: documentRequest.documentType,
+        status: documentRequest.status,
+        requestedAt: documentRequest.requestedAt,
+        requestReason: documentRequest.requestReason,
+        documents: documentRequest.documents,
+        uploadedAt: formatDate(documentRequest.createdAt),
+        createdAt: formatDate(documentRequest.createdAt)
+      }
     });
 
     res.status(201).json({
@@ -147,7 +157,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
       `An admin has requested an additional payment of ${amount} ${paidCurrency} for your case: ${courtCase.courtServiceID}. Please complete the payment before ${dueDate}.`
     );
 
-
     // Emit real-time update to customer
     emitAdminRequest("court-admin-request", customerId, {
       message: `New payment request for your case: ${courtCase.courtServiceID}`,
@@ -167,7 +176,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
         createdAt: formatDate(newAdditionalPayment.createdAt),
         updatedAt: formatDate(newAdditionalPayment.updatedAt)
       }
-
     });
 
     res.status(201).json({
@@ -238,13 +246,21 @@ export const adminSubmittedDoc = async (req, res, next) => {
       `An admin has uploaded new documents for your case: ${courtCase.courtServiceID}. Please review them.`
     );
 
-
     // Emit real-time update to customer
     emitAdminRequest("court-admin-request", customerId, {
-      type: 'adminUpload',
       message: "New documents uploaded for your case.",
-      document: newAdminDocument[0]
-
+      notifications: {
+        _id: newAdminDocument._id,
+        courtServiceCase: newAdminDocument.courtServiceCase,
+        uploadedBy: newAdminDocument.uploadedBy,
+        documentType: newAdminDocument.documentType,
+        status: newAdminDocument.status,
+        requestedAt: newAdminDocument.requestedAt,
+        requestReason: newAdminDocument.requestReason,
+        documents: newAdminDocument.documents,
+        uploadedAt: formatDate(newAdminDocument.uploadedAt),
+        createdAt: formatDate(newAdminDocument.createdAt)
+      }
     });
 
     res.status(201).json({
@@ -258,7 +274,6 @@ export const adminSubmittedDoc = async (req, res, next) => {
     session.endSession();
   }
 };
-
 
 export const getReqDocumentDetails = async (req, res, next) => {
   try {
