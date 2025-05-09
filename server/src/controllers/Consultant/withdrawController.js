@@ -98,29 +98,38 @@ export const requestWithdrawal = async (req, res, next) => {
       "New Withdrawal Request",
       `${consultant.Name} has requested a withdrawal of ${amount} AED. Please review and process the request.`
     );
+console.log("profilrpicture",consultant.profilePhoto);
 
-    // Emit event to admin
-    const adminNamespace = io.of("/admin");
-    adminNamespace.emit("new-withdrawal-request", {
-      id: withdrawal._id.toString(),
-      consultantId: consultantId.toString(),
-      amount: Number(amount), 
-      currentStatus: "pending",
-      time: formatDate(new Date()),
-      Name: consultant.Name,
-      email: consultant.email,
-      profilePicture: consultant.profilePhoto,
-      bankDetails: {
-        _id: bankDetails._id.toString(),
-        consultantId: bankDetails.consultantId.toString(),
-        holderName: bankDetails.holderName,
-        accountNumber: Number(bankDetails.accountNumber),
-        bankName: bankDetails.bankName,
-        iban: bankDetails.iban,
-        creationDate: bankDetails.creationDate,
-        _v: bankDetails.__v || 0
-      }
-    });
+// Prepare the data
+const payload = {
+  id: withdrawal._id.toString(),
+  consultantId: consultantId.toString(),
+  amount: Number(amount),
+  currentStatus: "pending",
+  time: formatDate(new Date()),
+  Name: consultant.Name,
+  email: consultant.email,
+  profilePicture: consultant.profilePhoto,
+  bankDetails: {
+    _id: bankDetails._id.toString(),
+    consultantId: bankDetails.consultantId.toString(),
+    holderName: bankDetails.holderName,
+    accountNumber: Number(bankDetails.accountNumber),
+    bankName: bankDetails.bankName,
+    iban: bankDetails.iban,
+    creationDate: bankDetails.creationDate,
+    _v: bankDetails.__v || 0
+  }
+};
+
+// Log it
+console.log("Emitting withdrawal request to admin:", JSON.stringify(payload, null, 2));
+
+// Emit to admin namespace
+const adminNamespace = io.of("/admin");
+adminNamespace.emit("new-withdrawal-request", payload);
+
+    
     
 
     res
