@@ -1,5 +1,6 @@
 import WithdrawalRequest from "../../models/Consultant/consultantModel/WithdrawRequest.js";
 import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
+import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetails.js";
 import Earnings from "../../models/Consultant/consultantModel/consultantEarnings.js";
 import BankDetails from "../../models/Consultant/ProfileModel/bankDetails.js";
 import { notificationService } from "../../service/sendPushNotification.js";
@@ -47,27 +48,21 @@ export const requestWithdrawal = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid withdrawal amount" });
     }
 
-    // Fetch consultant details
-    const consultant = await ConsultantProfile.findById(consultantId);
+    // Fetch all necessary data in parallel
+    const [consultant, earnings, existingRequest, bankDetails, profilePicture] = await Promise.all([
+      ConsultantProfile.findById(consultantId),
+      Earnings.findOne({ consultantId }),
+      WithdrawalRequest.findOne({ consultantId, currentStatus: "pending" }),
+      BankDetails.findOne({ consultantId }),
+      PersonalDetails.findOne({ consultantId })
+    ]);
+
     if (!consultant) {
       return res.status(404).json({ message: "Consultant not found" });
     }
-
-    if (!consultant.Name) {
-      return res.status(400).json({ message: "Consultant name is missing" });
-    }
-
-    // Fetch consultant's earnings
-    const earnings = await Earnings.findOne({ consultantId });
     if (!earnings || earnings.totalEarnings < amount) {
       return res.status(400).json({ message: "Insufficient balance" });
     }
-
-    // Optional: Prevent multiple pending withdrawal requests
-    const existingRequest = await WithdrawalRequest.findOne({
-      consultantId,
-      currentStatus: "pending"
-    });
 
     if (existingRequest) {
       return res
@@ -75,7 +70,7 @@ export const requestWithdrawal = async (req, res, next) => {
         .json({ message: "You already have a pending withdrawal request" });
     }
 
-    // Create withdrawal request entry
+    // Create withdrawal request
     const withdrawal = new WithdrawalRequest({
       consultantId,
       amount,
@@ -84,58 +79,51 @@ export const requestWithdrawal = async (req, res, next) => {
 
     await withdrawal.save();
 
-    const bankDetails = await BankDetails.findOne({ consultantId });
-
-    // Notify Consultant
-    await notificationService.sendToConsultant(
+    // Send notifications
+    notificationService.sendToConsultant(
       consultantId,
       "Withdrawal Request Submitted",
       `Your withdrawal request of ${amount} AED has been submitted successfully and is currently pending approval.`
-    );
+    ).catch(console.error);
 
-    // Notify Admin
-    await notificationService.sendToAdmin(
+    notificationService.sendToAdmin(
       "New Withdrawal Request",
       `${consultant.Name} has requested a withdrawal of ${amount} AED. Please review and process the request.`
-    );
-console.log("profilrpicture",consultant.profilePhoto);
+    ).catch(console.error);
+console.log("profilePicture", profilePicture);
 
-// Prepare the data
-const payload = {
-  id: withdrawal._id.toString(),
-  consultantId: consultantId.toString(),
-  amount: Number(amount),
-  currentStatus: "pending",
-  time: formatDate(new Date()),
-  Name: consultant.Name,
-  email: consultant.email,
-  profilePicture: consultant.profilePhoto,
-  bankDetails: {
-    _id: bankDetails._id.toString(),
-    consultantId: bankDetails.consultantId.toString(),
-    holderName: bankDetails.holderName,
-    accountNumber: Number(bankDetails.accountNumber),
-    bankName: bankDetails.bankName,
-    iban: bankDetails.iban,
-    creationDate: bankDetails.creationDate,
-    _v: bankDetails.__v || 0
-  }
-};
-
-// Log it
-console.log("Emitting withdrawal request to admin:", JSON.stringify(payload, null, 2));
-
-// Emit to admin namespace
-const adminNamespace = io.of("/admin");
-adminNamespace.emit("new-withdrawal-request", payload);
-
-    
-    
+    // Emit event to admin namespace
+    try {
+      const adminNamespace = io.of("/admin");
+      adminNamespace.emit("new-withdrawal-request", {
+        id: withdrawal._id.toString(),
+        consultantId: consultantId.toString(),
+        amount: Number(amount),
+        currentStatus: "pending",
+        time: formatDate(new Date()),
+        Name: consultant.Name,
+        email: consultant.email,
+        profilePicture: profilePicture,
+        bankDetails: {
+          _id: bankDetails._id.toString(),
+          consultantId: bankDetails.consultantId.toString(),
+          holderName: bankDetails.holderName,
+          accountNumber: Number(bankDetails.accountNumber),
+          bankName: bankDetails.bankName,
+          iban: bankDetails.iban,
+          creationDate: bankDetails.creationDate,
+        }
+      });
+    } catch (emitErr) {
+      console.error("Socket emit error:", emitErr);
+    }
 
     res
       .status(201)
       .json({ message: "Withdrawal request submitted", withdrawal });
+
   } catch (error) {
     next(error);
   }
 };
+
