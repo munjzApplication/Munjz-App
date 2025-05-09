@@ -9,7 +9,7 @@ import PersonalDetails from "../../../../models/Consultant/ProfileModel/personal
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 import { io } from "../../../../socket/socketController.js";
-import { formatDate } from "../../../../helper/dateFormatter.js";
+import { formatDate,formatMinutesToMMSS } from "../../../../helper/dateFormatter.js";
 import {
   getCurrencyFromCountryCode,
   getExchangeRate
@@ -211,7 +211,7 @@ export const handleConsultationDetails = async (req, res, next) => {
       _id: newConsultationDetails._id,
       consultantShare: consultantShare,
       consultationRating: reviewRating,
-      consultationDuration: callDurationInSecond,
+      consultationDuration: formatMinutesToMMSS(callDurationInSecond / 60),
       stringFeedback: reviewText,
       consultationDate: formatDate(new Date()),
       customerName: customer.Name,

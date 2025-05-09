@@ -107,6 +107,18 @@ export const requestWithdrawal = async (req, res, next) => {
       amount,
       currentStatus: "pending",
       time: formatDate(new Date()),
+      Name: consultant.Name,
+      email: consultant.email,
+      profilePicture: consultant.profilePicture,
+      bankDetails: {
+        _id: bankDetails._id,
+        consultantId: bankDetails.consultantId,
+        holderName: bankDetails.holderName,
+        accountNumber: bankDetails.accountNumber,
+        bankName: bankDetails.bankName,
+        iban: bankDetails.iban,
+        creationDate: bankDetails.creationDate
+      }
     });
 
     res
