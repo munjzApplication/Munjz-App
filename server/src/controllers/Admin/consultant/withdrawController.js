@@ -166,7 +166,15 @@ export const updateWithdrawalStatus = async (req, res, next) => {
         currency: "AED",
         status: withdrawal.currentStatus,
       },
-      withdrawal,
+      withdrawals: {
+        _id: withdrawal._id.toString(),
+        consultantId: withdrawal.consultantId.toString(),
+        amount: withdrawal.amount,
+        currentStatus: withdrawal.currentStatus,
+        paymentMethod: withdrawal.paymentMethod,
+        transferId: withdrawal.transferId,
+        time: formatDate(withdrawal.time),
+      },
     });
 
 

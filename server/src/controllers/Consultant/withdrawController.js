@@ -4,7 +4,7 @@ import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetail
 import Earnings from "../../models/Consultant/consultantModel/consultantEarnings.js";
 import BankDetails from "../../models/Consultant/ProfileModel/bankDetails.js";
 import { notificationService } from "../../service/sendPushNotification.js";
-import { io } from "../../socket/socketController.js"
+import { io } from "../../socket/socketController.js";
 import { formatDate } from "../../helper/dateFormatter.js";
 
 export const getWithdrawalDatas = async (req, res, next) => {
@@ -28,7 +28,6 @@ export const getWithdrawalDatas = async (req, res, next) => {
       });
     }
 
-
     res.status(200).json({
       message: "Withdrawal requests retrieved successfully",
       withdrawals
@@ -49,7 +48,13 @@ export const requestWithdrawal = async (req, res, next) => {
     }
 
     // Fetch all necessary data in parallel
-    const [consultant, earnings, existingRequest, bankDetails, profilePicture] = await Promise.all([
+    const [
+      consultant,
+      earnings,
+      existingRequest,
+      bankDetails,
+      profilePicture
+    ] = await Promise.all([
       ConsultantProfile.findById(consultantId),
       Earnings.findOne({ consultantId }),
       WithdrawalRequest.findOne({ consultantId, currentStatus: "pending" }),
@@ -80,18 +85,20 @@ export const requestWithdrawal = async (req, res, next) => {
     await withdrawal.save();
 
     // Send notifications
-    notificationService.sendToConsultant(
-      consultantId,
-      "Withdrawal Request Submitted",
-      `Your withdrawal request of ${amount} AED has been submitted successfully and is currently pending approval.`
-    ).catch(console.error);
+    notificationService
+      .sendToConsultant(
+        consultantId,
+        "Withdrawal Request Submitted",
+        `Your withdrawal request of ${amount} AED has been submitted successfully and is currently pending approval.`
+      )
+      .catch(console.error);
 
-    notificationService.sendToAdmin(
-      "New Withdrawal Request",
-      `${consultant.Name} has requested a withdrawal of ${amount} AED. Please review and process the request.`
-    ).catch(console.error);
-console.log("profilePicture", profilePicture.profilePicture);
-
+    notificationService
+      .sendToAdmin(
+        "New Withdrawal Request",
+        `${consultant.Name} has requested a withdrawal of ${amount} AED. Please review and process the request.`
+      )
+      .catch(console.error);
     // Emit event to admin namespace
     try {
       const adminNamespace = io.of("/admin");
@@ -111,7 +118,7 @@ console.log("profilePicture", profilePicture.profilePicture);
           accountNumber: Number(bankDetails.accountNumber),
           bankName: bankDetails.bankName,
           iban: bankDetails.iban,
-          creationDate: bankDetails.creationDate,
+          creationDate: bankDetails.creationDate
         }
       });
     } catch (emitErr) {
@@ -121,9 +128,7 @@ console.log("profilePicture", profilePicture.profilePicture);
     res
       .status(201)
       .json({ message: "Withdrawal request submitted", withdrawal });
-
   } catch (error) {
     next(error);
   }
 };
-
