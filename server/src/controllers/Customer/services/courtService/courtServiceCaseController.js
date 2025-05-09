@@ -76,7 +76,7 @@ export const saveCourtServiceDetails = async (req, res, next) => {
 
 
         const customerNamespace = io.of("/customer");
-        customerNamespace.to(customerId.toString()).emit("newCourtCaseRegistered", {
+        customerNamespace.to(customerId.toString()).emit("courtCaseRegistered", {
             message: "Court case registered successfully",
             data: {
                 _id: courtCase._id,
