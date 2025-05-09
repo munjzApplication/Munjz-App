@@ -102,24 +102,26 @@ export const requestWithdrawal = async (req, res, next) => {
     // Emit event to admin
     const adminNamespace = io.of("/admin");
     adminNamespace.emit("new-withdrawal-request", {
-      message: "Withdrawal request submitted",
-      consultantId,
-      amount,
+      id: withdrawal._id.toString(),
+      consultantId: consultantId.toString(),
+      amount: Number(amount), 
       currentStatus: "pending",
       time: formatDate(new Date()),
       Name: consultant.Name,
       email: consultant.email,
-      profilePicture: consultant.profilePicture,
+      profilePicture: consultant.profilePhoto,
       bankDetails: {
-        _id: bankDetails._id,
-        consultantId: bankDetails.consultantId,
+        _id: bankDetails._id.toString(),
+        consultantId: bankDetails.consultantId.toString(),
         holderName: bankDetails.holderName,
-        accountNumber: bankDetails.accountNumber,
+        accountNumber: Number(bankDetails.accountNumber),
         bankName: bankDetails.bankName,
         iban: bankDetails.iban,
-        creationDate: bankDetails.creationDate
+        creationDate: bankDetails.creationDate,
+        _v: bankDetails.__v || 0
       }
     });
+    
 
     res
       .status(201)
