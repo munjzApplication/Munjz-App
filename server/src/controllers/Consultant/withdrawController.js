@@ -90,7 +90,7 @@ export const requestWithdrawal = async (req, res, next) => {
       "New Withdrawal Request",
       `${consultant.Name} has requested a withdrawal of ${amount} AED. Please review and process the request.`
     ).catch(console.error);
-console.log("profilePicture", profilePicture);
+console.log("profilePicture", profilePicture.profilePicture);
 
     // Emit event to admin namespace
     try {
@@ -103,7 +103,7 @@ console.log("profilePicture", profilePicture);
         time: formatDate(new Date()),
         Name: consultant.Name,
         email: consultant.email,
-        profilePicture: profilePicture,
+        profilePicture: profilePicture.profilePicture,
         bankDetails: {
           _id: bankDetails._id.toString(),
           consultantId: bankDetails.consultantId.toString(),
