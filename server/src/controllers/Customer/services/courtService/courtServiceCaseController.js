@@ -7,8 +7,9 @@ import {
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import mongoose from "mongoose";
-import { formatDatewithmonth } from "../../../../helper/dateFormatter.js";
+import { formatDatewithmonth ,formatDate} from "../../../../helper/dateFormatter.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
+import { io } from "../../../../socket/socketController.js";
 
 
 export const saveCourtServiceDetails = async (req, res, next) => {
@@ -72,7 +73,27 @@ export const saveCourtServiceDetails = async (req, res, next) => {
             "New Court Case Registered",
             `A new court case (Case ID: ${courtServiceID}) has been registered with a payment of ${paymentAmount} ${paidCurrency}.`
           );
-          
+
+
+        const customerNamespace = io.of("/customer");
+        customerNamespace.to(customerId.toString()).emit("newCourtCaseRegistered", {
+            message: "Court case registered successfully",
+            data: {
+                _id: courtCase._id,
+                customerId: customerId,
+                courtServiceID: courtServiceID,
+                serviceName: serviceName,
+                selectedServiceCountry: selectedServiceCountry,
+                caseDescription: caseDescription,
+                paidCurrency: paidCurrency,
+                totalAmountPaid: paymentAmount,
+                casePaymentStatus: "paid",
+                status: "submitted",
+                follower: courtCase.follower,
+                createdAt: formatDate(courtCase.createdAt),
+                updatedAt: formatDate(courtCase.updatedAt),
+            },
+        });
         
         return res.status(201).json({ message: "Court case registered successfully" });
     } catch (error) {
