@@ -103,7 +103,7 @@ export const requestWithdrawal = async (req, res, next) => {
     try {
       const adminNamespace = io.of("/admin");
       adminNamespace.emit("new-withdrawal-request", {
-        id: withdrawal._id.toString(),
+        _id: withdrawal._id.toString(),
         consultantId: consultantId.toString(),
         amount: Number(amount),
         currentStatus: "pending",

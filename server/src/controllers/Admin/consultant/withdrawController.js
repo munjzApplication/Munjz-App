@@ -80,7 +80,6 @@ export const getWithdrawalDatas = async (req, res, next) => {
   }
 };
 
-
 export const updateWithdrawalStatus = async (req, res, next) => {
   try {
     const { requestId } = req.params;
@@ -94,11 +93,15 @@ export const updateWithdrawalStatus = async (req, res, next) => {
 
     // Block updates if the current status is "completed"
     if (withdrawal.currentStatus === "completed") {
-      return res.status(400).json({ message: "Completed withdrawals cannot be changed" });
+      return res
+        .status(400)
+        .json({ message: "Completed withdrawals cannot be changed" });
     }
 
     // Fetch consultant earnings
-    const earnings = await Earnings.findOne({ consultantId: withdrawal.consultantId });
+    const earnings = await Earnings.findOne({
+      consultantId: withdrawal.consultantId
+    });
     if (!earnings) {
       return res.status(400).json({ message: "Consultant earnings not found" });
     }
@@ -111,13 +114,16 @@ export const updateWithdrawalStatus = async (req, res, next) => {
     } else if (status === "completed") {
       if (!paymentMethod || !transferId) {
         return res.status(400).json({
-          message: "Payment method and transfer ID are required for completed status",
+          message:
+            "Payment method and transfer ID are required for completed status"
         });
       }
 
       // Check if the consultant has enough earnings
       if (earnings.totalEarnings < withdrawal.amount) {
-        return res.status(400).json({ message: "Insufficient balance in consultant's earnings" });
+        return res
+          .status(400)
+          .json({ message: "Insufficient balance in consultant's earnings" });
       }
 
       // Deduct the amount from total earnings
@@ -141,7 +147,7 @@ export const updateWithdrawalStatus = async (req, res, next) => {
       amount: withdrawal.amount,
       currency: "AED",
       status: withdrawal.currentStatus,
-      date: new Date(),
+      date: new Date()
     });
 
     await withdrawalActivity.save();
@@ -156,34 +162,34 @@ export const updateWithdrawalStatus = async (req, res, next) => {
 
     // Emit Socket Event for Real-Time Update
     const consultantNamespace = io.of("/consultant");
-    consultantNamespace.to(withdrawal.consultantId.toString()).emit("withdrawal-status-update", {
-      consultantId: withdrawal.consultantId,
-      message: `Withdrawal request updated to ${status}`,
-      activity: {
-        type: "Withdrawal",
-        amount: withdrawal.amount,
-        date: formatDate(new Date()),
-        currency: "AED",
-        status: withdrawal.currentStatus,
-      },
-      withdrawals: {
-        _id: withdrawal._id.toString(),
-        consultantId: withdrawal.consultantId.toString(),
-        amount: withdrawal.amount,
-        currentStatus: withdrawal.currentStatus,
-        paymentMethod: withdrawal.paymentMethod,
-        transferId: withdrawal.transferId,
-        time: formatDate(withdrawal.time),
-      },
-    });
-
+    consultantNamespace
+      .to(withdrawal.consultantId.toString())
+      .emit("withdrawal-status-update", {
+        consultantId: withdrawal.consultantId,
+        message: `Withdrawal request updated to ${status}`,
+        activity: {
+          type: "Withdrawal",
+          amount: withdrawal.amount,
+          date: formatDate(new Date()),
+          currency: "AED",
+          status: withdrawal.currentStatus
+        },
+        withdrawals: {
+          _id: withdrawal._id.toString(),
+          consultantId: withdrawal.consultantId.toString(),
+          amount: withdrawal.amount,
+          currentStatus: withdrawal.currentStatus,
+          paymentMethod: withdrawal.paymentMethod,
+          transferId: withdrawal.transferId,
+          time: formatDate(withdrawal.time)
+        }
+      });
 
     res.status(200).json({
       message: `Withdrawal request updated to ${status}`,
-      withdrawal,
+      withdrawal
     });
   } catch (error) {
     next(error);
   }
 };
-
