@@ -231,7 +231,7 @@ export const handleConsultationDetails = async (req, res, next) => {
         consultationDate:new Date(),
         consultantId: consultantID,
         CustomerId: customerID,
-        customerName: customer.Name,
+        CustomerName: customer.Name,
         CustomerEmail: customer.email,
         CustomerProfilePic: customer.profilePhoto,
         consultationHours: formatToHourMinute(new Date()),
