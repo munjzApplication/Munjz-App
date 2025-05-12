@@ -71,7 +71,7 @@ export const requestDocument = async (req, res, next) => {
       message: `New document request pending for your case: ${notaryCase.notaryServiceID}`,
       notifications: {
         _id: doc._id,
-        notaryServiceCase: doc.notaryServiceCase,
+        courtServiceCase : doc.notaryServiceCase,
         uploadedBy: doc.uploadedBy,
         documentType: doc.documentType,
         status: doc.status,
@@ -287,7 +287,7 @@ export const adminSubmittedDoc = async (req, res, next) => {
       message: "New documents uploaded for your case.",
       notifications: {
         _id: newAdminDocument[0]._id,
-        notaryServiceCase: newAdminDocument[0].notaryServiceCase,
+        courtServiceCase : newAdminDocument[0].notaryServiceCase,
         uploadedBy: newAdminDocument[0].uploadedBy,
         documentType: newAdminDocument[0].documentType,
         status: newAdminDocument[0].status,
