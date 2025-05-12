@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import courtServiceDetailsModel from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
+import { io } from "../../../../socket/socketController.js";
 
 export const editCourtCase = async (req, res, next) => {
   try {
@@ -40,11 +41,24 @@ export const editCourtCase = async (req, res, next) => {
     if (!updatedCase) {
       return res.status(404).json({ message: "Court case not found" });
     }
+    const customerId = updatedCase.customerId;
+
+    // Emit the updated case to all connected clients
+    const customerNamespace = io.of("/customer");
+    customerNamespace.to(customerId.toString()).emit("court-case-statusUpdated", {
+      message: "Status updated successfully",
+      updatedCase: {
+        _id: updatedCase._id,
+        customerId: customerId,
+        status: updatedCase.status
+      }
+    });
+
     return res.status(200).json({
       message: "Status updated successfully",
       updatedCase: {
         _id: updatedCase._id,
-        customerId: updatedCase.customerId,
+        customerId: customerId,
         status: updatedCase.status
       }
     });
