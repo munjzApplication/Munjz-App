@@ -4,6 +4,8 @@ import TranslationCase from "../../../../models/Customer/translationModel/transl
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import mongoose from "mongoose";
 import { notificationService } from "../../../../service/sendPushNotification.js";
+import emitAdminRequest from "../../../../socket/emitAdminRequest.js";
+import { formatDate } from "../../../../helper/dateFormatter.js";
 
 export const requestDocuments = async (req, res) => {
   const session = await mongoose.startSession();
@@ -66,6 +68,25 @@ export const requestDocuments = async (req, res) => {
       "New Document Request",
       `An admin has requested a document for your case: ${translationCase.translationServiceID}. Please upload the required document.`
     );
+
+    // Emit real-time update to customer
+        const doc = documentRequest[0]; // 👈 get the actual document object
+    
+        emitAdminRequest("translation-admin-request", customerId, {
+          message: `New document request pending for your case: ${translationCase.translationServiceID}`,
+          notifications: {
+            _id: doc._id,
+            translationCase: doc.translationCase,
+            uploadedBy: doc.uploadedBy,
+            documentType: doc.documentType,
+            status: doc.status,
+            requestedAt: formatDate(doc.requestedAt),
+            requestReason: doc.requestReason,
+            documents: doc.documents,
+            uploadedAt: formatDate(doc.uploadedAt),
+            createdAt: formatDate(doc.createdAt)
+          }
+        });
 
     res.status(201).json({
       message: "Document request created successfully.",
@@ -143,6 +164,28 @@ export const requestAdditionalPayment = async (req, res, next) => {
       "New Payment Request",
       `An admin has requested an additional payment of ${amount} ${paidCurrency} for your case: ${translationCase.translationServiceID}. Please complete the payment before ${dueDate}.`
     );
+    
+    // Emit real-time update to customer
+        emitAdminRequest("translation-admin-request", customerId, {
+          message: `New payment request for your case: ${translationCase.translationServiceID}`,
+          notifications: {
+            _id: newAdditionalPayment._id,
+            customerId: newAdditionalPayment.customerId,
+            caseId: newAdditionalPayment.caseId,
+            caseType: newAdditionalPayment.caseType,
+            serviceType: newAdditionalPayment.serviceType,
+            amount: newAdditionalPayment.amount,
+            paidCurrency: newAdditionalPayment.paidCurrency,
+            requestReason: newAdditionalPayment.requestReason,
+            dueDate: newAdditionalPayment.dueDate,
+            status: newAdditionalPayment.status,
+            requestedAt: formatDate(newAdditionalPayment.requestedAt),
+            paymentDate: formatDate(newAdditionalPayment.paymentDate),
+            createdAt: formatDate(newAdditionalPayment.createdAt),
+            updatedAt: formatDate(newAdditionalPayment.updatedAt)
+          }
+        });
+
     res.status(201).json({
       message: "Additional payment requested successfully.",
       additionalPayment: newAdditionalPayment
@@ -214,6 +257,23 @@ export const adminSubmittedDoc = async (req, res, next) => {
       "New Document Uploaded",
       `An admin has uploaded new documents for your case: ${translationCase.translationServiceID}. Please review them.`
     );
+
+     // Emit real-time update to customer
+    emitAdminRequest("translation-admin-request", customerId, {
+      message: "New documents uploaded for your case.",
+      notifications: {
+        _id: newAdminDocument[0]._id,
+        translationCase: newAdminDocument[0].translationCase,
+        uploadedBy: newAdminDocument[0].uploadedBy,
+        documentType: newAdminDocument[0].documentType,
+        status: newAdminDocument[0].status,
+        requestedAt: newAdminDocument[0].requestedAt,
+        requestReason: newAdminDocument[0].requestReason,
+        documents: newAdminDocument[0].documents,
+        uploadedAt: formatDate(newAdminDocument[0].uploadedAt),
+        createdAt: formatDate(newAdminDocument[0].createdAt)
+      }
+    });
 
     res.status(201).json({
       message: "Admin document uploaded successfully.",

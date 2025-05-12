@@ -51,3 +51,9 @@ export const formatTime = (timestamp) => {
   return time.replace(/AM|PM/, (match) => match.toLowerCase());
 };
 
+export const formatToHourMinute = (date) => {
+  const d = new Date(date);
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+};

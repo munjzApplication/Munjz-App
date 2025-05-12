@@ -141,12 +141,6 @@ export const getConsultationDataByDate = async (req, res, next) => {
       consultationDuration: formatMinutesToMMSS(item.consultationDuration / 60) // Assuming it's in seconds
     }));
 
-    const consultantNamespace = io.of("/consultant");
-    consultantNamespace.to(consultantId.toString()).emit("consultant-consultation-datas", {
-      message: "Consultation data retrieved successfully",
-      consultantId: consultantId,
-      data: formattedConsultationDatas
-    });
 
     return res.status(200).json({
       message: "Consultation data retrieved successfully",

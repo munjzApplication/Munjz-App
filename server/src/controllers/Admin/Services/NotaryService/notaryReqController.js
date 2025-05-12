@@ -4,6 +4,8 @@ import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import mongoose from "mongoose";
 import { notificationService } from "../../../../service/sendPushNotification.js";
+import emitAdminRequest from "../../../../socket/emitAdminRequest.js";
+import { formatDate } from "../../../../helper/dateFormatter.js";
 
 export const requestDocument = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -61,6 +63,27 @@ export const requestDocument = async (req, res, next) => {
       `An admin has requested a document for your case: ${notaryCase.notaryServiceID}. Please upload the required document.`,
 
     );
+
+    // Emit real-time update to customer
+    const doc = documentRequest[0]; // 👈 get the actual document object
+
+    emitAdminRequest("notary-admin-request", customerId, {
+      message: `New document request pending for your case: ${notaryCase.notaryServiceID}`,
+      notifications: {
+        _id: doc._id,
+        notaryServiceCase: doc.notaryServiceCase,
+        uploadedBy: doc.uploadedBy,
+        documentType: doc.documentType,
+        status: doc.status,
+        requestedAt: formatDate(doc.requestedAt),
+        requestReason: doc.requestReason,
+        documents: doc.documents,
+        uploadedAt: formatDate(doc.uploadedAt),
+        createdAt: formatDate(doc.createdAt)
+      }
+    });
+
+
     res.status(201).json({
       message: "Document request created successfully.",
       documentRequest: documentRequest[0],
@@ -166,6 +189,27 @@ export const requestAdditionalPayment = async (req, res, next) => {
       `An admin has requested an additional payment of ${amount} ${paidCurrency} for your case: ${notaryCase.notaryServiceID}. Please complete the payment before ${dueDate}.`
     );
 
+    // Emit real-time update to customer
+    emitAdminRequest("notary-admin-request", customerId, {
+      message: `New payment request for your case: ${notaryCase.notaryServiceID}`,
+      notifications: {
+        _id: newAdditionalPayment._id,
+        customerId: newAdditionalPayment.customerId,
+        caseId: newAdditionalPayment.caseId,
+        caseType: newAdditionalPayment.caseType,
+        serviceType: newAdditionalPayment.serviceType,
+        amount: newAdditionalPayment.amount,
+        paidCurrency: newAdditionalPayment.paidCurrency,
+        requestReason: newAdditionalPayment.requestReason,
+        dueDate: newAdditionalPayment.dueDate,
+        status: newAdditionalPayment.status,
+        requestedAt: formatDate(newAdditionalPayment.requestedAt),
+        paymentDate: formatDate(newAdditionalPayment.paymentDate),
+        createdAt: formatDate(newAdditionalPayment.createdAt),
+        updatedAt: formatDate(newAdditionalPayment.updatedAt)
+      }
+    });
+
     res.status(201).json({
       message: "Additional payment requested successfully.",
       additionalPayment: newAdditionalPayment,
@@ -237,6 +281,23 @@ export const adminSubmittedDoc = async (req, res, next) => {
 
     await session.commitTransaction();
     session.endSession();
+
+    // Emit real-time update to customer
+    emitAdminRequest("notary-admin-request", customerId, {
+      message: "New documents uploaded for your case.",
+      notifications: {
+        _id: newAdminDocument[0]._id,
+        notaryServiceCase: newAdminDocument[0].notaryServiceCase,
+        uploadedBy: newAdminDocument[0].uploadedBy,
+        documentType: newAdminDocument[0].documentType,
+        status: newAdminDocument[0].status,
+        requestedAt: newAdminDocument[0].requestedAt,
+        requestReason: newAdminDocument[0].requestReason,
+        documents: newAdminDocument[0].documents,
+        uploadedAt: formatDate(newAdminDocument[0].uploadedAt),
+        createdAt: formatDate(newAdminDocument[0].createdAt)
+      }
+    });
 
     res.status(201).json({
       message: "Admin document uploaded successfully.",

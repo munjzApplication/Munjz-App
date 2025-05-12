@@ -9,7 +9,7 @@ import PersonalDetails from "../../../../models/Consultant/ProfileModel/personal
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 import { io } from "../../../../socket/socketController.js";
-import { formatDate,formatMinutesToMMSS } from "../../../../helper/dateFormatter.js";
+import { formatDate,formatMinutesToMMSS,formatToHourMinute } from "../../../../helper/dateFormatter.js";
 import {
   getCurrencyFromCountryCode,
   getExchangeRate
@@ -221,6 +221,23 @@ export const handleConsultationDetails = async (req, res, next) => {
       consultantCurrency: "AED",
       }
     });
+
+    consultantNamespace.to(consultantID.toString()).emit("consultant-consultation-datas", {
+      message: "Consultation data retrieved successfully",
+      data: {
+        _id: newConsultationDetails._id,
+        consultantShare: consultantShare,
+        consultationDuration: formatMinutesToMMSS(callDurationInSecond / 60),
+        consultationDate:new Date(),
+        consultantId: consultantID,
+        CustomerId: customerID,
+        customerName: customer.Name,
+        CustomerEmail: customer.email,
+        CustomerProfilePicture: customer.profilePicture,
+        consultationHours: formatToHourMinute(new Date()),
+      },
+    });
+  
 
     return res.status(201).json({
       message: "Consultation details saved successfully.",
