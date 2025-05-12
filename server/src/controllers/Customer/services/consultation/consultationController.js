@@ -45,7 +45,7 @@ export const handleConsultationDetails = async (req, res, next) => {
     const [consultant, customer, consultantPersonalDetails] = await Promise.all(
       [
         Consultant.findById(consultantID).select("email countryCode Name"),
-        Customer.findById(customerID).select("email Name"),
+        Customer.findById(customerID).select("email Name profilePhoto"),
         PersonalDetails.findOne({ consultantId: consultantID }).select(
           "country"
         )
@@ -233,7 +233,7 @@ export const handleConsultationDetails = async (req, res, next) => {
         CustomerId: customerID,
         customerName: customer.Name,
         CustomerEmail: customer.email,
-        CustomerProfilePicture: customer.profilePicture,
+        CustomerProfilePic: customer.profilePhoto,
         consultationHours: formatToHourMinute(new Date()),
       },
     });

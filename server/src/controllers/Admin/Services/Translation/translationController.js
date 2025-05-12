@@ -1,5 +1,6 @@
 import translationDetails from "../../../../models/Customer/translationModel/translationDetails.js";
 import mongoose from "mongoose";
+import { io } from "../../../../socket/socketController.js";
 
 export const editTranslation = async (req, res, next) => {
   try {
@@ -39,6 +40,20 @@ export const editTranslation = async (req, res, next) => {
     if (!updatedCase) {
       return res.status(404).json({ message: "Translation  not found" });
     }
+
+     const customerId = updatedCase.customerId;
+        
+            // Emit the updated case to all connected clients
+            const customerNamespace = io.of("/customer");
+            customerNamespace.to(customerId.toString()).emit("translation-case-statusUpdated", {
+              message: "Status updated successfully",
+              updatedCase: {
+                _id: updatedCase._id,
+                customerId: customerId,
+                status: updatedCase.status
+              }
+            });
+    
 
     return res.status(200).json({ 
       message: "Status updated successfully", 
