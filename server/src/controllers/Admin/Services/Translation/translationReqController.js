@@ -79,7 +79,7 @@ export const requestDocuments = async (req, res) => {
       message: `New document request pending for your case: ${translationCase.translationServiceID}`,
       notifications: {
         _id: doc._id,
-        translationCase: doc.translationCase,
+        courtServiceCase: doc.translationCase,
         uploadedBy: doc.uploadedBy,
         documentType: doc.documentType,
         status: doc.status,
@@ -274,11 +274,11 @@ export const adminSubmittedDoc = async (req, res, next) => {
       message: "New documents uploaded for your case.",
       notifications: {
         _id: doc._id,
-        translationCase: doc.translationCase,
+        courtServiceCase: doc.translationCase,
         uploadedBy: doc.uploadedBy,
         documentType: doc.documentType,
         status: doc.status,
-        requestedAt: doc.requestedAt ? formatDate(doc.requestedAt) : null,
+        requestedAt: formatDate(doc.requestedAt?? new Date()),
         requestReason: doc.requestReason,
         documents: doc.documents,
         uploadedAt: formatDate(doc.uploadedAt ?? new Date()),
