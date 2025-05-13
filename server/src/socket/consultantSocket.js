@@ -25,6 +25,13 @@ const consultantHandlers = (io, socket) => {
         consultantId,
         isOnline: true,
       });
+
+       const customerNamespace = io.server.of("/customer");
+      customerNamespace.emit("consultant-status-update", {
+        consultantId,
+        isOnline: true,
+      });
+
     } catch (err) {
       console.error("Consultant online error:", err);
     }
@@ -44,6 +51,12 @@ const consultantHandlers = (io, socket) => {
         });
 
         io.emit("consultant-status-update", {
+          consultantId,
+          isOnline: false,
+        });
+
+         const customerNamespace = io.server.of("/customer");
+        customerNamespace.emit("consultant-status-update", {
           consultantId,
           isOnline: false,
         });
