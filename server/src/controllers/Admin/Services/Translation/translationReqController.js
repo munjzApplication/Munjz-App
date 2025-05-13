@@ -15,7 +15,9 @@ export const requestDocuments = async (req, res) => {
     const { caseId } = req.params;
     const { reason } = req.body;
 
-    const translationCase = await TranslationCase.findById(caseId).session(session);
+    const translationCase = await TranslationCase.findById(caseId).session(
+      session
+    );
     if (!translationCase) {
       await session.abortTransaction();
       session.endSession();
@@ -28,20 +30,20 @@ export const requestDocuments = async (req, res) => {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({
-        message: "Customer ID is missing for this translation case.",
+        message: "Customer ID is missing for this translation case."
       });
     }
 
     const existingRequest = await Document.findOne({
       translationCase: caseId,
-      status: "pending",
+      status: "pending"
     }).session(session);
 
     if (existingRequest) {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({
-        message: "A pending document request already exists.",
+        message: "A pending document request already exists."
       });
     }
 
@@ -53,8 +55,8 @@ export const requestDocuments = async (req, res) => {
           documentType: "admin-request",
           status: "pending",
           requestedAt: new Date(),
-          requestReason: reason,
-        },
+          requestReason: reason
+        }
       ],
       { session }
     );
@@ -70,27 +72,28 @@ export const requestDocuments = async (req, res) => {
     );
 
     // Emit real-time update to customer
-        const doc = documentRequest[0]; // 👈 get the actual document object
-    
-        emitAdminRequest("translation-admin-request", customerId, {
-          message: `New document request pending for your case: ${translationCase.translationServiceID}`,
-          notifications: {
-            _id: doc._id,
-            translationCase: doc.translationCase,
-            uploadedBy: doc.uploadedBy,
-            documentType: doc.documentType,
-            status: doc.status,
-            requestedAt: formatDate(doc.requestedAt),
-            requestReason: doc.requestReason,
-            documents: doc.documents,
-            uploadedAt: formatDate(doc.uploadedAt),
-            createdAt: formatDate(doc.createdAt)
-          }
-        });
+    const doc = documentRequest;
+
+
+    emitAdminRequest("translation-admin-request", customerId, {
+      message: `New document request pending for your case: ${translationCase.translationServiceID}`,
+      notifications: {
+        _id: doc._id,
+        translationCase: doc.translationCase,
+        uploadedBy: doc.uploadedBy,
+        documentType: doc.documentType,
+        status: doc.status,
+        requestedAt: formatDate(doc.requestedAt),
+        requestReason: doc.requestReason,
+        documents: doc.documents,
+        uploadedAt: formatDate(doc.uploadedAt),
+        createdAt: formatDate(doc.createdAt)
+      }
+    });
 
     res.status(201).json({
       message: "Document request created successfully.",
-      documentRequest,
+      documentRequest
     });
   } catch (error) {
     // ✅ Only abort if session is still active
@@ -101,7 +104,7 @@ export const requestDocuments = async (req, res) => {
 
     res.status(500).json({
       message: "Failed to create document request.",
-      error: error.message,
+      error: error.message
     });
   }
 };
@@ -164,27 +167,27 @@ export const requestAdditionalPayment = async (req, res, next) => {
       "New Payment Request",
       `An admin has requested an additional payment of ${amount} ${paidCurrency} for your case: ${translationCase.translationServiceID}. Please complete the payment before ${dueDate}.`
     );
-    
+
     // Emit real-time update to customer
-        emitAdminRequest("translation-admin-request", customerId, {
-          message: `New payment request for your case: ${translationCase.translationServiceID}`,
-          notifications: {
-            _id: newAdditionalPayment._id,
-            customerId: newAdditionalPayment.customerId,
-            caseId: newAdditionalPayment.caseId,
-            caseType: newAdditionalPayment.caseType,
-            serviceType: newAdditionalPayment.serviceType,
-            amount: newAdditionalPayment.amount,
-            paidCurrency: newAdditionalPayment.paidCurrency,
-            requestReason: newAdditionalPayment.requestReason,
-            dueDate: newAdditionalPayment.dueDate,
-            status: newAdditionalPayment.status,
-            requestedAt: formatDate(newAdditionalPayment.requestedAt),
-            paymentDate: formatDate(newAdditionalPayment.paymentDate),
-            createdAt: formatDate(newAdditionalPayment.createdAt),
-            updatedAt: formatDate(newAdditionalPayment.updatedAt)
-          }
-        });
+    emitAdminRequest("translation-admin-request", customerId, {
+      message: `New payment request for your case: ${translationCase.translationServiceID}`,
+      notifications: {
+        _id: newAdditionalPayment._id,
+        customerId: newAdditionalPayment.customerId,
+        caseId: newAdditionalPayment.caseId,
+        caseType: newAdditionalPayment.caseType,
+        serviceType: newAdditionalPayment.serviceType,
+        amount: newAdditionalPayment.amount,
+        paidCurrency: newAdditionalPayment.paidCurrency,
+        requestReason: newAdditionalPayment.requestReason,
+        dueDate: newAdditionalPayment.dueDate,
+        status: newAdditionalPayment.status,
+        requestedAt: formatDate(newAdditionalPayment.requestedAt),
+        paymentDate: formatDate(newAdditionalPayment.paymentDate),
+        createdAt: formatDate(newAdditionalPayment.createdAt),
+        updatedAt: formatDate(newAdditionalPayment.updatedAt)
+      }
+    });
 
     res.status(201).json({
       message: "Additional payment requested successfully.",
@@ -249,8 +252,16 @@ export const adminSubmittedDoc = async (req, res, next) => {
       { session }
     );
 
+    if (!newAdminDocument || newAdminDocument.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(500).json({ message: "Failed to save admin document." });
+    }
+
     await session.commitTransaction();
     session.endSession();
+
+    const doc = newAdminDocument[0];
 
     await notificationService.sendToCustomer(
       customerId,
@@ -258,20 +269,20 @@ export const adminSubmittedDoc = async (req, res, next) => {
       `An admin has uploaded new documents for your case: ${translationCase.translationServiceID}. Please review them.`
     );
 
-     // Emit real-time update to customer
+    // Emit real-time update to customer
     emitAdminRequest("translation-admin-request", customerId, {
       message: "New documents uploaded for your case.",
       notifications: {
-        _id: newAdminDocument[0]._id,
-        translationCase: newAdminDocument[0].translationCase,
-        uploadedBy: newAdminDocument[0].uploadedBy,
-        documentType: newAdminDocument[0].documentType,
-        status: newAdminDocument[0].status,
-        requestedAt: newAdminDocument[0].requestedAt,
-        requestReason: newAdminDocument[0].requestReason,
-        documents: newAdminDocument[0].documents,
-        uploadedAt: formatDate(newAdminDocument[0].uploadedAt),
-        createdAt: formatDate(newAdminDocument[0].createdAt)
+        _id: doc._id,
+        translationCase: doc.translationCase,
+        uploadedBy: doc.uploadedBy,
+        documentType: doc.documentType,
+        status: doc.status,
+        requestedAt: doc.requestedAt ? formatDate(doc.requestedAt) : null,
+        requestReason: doc.requestReason,
+        documents: doc.documents,
+        uploadedAt: formatDate(doc.uploadedAt ?? new Date()),
+        createdAt: formatDate(doc.createdAt ?? new Date())
       }
     });
 

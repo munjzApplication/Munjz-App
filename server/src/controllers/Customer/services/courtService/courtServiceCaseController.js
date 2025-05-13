@@ -7,7 +7,7 @@ import {
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import mongoose from "mongoose";
-import { formatDatewithmonth ,formatDate} from "../../../../helper/dateFormatter.js";
+import { formatDatewithmonth, formatDate } from "../../../../helper/dateFormatter.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import { io } from "../../../../socket/socketController.js";
 
@@ -72,7 +72,7 @@ export const saveCourtServiceDetails = async (req, res, next) => {
         await notificationService.sendToAdmin(
             "New Court Case Registered",
             `A new court case (Case ID: ${courtServiceID}) has been registered with a payment of ${paymentAmount} ${paidCurrency}.`
-          );
+        );
 
 
         const customerNamespace = io.of("/customer");
@@ -94,7 +94,35 @@ export const saveCourtServiceDetails = async (req, res, next) => {
                 updatedAt: formatDate(courtCase.updatedAt),
             },
         });
-        
+
+        const adminNamespace = io.of("/admin");
+        adminNamespace.emit("newCourtCaseRegistered", {
+            message: "New court case registered",
+            data: {
+                _id: courtCase._id,
+                customerId: customerId,
+                courtServiceID: courtServiceID,
+                serviceName: serviceName,
+                selectedServiceCountry: selectedServiceCountry,
+                caseDescription: caseDescription,
+                casePaymentStatus: "paid",
+                status: "submitted",
+                follower: courtCase.follower,
+                createdAt: formatDate(courtCase.createdAt),
+
+                customerUniqueId: customer.customerUniqueId,
+                customerName: customer.customerName,
+                customerEmail: customer.customerEmail,
+                customerPhone: customer.customerPhone,
+                customerProfile: customer.customerProfile,
+                country: customer.country,
+                paymentAmount: paymentAmount,
+                paymentCurrency: paidCurrency,
+
+
+            },
+        });
+
         return res.status(201).json({ message: "Court case registered successfully" });
     } catch (error) {
         console.error("Error in saveCourtServiceDetails:", error);
