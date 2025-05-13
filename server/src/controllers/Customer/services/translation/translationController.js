@@ -43,7 +43,7 @@ export const submitTranslationRequest = async (req, res, next) => {
     const PaymentStatus = paymentAmount ? "paid" : "unpaid";
 
     // Save Translation Case
-    const { translationCase } = await saveTranslationCase(
+    const { translationCase ,translationServiceID } = await saveTranslationCase(
       {
         customerId,
         documentLanguage,
