@@ -116,6 +116,7 @@ export const submitTranslationRequest = async (req, res, next) => {
                   customerProfile: customer.profilePhoto,
                   country: customer.country,
                   paymentAmount: paymentAmount,
+                  paymentCurrency: paidCurrency,
                 }
               };
           
