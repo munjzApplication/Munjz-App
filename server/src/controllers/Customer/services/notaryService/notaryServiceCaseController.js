@@ -8,6 +8,7 @@ import NotaryCase from "../../../../models/Customer/notaryServiceModel/notarySer
 import { formatDatewithmonth } from "../../../../helper/dateFormatter.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
+import { io } from "../../../../socket/socketController.js";
 
 export const saveNotaryServiceDetails = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -80,6 +81,37 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
       "New Notary Case Registered",
       `A new notary case (Case ID: ${notaryServiceID}) has been registered with a payment of ${paymentAmount} ${paidCurrency}.`
     );
+
+     const adminNamespace = io.of("/admin");
+    
+        const eventData = {
+          message: "New court case registered",
+          data: {
+            _id: notaryCase._id,
+            customerId: customerId,
+            notaryServiceID: notaryServiceID,
+            serviceName: serviceName,
+            selectedServiceCountry: selectedServiceCountry,
+            caseDescription: caseDescription,
+            casePaymentStatus: "paid",
+            status: "submitted",
+            follower: notaryCase.follower,
+            createdAt: formatDate(notaryCase.createdAt),
+    
+            customerUniqueId: customer.customerUniqueId,
+            customerName: customer.Name,
+            customerEmail: customer.email,
+            customerPhone: customer.phoneNumber,
+            customerProfile: customer.profilePhoto,
+            country: customer.country,
+            paymentAmount: paymentAmount,
+            paymentCurrency: paidCurrency
+          }
+        };
+    
+        // Emit the event
+        adminNamespace.emit("newNotaryCaseRegistered", eventData);
+
     return res.status(201).json({
       message: "Notary case registered successfully"
     });
