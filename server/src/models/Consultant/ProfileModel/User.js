@@ -75,6 +75,16 @@ const consultantProfileSchema = new mongoose.Schema({
     },
     
     isOnline: { type: Boolean, default: false },
+      personalDetails: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Consultant_PersonalDetails"
+  },
+
+  // optionally add this if needed
+  consultationDetails: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "ConsultationDetails"
+  },
 
 });
 
