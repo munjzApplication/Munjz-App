@@ -130,12 +130,8 @@ const eventData = {
   },
 };
 
-// Debugging the event data before emitting
-console.log("Emitting event data:", JSON.stringify(eventData, null, 2));
-
 // Emit the event
 adminNamespace.emit("newCourtCaseRegistered", eventData);
-
 
     return res
       .status(201)

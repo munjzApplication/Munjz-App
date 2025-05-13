@@ -5,7 +5,7 @@ import {
 } from "../../../../helper/notaryService/notaryCaseHelper.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
-import { formatDatewithmonth } from "../../../../helper/dateFormatter.js";
+import { formatDatewithmonth,formatDate } from "../../../../helper/dateFormatter.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 import { io } from "../../../../socket/socketController.js";
