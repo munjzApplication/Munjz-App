@@ -96,7 +96,7 @@ export const saveCourtServiceDetails = async (req, res, next) => {
         });
 
         const adminNamespace = io.of("/admin");
-        adminNamespace.emit("newCourtCaseRegistered", {
+        adminNamespace.emit("newourtCaseRegistered", {
             message: "New court case registered",
             data: {
                 _id: courtCase._id,
@@ -111,10 +111,10 @@ export const saveCourtServiceDetails = async (req, res, next) => {
                 createdAt: formatDate(courtCase.createdAt),
 
                 customerUniqueId: customer.customerUniqueId,
-                customerName: customer.customerName,
-                customerEmail: customer.customerEmail,
-                customerPhone: customer.customerPhone,
-                customerProfile: customer.customerProfile,
+                customerName: customer.Name,
+                customerEmail: customer.email,
+                customerPhone: customer.phoneNumber,
+                customerProfile: customer.profilePhoto,
                 country: customer.country,
                 paymentAmount: paymentAmount,
                 paymentCurrency: paidCurrency,
