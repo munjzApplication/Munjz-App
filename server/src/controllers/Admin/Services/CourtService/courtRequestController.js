@@ -181,6 +181,14 @@ export const requestAdditionalPayment = async (req, res, next) => {
       }
     });
 
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("new-payment-request", {
+      message: `New payment request for case: ${courtCase.courtServiceID}`,
+      customerId: newAdditionalPayment.customerId,
+      caseId: newAdditionalPayment.caseId,
+      hasPendingPayment: true,
+    });
+
     res.status(201).json({
       message: "Additional payment requested successfully.",
       additionalPayment: newAdditionalPayment

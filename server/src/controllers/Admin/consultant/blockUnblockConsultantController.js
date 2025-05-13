@@ -40,7 +40,14 @@ export const blockUnblockConsultant = async (req, res, next) => {
     }
 
     await consultant.save();
-
+   const customerNamespace = io.of("/customer");
+    customerNamespace.emit("consultant-block-status", {
+      consultantId,
+      message: consultant.isBlocked
+        ? "Consultant has been blocked."
+        : "Consultant has been unblocked.",
+      isBlocked: consultant.isBlocked,
+    });
     // Emit Socket Event for Real-Time Update
     const consultantNamespace = io.of("/consultant");
     consultantNamespace.to(consultantId.toString()).emit("consultant-block-status", {

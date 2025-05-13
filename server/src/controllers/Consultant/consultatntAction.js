@@ -3,6 +3,7 @@ import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
 import IDProof from "../../models/Consultant/ProfileModel/idProof.js";
 import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetails.js";
 import BankDetails from "../../models/Consultant/ProfileModel/bankDetails.js";
+import consultationDetails from "../../models/Customer/consultationModel/consultationModel.js";
 import { uploadFileToS3 } from "../../utils/s3Uploader.js";
 import { notificationService } from "../../service/sendPushNotification.js";
 import { formatDate } from "../../helper/dateFormatter.js";
@@ -54,6 +55,9 @@ export const handleConsultantAction = async (req, res, next) => {
         missingFields
       });
     }
+
+  const consultationData = await consultationDetails.findOne({ consultantId });
+
     // Check if ConsultantProfile already exists (to avoid redundant creation)
     const existingProfile = await ConsultantProfile.findOne({
       _id: consultantId
@@ -172,6 +176,30 @@ export const handleConsultantAction = async (req, res, next) => {
       "New Consultant Registration",
       `A new Consultant has registered: ${existingProfile.Name} (${existingProfile.email}).`
     );
+
+    // Emit real-time data to the customer
+    const customerNamespace = io.of("/customer");
+    customerNamespace.emit("new-consultant-registered", {
+      _id: consultantId,
+      Name: existingProfile.Name,
+      email: existingProfile.email,
+      countryCode: existingProfile.countryCode,
+      consultantUniqueId: existingProfile.consultantUniqueId,
+      isBlocked: existingProfile.isBlocked,
+      deletedAt: existingProfile.deletedAt,
+      isOnline: existingProfile.isOnline,
+      creationDate: formatDate(existingProfile.creationDate) ?? formatDate(new Date()),
+      profilePicture: profilePictureUrl,
+      country: personalDetails.country,
+      languages: languagesArray,
+      areaOfPractices: areaOfPracticesArray,
+      experience: experience,
+      biography: biography,
+      consultationRating: consultationData?.consultationRating ?? null,
+      isFav: false  
+
+
+    });
 
     // Emit real-time data to admin dashboard
     const adminNamespace = io.of("/admin");
