@@ -103,35 +103,39 @@ export const saveCourtServiceDetails = async (req, res, next) => {
       }
     });
 
-    const adminNamespace = io.of("/admin");
+const adminNamespace = io.of("/admin");
 
-    const eventData = {
-      message: "New court case registered",
-      data: {
-        _id: courtCase._id,
-        customerId: customerId,
-        courtServiceID: courtServiceID,
-        serviceName: serviceName,
-        selectedServiceCountry: selectedServiceCountry,
-        caseDescription: caseDescription,
-        casePaymentStatus: "paid",
-        status: "submitted",
-        follower: courtCase.follower,
-        createdAt: formatDate(courtCase.createdAt),
+const eventData = {
+  message: "New court case registered",
+  data: {
+    _id: courtCase._id,
+    customerId: customerId,
+    courtServiceID: courtServiceID,
+    serviceName: serviceName,
+    selectedServiceCountry: selectedServiceCountry,
+    caseDescription: caseDescription,
+    casePaymentStatus: "paid",
+    status: "submitted",
+    follower: courtCase.follower,
+    createdAt: formatDate(courtCase.createdAt),
 
-        customerUniqueId: customer.customerUniqueId,
-        customerName: customer.Name,
-        customerEmail: customer.email,
-        customerPhone: customer.phoneNumber,
-        customerProfile: customer.profilePhoto,
-        country: customer.country,
-        paymentAmount: paymentAmount,
-        paymentCurrency: paidCurrency
-      }
-    };
+    customerUniqueId: customer.customerUniqueId,
+    customerName: customer.Name,
+    customerEmail: customer.email,
+    customerPhone: customer.phoneNumber,
+    customerProfile: customer.profilePhoto,
+    country: customer.country,
+    paymentAmount: paymentAmount,
+    paymentCurrency: paidCurrency,
+  },
+};
 
-    // Emit the event
-    adminNamespace.emit("newCourtCaseRegistered", eventData);
+// Debugging the event data before emitting
+console.log("Emitting event data:", JSON.stringify(eventData, null, 2));
+
+// Emit the event
+adminNamespace.emit("newCourtCaseRegistered", eventData);
+
 
     return res
       .status(201)

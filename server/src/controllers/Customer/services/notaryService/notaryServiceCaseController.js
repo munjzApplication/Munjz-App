@@ -85,7 +85,7 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
      const adminNamespace = io.of("/admin");
     
         const eventData = {
-          message: "New court case registered",
+          message: "New Notary case registered",
           data: {
             _id: notaryCase._id,
             customerId: customerId,
@@ -109,8 +109,12 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
           }
         };
     
+        // Debugging the event data before emitting
+console.log("Emitting event data:", JSON.stringify(eventData, null, 2));
+
         // Emit the event
         adminNamespace.emit("newNotaryCaseRegistered", eventData);
+        
 
     return res.status(201).json({
       message: "Notary case registered successfully"

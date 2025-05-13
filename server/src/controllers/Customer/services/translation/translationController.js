@@ -91,6 +91,36 @@ export const submitTranslationRequest = async (req, res, next) => {
         "New Translation Request Registered",
         `A new translation request (${documentLanguage} → ${translationLanguage}) has been registered${paymentMessage}`
       );
+
+         const adminNamespace = io.of("/admin");
+          
+              const eventData = {
+                message: "New Translation case registered",
+                data: {
+                  _id: translationCase._id,
+                  customerId: customerId,
+                  translationServiceID: translationServiceID,
+                  documentLanguage: translationLanguage,
+                  translationLanguage: translationLanguage,
+                  PaymentStatus: PaymentStatus,
+                  noOfPage: noOfPage,
+                  status: "submitted",
+                  follower: translationCase.follower,
+                  createdAt: formatDate(translationCase.createdAt),
+          
+                  customerUniqueId: customer.customerUniqueId,
+                  customerName: customer.Name,
+                  customerEmail: customer.email,
+                  customerPhone: customer.phoneNumber,
+                  customerProfile: customer.profilePhoto,
+                  country: customer.country,
+                  paymentAmount: paymentAmount,
+                }
+              };
+          
+              console.log("Emitting event data:", JSON.stringify(eventData, null, 2));
+              // Emit the event
+              adminNamespace.emit("newTranslationCaseRegistered", eventData);
   
 
     return res.status(201).json({
