@@ -4,8 +4,10 @@ import AdditionalPayment from "../../../../models/Customer/customerModels/additi
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
+import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
+import { emitAdminEarningsSocket } from "../../../../socket/emitAdminEarningsSocket.js";
 
 
 export const uploadCustomerAdditionalDocument = async (req, res) => {
@@ -231,6 +233,17 @@ export const submitAdditionalPayment = async (req, res, next) => {
       session.endSession();
       return res.status(404).json({ message: "Notary case not found." });
     }
+
+          const earnings = new AdminEarnings({
+             customerId: updatedNotaryCase.customerId,
+             currency: paidCurrency,
+             serviceAmount: amount,
+             serviceName: "NotaryService",
+             reason: "Additional Payment",
+             createdAt: new Date()
+           });
+           await earnings.save({ session });
+           await emitAdminEarningsSocket(earnings);
 
     await session.commitTransaction();
     session.endSession();

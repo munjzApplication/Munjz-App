@@ -7,12 +7,14 @@ import {
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 import mongoose from "mongoose";
+import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import {
   formatDatewithmonth,
   formatDate
 } from "../../../../helper/dateFormatter.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import { io } from "../../../../socket/socketController.js";
+import { emitAdminEarningsSocket } from "../../../../socket/emitAdminEarningsSocket.js";
 
 export const saveCourtServiceDetails = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -64,6 +66,17 @@ export const saveCourtServiceDetails = async (req, res, next) => {
       session
     );
 
+    const earnings = new AdminEarnings({
+      customerId,
+      currency: paidCurrency,
+      serviceAmount: paymentAmount,
+      serviceName: "CourtService",
+      reason: "Court Service Registration",
+      createdAt: new Date()
+    });
+    await earnings.save({ session });
+    await emitAdminEarningsSocket(earnings);
+
     await session.commitTransaction();
     session.endSession();
 
@@ -79,9 +92,6 @@ export const saveCourtServiceDetails = async (req, res, next) => {
       "New Court Case Registered",
       `A new court case (Case ID: ${courtServiceID}) has been registered with a payment of ${paymentAmount} ${paidCurrency}.`
     );
-
-    console.log("customer", customer);
-    console.log("customername", customer.Name);
 
     const customerNamespace = io.of("/customer");
     customerNamespace.to(customerId.toString()).emit("courtCaseRegistered", {
@@ -103,35 +113,35 @@ export const saveCourtServiceDetails = async (req, res, next) => {
       }
     });
 
-const adminNamespace = io.of("/admin");
+    const adminNamespace = io.of("/admin");
 
-const eventData = {
-  message: "New court case registered",
-  data: {
-    _id: courtCase._id,
-    customerId: customerId,
-    courtServiceID: courtServiceID,
-    serviceName: serviceName,
-    selectedServiceCountry: selectedServiceCountry,
-    caseDescription: caseDescription,
-    casePaymentStatus: "paid",
-    status: "submitted",
-    follower: courtCase.follower,
-    createdAt: formatDate(courtCase.createdAt),
+    const eventData = {
+      message: "New court case registered",
+      data: {
+        _id: courtCase._id,
+        customerId: customerId,
+        courtServiceID: courtServiceID,
+        serviceName: serviceName,
+        selectedServiceCountry: selectedServiceCountry,
+        caseDescription: caseDescription,
+        casePaymentStatus: "paid",
+        status: "submitted",
+        follower: courtCase.follower,
+        createdAt: formatDate(courtCase.createdAt),
 
-    customerUniqueId: customer.customerUniqueId,
-    customerName: customer.Name,
-    customerEmail: customer.email,
-    customerPhone: customer.phoneNumber,
-    customerProfile: customer.profilePhoto,
-    country: customer.country,
-    paymentAmount: paymentAmount,
-    paymentCurrency: paidCurrency,
-  },
-};
+        customerUniqueId: customer.customerUniqueId,
+        customerName: customer.Name,
+        customerEmail: customer.email,
+        customerPhone: customer.phoneNumber,
+        customerProfile: customer.profilePhoto,
+        country: customer.country,
+        paymentAmount: paymentAmount,
+        paymentCurrency: paidCurrency
+      }
+    };
 
-// Emit the event
-adminNamespace.emit("newCourtCaseRegistered", eventData);
+    // Emit the event
+    adminNamespace.emit("newCourtCaseRegistered", eventData);
 
     return res
       .status(201)

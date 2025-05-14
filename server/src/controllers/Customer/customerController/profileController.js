@@ -43,6 +43,7 @@ export const profileSetup = async (req, res, next) => {
     // Update the profile with the provided details
     userProfile.profilePhoto = profilePhoto;
     userProfile.country = country;
+    userProfile.isRegistrationComplete = true;
 
     await userProfile.save();
 
@@ -95,10 +96,10 @@ export const countrySetup = async (req, res, next) => {
     const userId = req.user._id;
     const { country, countryCode, phoneNumber } = req.body;
 
-    if (!country || !countryCode) {
+    if (!country || !countryCode || !phoneNumber) {
       return res.status(400).json({
         success: false,
-        message: "Country and country code are required."
+        message: "Country and phoneNumber are required."
       });
     }
 
@@ -122,7 +123,8 @@ export const countrySetup = async (req, res, next) => {
       {
         country,
         countryCode,
-        phoneNumber: phoneNumber || null 
+        phoneNumber: phoneNumber || null ,
+        isRegistrationComplete: true
       },
       { new: true, upsert: true, runValidators: true } 
     );

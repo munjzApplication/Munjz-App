@@ -7,8 +7,10 @@ import Customer from "../../../../models/Customer/customerModels/customerModel.j
 import TranslationCase from "../../../../models/Customer/translationModel/translationDetails.js";
 import mongoose from "mongoose";
 import { notificationService } from "../../../../service/sendPushNotification.js";
+import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import { formatDatewithmonth ,formatDate} from "../../../../helper/dateFormatter.js";
 import { io } from "../../../../socket/socketController.js";
+import { emitAdminEarningsSocket } from "../../../../socket/emitAdminEarningsSocket.js";
 
 export const submitTranslationRequest = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -74,7 +76,21 @@ export const submitTranslationRequest = async (req, res, next) => {
         },
         session
       );
+
+       const earnings = new AdminEarnings({
+              customerId,
+              currency: paidCurrency,
+              serviceAmount: paymentAmount,
+              serviceName: "Translation",
+              reason: "Translation Registration",
+              createdAt: new Date()
+            });
+            await earnings.save({ session });
+
+            await emitAdminEarningsSocket(earnings);
     }
+
+    
 
     await session.commitTransaction();
     session.endSession();

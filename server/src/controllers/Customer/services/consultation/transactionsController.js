@@ -3,6 +3,7 @@ import Wallet from "../../../../models/Customer/customerModels/walletModel.js";
 import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import CustomerProfile from "../../../../models/Customer/customerModels/customerModel.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
+import {emitAdminEarningsSocket} from "../../../../socket/emitAdminEarningsSocket.js";
 
 
 export const createTransaction = async (req, res, next) => {
@@ -105,6 +106,7 @@ export const createTransaction = async (req, res, next) => {
     });
 
     await earnings.save();
+    await emitAdminEarningsSocket(earnings);
 
     // Send push notification
     // try {

@@ -87,7 +87,11 @@ const customerProfileSchema = new mongoose.Schema({
   deletedAt: {
     type: Date,
     default: null // NULL means the account is active
-  }
+  },
+  isRegistrationComplete: {
+    type: Boolean,
+    default: false
+  },
 
 });
 

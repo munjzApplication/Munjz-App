@@ -4,7 +4,9 @@ import AdditionalPayment from "../../../../models/Customer/customerModels/additi
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import TranslationCase from "../../../../models/Customer/translationModel/translationDetails.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
+import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import mongoose from "mongoose";
+import { emitAdminEarningsSocket } from "../../../../socket/emitAdminEarningsSocket.js";
 
 export const uploadCustomerAdditionalDocument = async (req, res) => {
   const session = await mongoose.startSession();
@@ -227,6 +229,18 @@ export const submitAdditionalPayment = async (req, res, next) => {
       session.endSession();
       return res.status(404).json({ message: "Translation case not found." });
     }
+
+      const earnings = new AdminEarnings({
+             customerId: updatedTranslationCase.customerId,
+             currency: paidCurrency,
+             serviceAmount: amount,
+             serviceName: "Translation",
+             reason: "Additional Payment",
+             createdAt: new Date()
+           });
+           await earnings.save({ session });
+           await emitAdminEarningsSocket(earnings);
+    
     await session.commitTransaction();
     session.endSession();
 
