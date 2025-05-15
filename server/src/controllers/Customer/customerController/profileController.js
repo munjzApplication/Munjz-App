@@ -382,14 +382,12 @@ export const getAllServices = async (req, res) => {
 // Delete Profile
 export const deleteProfile = async (req, res, next) => {
   const session = await mongoose.startSession();
-  session.startTransaction();
   try {
+     session.startTransaction();
     const userId = req.user._id;
 
     const user = await CustomerProfile.findById(userId).session(session);
     if (!user) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(404).json({ message: "Profile not found." });
     }
 
@@ -415,7 +413,6 @@ export const deleteProfile = async (req, res, next) => {
     );
 
     await session.commitTransaction();
-    session.endSession();
 
     // Push Notifications
     try {
@@ -454,8 +451,13 @@ export const deleteProfile = async (req, res, next) => {
 
     res.status(200).json({ message: "Profile deleted successfully." });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
+    try {
+      await session.abortTransaction();
+    } catch (abortError) {
+      console.warn("Abort transaction failed:", abortError.message);
+    }
     next(error);
+  } finally {
+    session.endSession();
   }
 };
