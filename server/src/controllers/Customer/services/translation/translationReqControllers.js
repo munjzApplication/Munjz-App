@@ -239,10 +239,12 @@ export const submitAdditionalPayment = async (req, res, next) => {
              createdAt: new Date()
            });
            await earnings.save({ session });
-           await emitAdminEarningsSocket(earnings);
+          
     
     await session.commitTransaction();
     session.endSession();
+
+     await emitAdminEarningsSocket(earnings);
 
     // Notify Admin with customer email instead of caseId
     await notificationService.sendToAdmin(

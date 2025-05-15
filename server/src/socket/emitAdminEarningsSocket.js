@@ -1,11 +1,20 @@
 // utils/socket/emitAdminEarningsSocket.js
 import { io } from "../socket/socketController.js";
 import  AdminEarnings from "../models/Admin/adminModels/earningsModel.js";
+import CustomerProfile from "../models/Customer/customerModels/customerModel.js";
 
 export const emitAdminEarningsSocket = async (earningDoc) => {
   const totalEarnings = await AdminEarnings.aggregate([
     { $group: { _id: null, total: { $sum: "$serviceAmount" } } }
   ]);
+
+  let customerName = "";
+  if (earningDoc.customerId) {
+    const customer = await CustomerProfile.findById(earningDoc.customerId);
+    if (customer) {
+      customerName = customer.Name;
+    }
+  }
 
   const adminNamespace = io.of("/admin");
   adminNamespace.emit("admin-earnings-update", {
@@ -19,7 +28,7 @@ export const emitAdminEarningsSocket = async (earningDoc) => {
       serviceName: earningDoc.serviceName,
       reason: earningDoc.reason,
       createdAt: earningDoc.createdAt,
-      customerName: earningDoc.customerName, // if you store name
+      customerName, 
     }
   });
 };

@@ -75,10 +75,11 @@ export const saveCourtServiceDetails = async (req, res, next) => {
       createdAt: new Date()
     });
     await earnings.save({ session });
-    await emitAdminEarningsSocket(earnings);
-
+    
     await session.commitTransaction();
     session.endSession();
+
+    await emitAdminEarningsSocket(earnings);
 
     // Notify Customer
     await notificationService.sendToCustomer(

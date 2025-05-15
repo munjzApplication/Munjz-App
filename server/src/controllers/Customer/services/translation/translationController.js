@@ -87,13 +87,14 @@ export const submitTranslationRequest = async (req, res, next) => {
             });
             await earnings.save({ session });
 
-            await emitAdminEarningsSocket(earnings);
+            
     }
 
     
 
     await session.commitTransaction();
     session.endSession();
+    await emitAdminEarningsSocket(earnings);
 
       // Send Notifications
       const paymentMessage = paymentAmount ? ` with a payment of ${paymentAmount} ${paidCurrency}.` : " without payment.";

@@ -1,5 +1,6 @@
 import News from "../../../models/Admin/adminModels/newsModel.js";
 import { uploadFileToS3 } from "../../../utils/s3Uploader.js";
+import { io } from "../../../socket/socketController.js";
 
 // Get all news articles
 export const getAllNews = async (req, res) => {
@@ -31,6 +32,19 @@ export const createNews = async (req, res) => {
       description,
       readTime
     });
+
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("news-update", {
+      message: "New news article created",
+      data: {
+        _id: news._id,
+        title: news.title,
+        description: news.description,
+        readTime: news.readTime,
+        image: news.image,
+        createdAt: news.createdAt
+      }
+    });
     res.status(201).json({ message: "News created successfully", news });
   } catch (error) {
     res
@@ -57,6 +71,19 @@ export const updateNews = async (req, res) => {
     if (!news)
       return res.status(404).json({ message: "News article not found" });
 
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("news-update", {
+      message: "News article updated",
+      data: {
+        _id: news._id,
+        title: news.title,
+        description: news.description,
+        readTime: news.readTime,
+        image: news.image,
+        createdAt: news.createdAt
+      }
+    });
+
     res.status(200).json({ message: "News updated successfully", news });
   } catch (error) {
     res
@@ -76,6 +103,19 @@ export const deleteNews = async (req, res) => {
 
     if (!news)
       return res.status(404).json({ message: "News article not found" });
+
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("news-update", {
+      message: "News article deleted",
+      data: {
+        _id: news._id,
+        title: news.title,
+        description: news.description,
+        readTime: news.readTime,
+        image: news.image,
+        createdAt: news.createdAt
+      }
+    });
 
     res.status(200).json({ message: "News article deleted successfully" });
   } catch (error) {
