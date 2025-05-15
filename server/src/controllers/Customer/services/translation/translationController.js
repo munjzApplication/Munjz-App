@@ -118,7 +118,7 @@ export const submitTranslationRequest = async (req, res, next) => {
 
     const eventData = {
       message: "New Translation case registered",
-      data: {
+      translations: {
         _id: translationCase._id,
         customerId: customerId,
         translationServiceID: translationServiceID,
@@ -140,8 +140,6 @@ export const submitTranslationRequest = async (req, res, next) => {
         paymentCurrency: paidCurrency,
       }
     };
-
-    console.log("Emitting event data:", JSON.stringify(eventData, null, 2));
     // Emit the event
     adminNamespace.emit("newTranslationCaseRegistered", eventData);
 

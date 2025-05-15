@@ -118,7 +118,7 @@ export const saveCourtServiceDetails = async (req, res, next) => {
 
     const eventData = {
       message: "New court case registered",
-      data: {
+      courtCases: {
         _id: courtCase._id,
         customerId: customerId,
         courtServiceID: courtServiceID,

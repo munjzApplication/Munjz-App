@@ -101,7 +101,7 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
 
     const eventData = {
       message: "New Notary case registered",
-      data: {
+      notaryCases: {
         _id: notaryCase._id,
         customerId: customerId,
         notaryServiceID: notaryServiceID,
@@ -123,10 +123,6 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
         paymentCurrency: paidCurrency
       }
     };
-
-    // Debugging the event data before emitting
-    console.log("Emitting event data:", JSON.stringify(eventData, null, 2));
-
     // Emit the event
     adminNamespace.emit("newNotaryCaseRegistered", eventData);
 
