@@ -4,7 +4,8 @@ import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
 import mongoose from "mongoose";
 import { notificationService } from "../../../../service/sendPushNotification.js";
-import emitAdminRequest from "../../../../socket/emitAdminRequest.js";
+import {emitAdminRequest} from "../../../../socket/emitAdminRequest.js";
+import { emitAdminPaymentRequest } from "../../../../socket/emitAdminRequest.js";
 import { formatDate } from "../../../../helper/dateFormatter.js";
 
 export const requestDocument = async (req, res, next) => {
@@ -209,6 +210,8 @@ export const requestAdditionalPayment = async (req, res, next) => {
         updatedAt: formatDate(newAdditionalPayment.updatedAt)
       }
     });
+
+    emitAdminPaymentRequest("new-notary-payment-request", newAdditionalPayment);
 
     res.status(201).json({
       message: "Additional payment requested successfully.",

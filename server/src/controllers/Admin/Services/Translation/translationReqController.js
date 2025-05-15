@@ -4,7 +4,8 @@ import TranslationCase from "../../../../models/Customer/translationModel/transl
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import mongoose from "mongoose";
 import { notificationService } from "../../../../service/sendPushNotification.js";
-import emitAdminRequest from "../../../../socket/emitAdminRequest.js";
+import {emitAdminRequest} from "../../../../socket/emitAdminRequest.js";
+import { emitAdminPaymentRequest } from "../../../../socket/emitAdminRequest.js";
 import { formatDate } from "../../../../helper/dateFormatter.js";
 
 export const requestDocuments = async (req, res) => {
@@ -188,6 +189,8 @@ export const requestAdditionalPayment = async (req, res, next) => {
         updatedAt: formatDate(newAdditionalPayment.updatedAt)
       }
     });
+
+    emitAdminPaymentRequest("new-translation-payment-request", newAdditionalPayment);
 
     res.status(201).json({
       message: "Additional payment requested successfully.",

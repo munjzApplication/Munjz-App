@@ -5,7 +5,8 @@ import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
 import { io } from "../../../../socket/socketController.js";
-import emitAdminRequest from "../../../../socket/emitAdminRequest.js";
+import {emitAdminRequest} from "../../../../socket/emitAdminRequest.js";
+import {emitAdminPaymentRequest} from "../../../../socket/emitAdminRequest.js";
 import { formatDate } from "../../../../helper/dateFormatter.js";
 
 export const requestDocument = async (req, res) => {
@@ -181,13 +182,7 @@ export const requestAdditionalPayment = async (req, res, next) => {
       }
     });
 
-    const adminNamespace = io.of("/admin");
-    adminNamespace.emit("new-payment-request", {
-      message: `New payment request for case: ${courtCase.courtServiceID}`,
-      customerId: newAdditionalPayment.customerId,
-      caseId: newAdditionalPayment.caseId,
-      hasPendingPayment: true,
-    });
+    emitAdminPaymentRequest("new-court-payment-request", newAdditionalPayment);
 
     res.status(201).json({
       message: "Additional payment requested successfully.",

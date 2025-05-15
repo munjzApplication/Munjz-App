@@ -34,8 +34,8 @@ export const createNews = async (req, res) => {
     });
 
     const adminNamespace = io.of("/admin");
-    adminNamespace.emit("news-update", {
-      message: "New news article created",
+    adminNamespace.emit("news-created", {
+      message: "News created successfully",
       data: {
         _id: news._id,
         title: news.title,
@@ -105,15 +105,10 @@ export const deleteNews = async (req, res) => {
       return res.status(404).json({ message: "News article not found" });
 
     const adminNamespace = io.of("/admin");
-    adminNamespace.emit("news-update", {
-      message: "News article deleted",
+    adminNamespace.emit("news-deleted", {
+      message: "News article deleted successfully",
       data: {
         _id: news._id,
-        title: news.title,
-        description: news.description,
-        readTime: news.readTime,
-        image: news.image,
-        createdAt: news.createdAt
       }
     });
 
