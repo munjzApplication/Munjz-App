@@ -8,7 +8,7 @@ import TranslationCase from "../../../../models/Customer/translationModel/transl
 import mongoose from "mongoose";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
-import { formatDatewithmonth ,formatDate} from "../../../../helper/dateFormatter.js";
+import { formatDatewithmonth, formatDate } from "../../../../helper/dateFormatter.js";
 import { io } from "../../../../socket/socketController.js";
 import { emitAdminEarningsSocket } from "../../../../socket/emitAdminEarningsSocket.js";
 
@@ -25,7 +25,7 @@ export const submitTranslationRequest = async (req, res, next) => {
       paidCurrency,
       noOfPage
     } = req.body;
-    
+
 
     // Validate customer existence
     const customer = await Customer.findById(customerId).lean();
@@ -34,7 +34,7 @@ export const submitTranslationRequest = async (req, res, next) => {
     const customerName = customer.Name;
     if (!documentLanguage) throw new Error("Document language is required.");
     if (!translationLanguage) throw new Error("Translation language is required.");
-    
+
     if (paymentAmount && !paidCurrency) throw new Error("Paid currency is required for payment.");
 
     if (!req.files || req.files.length === 0) {
@@ -45,7 +45,7 @@ export const submitTranslationRequest = async (req, res, next) => {
     const PaymentStatus = paymentAmount ? "paid" : "unpaid";
 
     // Save Translation Case
-    const { translationCase ,translationServiceID } = await saveTranslationCase(
+    const { translationCase, translationServiceID } = await saveTranslationCase(
       {
         customerId,
         documentLanguage,
@@ -77,70 +77,70 @@ export const submitTranslationRequest = async (req, res, next) => {
         session
       );
 
-       const earnings = new AdminEarnings({
-              customerId,
-              currency: paidCurrency,
-              serviceAmount: paymentAmount,
-              serviceName: "Translation",
-              reason: "Translation Registration",
-              createdAt: new Date()
-            });
-            await earnings.save({ session });
+      const earnings = new AdminEarnings({
+        customerId,
+        currency: paidCurrency,
+        serviceAmount: paymentAmount,
+        serviceName: "Translation",
+        reason: "Translation Registration",
+        createdAt: new Date()
+      });
+      await earnings.save({ session });
 
-            
+
     }
 
-    
+
 
     await session.commitTransaction();
     session.endSession();
     await emitAdminEarningsSocket(earnings);
 
-      // Send Notifications
-      const paymentMessage = paymentAmount ? ` with a payment of ${paymentAmount} ${paidCurrency}.` : " without payment.";
-    
-      await notificationService.sendToCustomer(
-        customerId,
-        "Translation Case Registered",
-        `Your translation request (${documentLanguage} → ${translationLanguage}) has been registered successfully${paymentMessage}`
-      );
-  
-      await notificationService.sendToAdmin(
-        "New Translation Request Registered",
-        `A new translation request (${documentLanguage} → ${translationLanguage}) has been registered${paymentMessage}`
-      );
+    // Send Notifications
+    const paymentMessage = paymentAmount ? ` with a payment of ${paymentAmount} ${paidCurrency}.` : " without payment.";
 
-         const adminNamespace = io.of("/admin");
-          
-              const eventData = {
-                message: "New Translation case registered",
-                data: {
-                  _id: translationCase._id,
-                  customerId: customerId,
-                  translationServiceID: translationServiceID,
-                  documentLanguage: translationLanguage,
-                  translationLanguage: translationLanguage,
-                  PaymentStatus: PaymentStatus,
-                  noOfPage: noOfPage,
-                  status: "submitted",
-                  follower: translationCase.follower,
-                  createdAt: formatDate(translationCase.createdAt),
-          
-                  customerUniqueId: customer.customerUniqueId,
-                  customerName: customer.Name,
-                  customerEmail: customer.email,
-                  customerPhone: customer.phoneNumber,
-                  customerProfile: customer.profilePhoto,
-                  country: customer.country,
-                  paymentAmount: paymentAmount,
-                  paymentCurrency: paidCurrency,
-                }
-              };
-          
-              console.log("Emitting event data:", JSON.stringify(eventData, null, 2));
-              // Emit the event
-              adminNamespace.emit("newTranslationCaseRegistered", eventData);
-  
+    await notificationService.sendToCustomer(
+      customerId,
+      "Translation Case Registered",
+      `Your translation request (${documentLanguage} → ${translationLanguage}) has been registered successfully${paymentMessage}`
+    );
+
+    await notificationService.sendToAdmin(
+      "New Translation Request Registered",
+      `A new translation request (${documentLanguage} → ${translationLanguage}) has been registered${paymentMessage}`
+    );
+
+    const adminNamespace = io.of("/admin");
+
+    const eventData = {
+      message: "New Translation case registered",
+      data: {
+        _id: translationCase._id,
+        customerId: customerId,
+        translationServiceID: translationServiceID,
+        documentLanguage: translationLanguage,
+        translationLanguage: translationLanguage,
+        PaymentStatus: PaymentStatus,
+        noOfPage: noOfPage,
+        status: "submitted",
+        follower: translationCase.follower,
+        createdAt: formatDate(translationCase.createdAt),
+
+        customerUniqueId: customer.customerUniqueId,
+        customerName: customer.Name,
+        customerEmail: customer.email,
+        customerPhone: customer.phoneNumber,
+        customerProfile: customer.profilePhoto,
+        country: customer.country,
+        paymentAmount: paymentAmount,
+        paymentCurrency: paidCurrency,
+      }
+    };
+
+    console.log("Emitting event data:", JSON.stringify(eventData, null, 2));
+    // Emit the event
+    adminNamespace.emit("newTranslationCaseRegistered", eventData);
+
 
     return res.status(201).json({
       message: "Translation request submitted successfully",
@@ -171,80 +171,80 @@ export const getAllTranslation = async (req, res, next) => {
           as: "requestpayments"
         }
       },
-        // Lookup additional payments
-        {
-          $lookup: {
-              from: "translation_documents",
-              localField: "_id",
-              foreignField: "translationCase",
-              as: "requestdocuments"
-          }
+      // Lookup additional payments
+      {
+        $lookup: {
+          from: "translation_documents",
+          localField: "_id",
+          foreignField: "translationCase",
+          as: "requestdocuments"
+        }
       },
-     // Calculate total amount paid from both transactions
-     {
-      $addFields: {
-        hasAdminRequestedPayment: {
+      // Calculate total amount paid from both transactions
+      {
+        $addFields: {
+          hasAdminRequestedPayment: {
             $gt: [
-                {
-                    $size: {
-                        $filter: {
-                            input: "$requestpayments",
-                            as: "payment",
-                            cond: { $eq: ["$$payment.status", "pending"] }
-                        }
-                    }
-                }, 0]
-        },
+              {
+                $size: {
+                  $filter: {
+                    input: "$requestpayments",
+                    as: "payment",
+                    cond: { $eq: ["$$payment.status", "pending"] }
+                  }
+                }
+              }, 0]
+          },
 
-        hasAdminRequestedDocument: {
+          hasAdminRequestedDocument: {
             $gt: [
-                {
-                    $size: {
-                        $filter: {
-                            input: "$requestdocuments",
-                            as: "document",
-                            cond: {
-                                $and: [
-                                    { $eq: ["$$document.status", "pending"] },
-                                    { $eq: ["$$document.documentType", "admin-request"] }
-                                ]
-                            }
-                        }
+              {
+                $size: {
+                  $filter: {
+                    input: "$requestdocuments",
+                    as: "document",
+                    cond: {
+                      $and: [
+                        { $eq: ["$$document.status", "pending"] },
+                        { $eq: ["$$document.documentType", "admin-request"] }
+                      ]
                     }
-                }, 0]
-        },
-        hasAdminUploadDocument: {
+                  }
+                }
+              }, 0]
+          },
+          hasAdminUploadDocument: {
             $gt: [
-                {
-                    $size: {
-                        $filter: {
-                            input: "$requestdocuments",
-                            as: "document",
-                            cond: {
-                                $and: [
-                                    { $eq: ["$$document.status", "submitted"] },
-                                    { $eq: ["$$document.documentType", "admin-upload"] }
-                                ]
-                            }
-                        }
+              {
+                $size: {
+                  $filter: {
+                    input: "$requestdocuments",
+                    as: "document",
+                    cond: {
+                      $and: [
+                        { $eq: ["$$document.status", "submitted"] },
+                        { $eq: ["$$document.documentType", "admin-upload"] }
+                      ]
                     }
-                }, 0]
+                  }
+                }
+              }, 0]
+          }
+
+
         }
-
-
-    }
-  },
-  {
-    $addFields: {
-        hasAdminAction: {
+      },
+      {
+        $addFields: {
+          hasAdminAction: {
             $or: [
-                "$hasAdminRequestedPayment",
-                "$hasAdminRequestedDocument",
-                "$hasAdminUploadDocument"
+              "$hasAdminRequestedPayment",
+              "$hasAdminRequestedDocument",
+              "$hasAdminUploadDocument"
             ]
+          }
         }
-    }
-},
+      },
       {
         $project: {
           createdAt: 1,

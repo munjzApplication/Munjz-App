@@ -5,7 +5,7 @@ import {
 } from "../../../../helper/notaryService/notaryCaseHelper.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import NotaryCase from "../../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
-import { formatDatewithmonth,formatDate } from "../../../../helper/dateFormatter.js";
+import { formatDatewithmonth, formatDate } from "../../../../helper/dateFormatter.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import mongoose from "mongoose";
@@ -50,7 +50,7 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
       session
     );
 
-  
+
 
     if (req.files?.length > 0) {
       await saveNotaryDocuments(req.files, notaryCase._id, session);
@@ -69,20 +69,20 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
     );
 
     const earnings = new AdminEarnings({
-          customerId,
-          currency: paidCurrency,
-          serviceAmount: paymentAmount,
-          serviceName: "NotaryService",
-          reason: "Notary Service Registration",
-          createdAt: new Date()
-        });
-        await earnings.save({ session });
-       
-  
+      customerId,
+      currency: paidCurrency,
+      serviceAmount: paymentAmount,
+      serviceName: "NotaryService",
+      reason: "Notary Service Registration",
+      createdAt: new Date()
+    });
+    await earnings.save({ session });
+
+
     await session.commitTransaction();
     session.endSession();
 
-     await emitAdminEarningsSocket(earnings);
+    await emitAdminEarningsSocket(earnings);
 
     // Notify Customer
     await notificationService.sendToCustomer(
@@ -97,39 +97,39 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
       `A new notary case (Case ID: ${notaryServiceID}) has been registered with a payment of ${paymentAmount} ${paidCurrency}.`
     );
 
-     const adminNamespace = io.of("/admin");
-    
-        const eventData = {
-          message: "New Notary case registered",
-          data: {
-            _id: notaryCase._id,
-            customerId: customerId,
-            notaryServiceID: notaryServiceID,
-            serviceName: serviceName,
-            selectedServiceCountry: selectedServiceCountry,
-            caseDescription: caseDescription,
-            casePaymentStatus: "paid",
-            status: "submitted",
-            follower: notaryCase.follower,
-            createdAt: formatDate(notaryCase.createdAt),
-    
-            customerUniqueId: customer.customerUniqueId,
-            customerName: customer.Name,
-            customerEmail: customer.email,
-            customerPhone: customer.phoneNumber,
-            customerProfile: customer.profilePhoto,
-            country: customer.country,
-            paymentAmount: paymentAmount,
-            paymentCurrency: paidCurrency
-          }
-        };
-    
-        // Debugging the event data before emitting
-console.log("Emitting event data:", JSON.stringify(eventData, null, 2));
+    const adminNamespace = io.of("/admin");
 
-        // Emit the event
-        adminNamespace.emit("newNotaryCaseRegistered", eventData);
-        
+    const eventData = {
+      message: "New Notary case registered",
+      data: {
+        _id: notaryCase._id,
+        customerId: customerId,
+        notaryServiceID: notaryServiceID,
+        serviceName: serviceName,
+        selectedServiceCountry: selectedServiceCountry,
+        caseDescription: caseDescription,
+        casePaymentStatus: "paid",
+        status: "submitted",
+        follower: notaryCase.follower,
+        createdAt: formatDate(notaryCase.createdAt),
+
+        customerUniqueId: customer.customerUniqueId,
+        customerName: customer.Name,
+        customerEmail: customer.email,
+        customerPhone: customer.phoneNumber,
+        customerProfile: customer.profilePhoto,
+        country: customer.country,
+        paymentAmount: paymentAmount,
+        paymentCurrency: paidCurrency
+      }
+    };
+
+    // Debugging the event data before emitting
+    console.log("Emitting event data:", JSON.stringify(eventData, null, 2));
+
+    // Emit the event
+    adminNamespace.emit("newNotaryCaseRegistered", eventData);
+
 
     return res.status(201).json({
       message: "Notary case registered successfully"
@@ -150,89 +150,89 @@ export const getAllNotaryCases = async (req, res, next) => {
       { $match: { customerId } },
       { $sort: { createdAt: -1 } },
 
-      { 
+      {
 
-         $lookup: {
+        $lookup: {
           from: "customer_additionatransactions",
           localField: "_id",
           foreignField: "caseId",
           as: "requestpayments"
         }
       },
-        // Lookup additional payments
-        {
-          $lookup: {
-              from: "NotaryService_Document",
-              localField: "_id",
-              foreignField: "notaryServiceCase",
-              as: "requestdocuments"
-          }
+      // Lookup additional payments
+      {
+        $lookup: {
+          from: "NotaryService_Document",
+          localField: "_id",
+          foreignField: "notaryServiceCase",
+          as: "requestdocuments"
+        }
       },
-       // Calculate total amount paid from both transactions
-       {
+      // Calculate total amount paid from both transactions
+      {
         $addFields: {
           hasAdminRequestedPayment: {
-              $gt: [
-                  {
-                      $size: {
-                          $filter: {
-                              input: "$requestpayments",
-                              as: "payment",
-                              cond: { $eq: ["$$payment.status", "pending"] }
-                          }
-                      }
-                  }, 0]
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: "$requestpayments",
+                    as: "payment",
+                    cond: { $eq: ["$$payment.status", "pending"] }
+                  }
+                }
+              }, 0]
           },
 
           hasAdminRequestedDocument: {
-              $gt: [
-                  {
-                      $size: {
-                          $filter: {
-                              input: "$requestdocuments",
-                              as: "document",
-                              cond: {
-                                  $and: [
-                                      { $eq: ["$$document.status", "pending"] },
-                                      { $eq: ["$$document.documentType", "admin-request"] }
-                                  ]
-                              }
-                          }
-                      }
-                  }, 0]
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: "$requestdocuments",
+                    as: "document",
+                    cond: {
+                      $and: [
+                        { $eq: ["$$document.status", "pending"] },
+                        { $eq: ["$$document.documentType", "admin-request"] }
+                      ]
+                    }
+                  }
+                }
+              }, 0]
           },
           hasAdminUploadDocument: {
-              $gt: [
-                  {
-                      $size: {
-                          $filter: {
-                              input: "$requestdocuments",
-                              as: "document",
-                              cond: {
-                                  $and: [
-                                      { $eq: ["$$document.status", "submitted"] },
-                                      { $eq: ["$$document.documentType", "admin-upload"] }
-                                  ]
-                              }
-                          }
-                      }
-                  }, 0]
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: "$requestdocuments",
+                    as: "document",
+                    cond: {
+                      $and: [
+                        { $eq: ["$$document.status", "submitted"] },
+                        { $eq: ["$$document.documentType", "admin-upload"] }
+                      ]
+                    }
+                  }
+                }
+              }, 0]
           }
 
 
-      }
-    },
-    {
-      $addFields: {
+        }
+      },
+      {
+        $addFields: {
           hasAdminAction: {
-              $or: [
-                  "$hasAdminRequestedPayment",
-                  "$hasAdminRequestedDocument",
-                  "$hasAdminUploadDocument"
-              ]
+            $or: [
+              "$hasAdminRequestedPayment",
+              "$hasAdminRequestedDocument",
+              "$hasAdminUploadDocument"
+            ]
           }
-      }
-  },
+        }
+      },
       {
         $project: {
           createdAt: 1,

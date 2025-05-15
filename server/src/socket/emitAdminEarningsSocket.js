@@ -1,6 +1,6 @@
 // utils/socket/emitAdminEarningsSocket.js
 import { io } from "../socket/socketController.js";
-import  AdminEarnings from "../models/Admin/adminModels/earningsModel.js";
+import AdminEarnings from "../models/Admin/adminModels/earningsModel.js";
 import CustomerProfile from "../models/Customer/customerModels/customerModel.js";
 
 export const emitAdminEarningsSocket = async (earningDoc) => {
@@ -28,7 +28,7 @@ export const emitAdminEarningsSocket = async (earningDoc) => {
       serviceName: earningDoc.serviceName,
       reason: earningDoc.reason,
       createdAt: earningDoc.createdAt,
-      customerName, 
+      customerName,
     }
   });
 };
