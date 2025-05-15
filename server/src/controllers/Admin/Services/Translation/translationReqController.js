@@ -190,7 +190,7 @@ export const requestAdditionalPayment = async (req, res, next) => {
       }
     });
 
-    emitAdminPaymentRequest("new-translation-payment-request", newAdditionalPayment);
+    emitAdminPaymentRequest("translation-payment-request", newAdditionalPayment);
 
     res.status(201).json({
       message: "Additional payment requested successfully.",

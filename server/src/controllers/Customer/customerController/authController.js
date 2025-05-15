@@ -206,7 +206,7 @@ export const Login = async (req, res, next) => {
     // Check if the user has a country
     if (!user.country) {
       return res.status(403).json({
-        message: "Registration successful."
+        message: "Please complete your profile to proceed."
       });
     }
 

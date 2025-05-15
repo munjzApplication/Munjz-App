@@ -211,7 +211,7 @@ export const requestAdditionalPayment = async (req, res, next) => {
       }
     });
 
-    emitAdminPaymentRequest("new-notary-payment-request", newAdditionalPayment);
+    emitAdminPaymentRequest("notary-payment-request", newAdditionalPayment);
 
     res.status(201).json({
       message: "Additional payment requested successfully.",

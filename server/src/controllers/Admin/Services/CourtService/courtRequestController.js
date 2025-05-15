@@ -182,7 +182,7 @@ export const requestAdditionalPayment = async (req, res, next) => {
       }
     });
 
-    emitAdminPaymentRequest("new-court-payment-request", newAdditionalPayment);
+    emitAdminPaymentRequest("court-payment-request", newAdditionalPayment);
 
     res.status(201).json({
       message: "Additional payment requested successfully.",
