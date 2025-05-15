@@ -33,7 +33,7 @@ export const createNews = async (req, res) => {
       readTime
     });
 
-    const adminNamespace = io.of("/admin");
+    const customerNamespace = io.of("/customer");
 
     const emitData ={
       message: "News created successfully",
@@ -46,8 +46,8 @@ export const createNews = async (req, res) => {
         createdAt: news.createdAt
       }
     };
-       console.log("Emitting to /admin namespace:", emitData);
-    adminNamespace.emit("news-created", emitData);
+       console.log("Emitting to /customer namespace:", emitData);
+    customerNamespace.emit("news-created", emitData);
 
     res.status(201).json({ message: "News created successfully", news });
   } catch (error) {
@@ -108,7 +108,7 @@ export const deleteNews = async (req, res) => {
     if (!news)
       return res.status(404).json({ message: "News article not found" });
 
-    const adminNamespace = io.of("/admin");
+    const customerNamespace = io.of("/customer");
     const emitData = {
       message: "News article deleted successfully",
       data: {
@@ -116,8 +116,8 @@ export const deleteNews = async (req, res) => {
       }
     };
 
-    adminNamespace.emit("news-deleted", emitData);
-    console.log("Emitting to /admin namespace:", emitData);
+    customerNamespace.emit("news-deleted", emitData);
+    console.log("Emitting to /customer namespace:", emitData);
 
     res.status(200).json({ message: "News article deleted successfully" });
   } catch (error) {
