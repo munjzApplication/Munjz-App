@@ -5,7 +5,7 @@ import { io } from "../../../socket/socketController.js";
 // Get all news articles
 export const getAllNews = async (req, res) => {
   try {
-    const news = await News.find().sort({ createdAt: -1 }); 
+    const news = await News.find().sort({ createdAt: -1 });
     res.status(200).json({ message: "News fetched successfully", news });
   } catch (error) {
     res
@@ -34,7 +34,8 @@ export const createNews = async (req, res) => {
     });
 
     const adminNamespace = io.of("/admin");
-    adminNamespace.emit("news-created", {
+
+    const emitData ={
       message: "News created successfully",
       data: {
         _id: news._id,
@@ -44,7 +45,10 @@ export const createNews = async (req, res) => {
         image: news.image,
         createdAt: news.createdAt
       }
-    });
+    };
+       console.log("Emitting to /admin namespace:", emitData);
+    adminNamespace.emit("news-created", emitData);
+
     res.status(201).json({ message: "News created successfully", news });
   } catch (error) {
     res
@@ -105,12 +109,15 @@ export const deleteNews = async (req, res) => {
       return res.status(404).json({ message: "News article not found" });
 
     const adminNamespace = io.of("/admin");
-    adminNamespace.emit("news-deleted", {
+    const emitData = {
       message: "News article deleted successfully",
       data: {
         _id: news._id,
       }
-    });
+    };
+
+    adminNamespace.emit("news-deleted", emitData);
+    console.log("Emitting to /admin namespace:", emitData);
 
     res.status(200).json({ message: "News article deleted successfully" });
   } catch (error) {
