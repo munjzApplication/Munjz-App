@@ -154,7 +154,7 @@ export const uploadAdminReqDocuments = async (req, res, next) => {
 export const submitAdditionalPayment = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  let earnings = null;
+  
   try {
     const { caseId } = req.params;
     const { amount, paidCurrency } = req.body;
@@ -243,7 +243,7 @@ export const submitAdditionalPayment = async (req, res, next) => {
       return res.status(404).json({ message: "Translation case not found." });
     }
 
-    earnings = new AdminEarnings({
+    const earnings = new AdminEarnings({
       customerId: updatedTranslationCase.customerId,
       currency: paidCurrency,
       serviceAmount: amount,

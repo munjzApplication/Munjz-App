@@ -15,6 +15,7 @@ import { emitAdminEarningsSocket } from "../../../../socket/emitAdminEarningsSoc
 export const submitTranslationRequest = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
+  let earnings = null;
 
   try {
     const customerId = req.user._id;
@@ -77,7 +78,7 @@ export const submitTranslationRequest = async (req, res, next) => {
         session
       );
 
-      const earnings = new AdminEarnings({
+       earnings = new AdminEarnings({
         customerId,
         currency: paidCurrency,
         serviceAmount: paymentAmount,
@@ -94,7 +95,10 @@ export const submitTranslationRequest = async (req, res, next) => {
 
     await session.commitTransaction();
     session.endSession();
-    await emitAdminEarningsSocket(earnings);
+    
+     if (earnings) {
+      await emitAdminEarningsSocket(earnings); 
+    }
 
     // Send Notifications
     const paymentMessage = paymentAmount ? ` with a payment of ${paymentAmount} ${paidCurrency}.` : " without payment.";
