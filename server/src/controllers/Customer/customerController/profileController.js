@@ -432,7 +432,9 @@ export const deleteProfile = async (req, res, next) => {
       console.error("Error sending account deletion notification:", pushError);
     }
     const walletBalance = await wallet.findOne({ userId: userId });
+
     // Emit event to admin namespace
+    const adminNamespace = io.of("/admin");
     adminNamespace.emit("customer-deleted", {
       profile: {
         _id: updatedProfile._id,
