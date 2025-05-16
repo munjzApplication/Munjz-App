@@ -232,17 +232,17 @@ export const getAllCourtPayments = async (req, res, next) => {
 
     // Fetch all transactions and additional payments in parallel
     const [paidTransactions, pendingTransactions] = await Promise.all([
-      // Fetch all "paid" transactions from both collections
+     
       Promise.all([
         CustomerTransaction.find({ caseId: caseObjectId, caseType: "CourtService_Case", status: "paid" }),
         AdditionalPayment.find({ caseId: caseObjectId, caseType: "CourtService_Case", status: "paid" })
       ]).then(([customerPaid, additionalPaid]) => [...customerPaid, ...additionalPaid]),
 
-      // Fetch all "pending" additional payments
+
       AdditionalPayment.find({ caseId: caseObjectId, caseType: "CourtService_Case", status: "pending" })
     ]);
 
-     // Format dates before sending response
+
      const formattedPaidTransactions = paidTransactions.map((transaction) => ({
       _id: transaction._id,
       customerId: transaction.customerId,

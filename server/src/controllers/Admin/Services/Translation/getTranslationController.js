@@ -21,7 +21,7 @@ export const getAllTranslations = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "translation_documents", // Ensure this matches your actual collection name in MongoDB
+          from: "translation_documents",
           localField: "_id",
           foreignField: "translationCase",
           as: "documents"
@@ -29,7 +29,7 @@ export const getAllTranslations = async (req, res, next) => {
       },
       {
         $addFields: {
-          noOfPage: { $sum: "$documents.noOfPage" } // Sum the pages from all related documents
+          noOfPage: { $sum: "$documents.noOfPage" }
         }
       },
       {
@@ -42,19 +42,19 @@ export const getAllTranslations = async (req, res, next) => {
                 $expr: {
                   $and: [
                     { $eq: ["$caseId", "$$caseId"] },
-                    { $eq: ["$status", "pending"] } // Check if any additional payment is pending
+                    { $eq: ["$status", "pending"] }
                   ]
                 }
               }
             },
-            { $limit: 1 } // If at least one pending payment exists, it's enough
+            { $limit: 1 }
           ],
           as: "pendingPayments"
         }
       },
       {
         $addFields: {
-          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] } // Returns true if there are pending payments
+          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] }
         }
       },
       {
@@ -120,7 +120,6 @@ export const getCaseDocs = async (req, res, next) => {
       }
     ]);
 
-
     // Format dates
     const formattedDocs = caseDocuments.map(doc => ({
       ...doc,
@@ -158,7 +157,7 @@ export const getTranslationCaseById = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "translation_documents", // Ensure this matches your actual collection name in MongoDB
+          from: "translation_documents",
           localField: "_id",
           foreignField: "translationCase",
           as: "documents"
@@ -166,13 +165,13 @@ export const getTranslationCaseById = async (req, res, next) => {
       },
       {
         $addFields: {
-          noOfPage: { $sum: "$documents.noOfPage" } // Sum the pages from all related documents
+          noOfPage: { $sum: "$documents.noOfPage" }
         }
       },
 
       {
         $lookup: {
-          from: "customer_additionatransactions", // Match collection name in lowercase
+          from: "customer_additionatransactions",
           let: { caseId: "$_id" },
           pipeline: [
             {
@@ -180,19 +179,19 @@ export const getTranslationCaseById = async (req, res, next) => {
                 $expr: {
                   $and: [
                     { $eq: ["$caseId", "$$caseId"] },
-                    { $eq: ["$status", "pending"] } // Check if any additional payment is pending
+                    { $eq: ["$status", "pending"] }
                   ]
                 }
               }
             },
-            { $limit: 1 } // If at least one pending payment exists, it's enough
+            { $limit: 1 }
           ],
           as: "pendingPayments"
         }
       },
       {
         $addFields: {
-          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] } // Returns true if there are pending payments
+          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] }
         }
       },
       {
@@ -246,20 +245,31 @@ export const getAllTranslationPayments = async (req, res, next) => {
 
     const caseObjectId = new mongoose.Types.ObjectId(caseId);
 
-    // Fetch all transactions and additional payments in parallel
     const [paidTransactions, pendingTransactions] = await Promise.all([
-      // Fetch all "paid" transactions from both collections
       Promise.all([
-        CustomerTransaction.find({ caseId: caseObjectId, caseType: "Translation_Case", status: "paid" }),
-        AdditionalPayment.find({ caseId: caseObjectId, caseType: "Translation_Case", status: "paid" })
-      ]).then(([customerPaid, additionalPaid]) => [...customerPaid, ...additionalPaid]),
+        CustomerTransaction.find({
+          caseId: caseObjectId,
+          caseType: "Translation_Case",
+          status: "paid"
+        }),
+        AdditionalPayment.find({
+          caseId: caseObjectId,
+          caseType: "Translation_Case",
+          status: "paid"
+        })
+      ]).then(([customerPaid, additionalPaid]) => [
+        ...customerPaid,
+        ...additionalPaid
+      ]),
 
-      // Fetch all "pending" additional payments
-      AdditionalPayment.find({ caseId: caseObjectId, caseType: "Translation_Case", status: "pending" })
+      AdditionalPayment.find({
+        caseId: caseObjectId,
+        caseType: "Translation_Case",
+        status: "pending"
+      })
     ]);
 
-    // Format dates before sending response
-    const formattedPaidTransactions = paidTransactions.map((transaction) => ({
+    const formattedPaidTransactions = paidTransactions.map(transaction => ({
       _id: transaction._id,
       customerId: transaction.customerId,
       caseId: transaction.caseId,
@@ -270,25 +280,26 @@ export const getAllTranslationPayments = async (req, res, next) => {
       status: transaction.status,
       paymentDate: formatDate(transaction.createdAt),
       createdAt: transaction.createdAt,
-      updatedAt: transaction.updatedAt,
+      updatedAt: transaction.updatedAt
     }));
 
-
-    const formattedPendingTransactions = pendingTransactions.map((transaction) => ({
-      _id: transaction._id,
-      customerId: transaction.customerId,
-      caseId: transaction.caseId,
-      caseType: transaction.caseType,
-      serviceType: transaction.serviceType,
-      amountPaid: transaction.amount || transaction.amountPaid,
-      currency: transaction.currency || transaction.paidCurrency,
-      requestReason: transaction.requestReason,
-      dueDate: formatDate(transaction.dueDate),
-      paymentDate: formatDate(transaction.paymentDate),
-      status: transaction.status,
-      createdAt: transaction.createdAt,
-      updatedAt: transaction.updatedAt,
-    }));
+    const formattedPendingTransactions = pendingTransactions.map(
+      transaction => ({
+        _id: transaction._id,
+        customerId: transaction.customerId,
+        caseId: transaction.caseId,
+        caseType: transaction.caseType,
+        serviceType: transaction.serviceType,
+        amountPaid: transaction.amount || transaction.amountPaid,
+        currency: transaction.currency || transaction.paidCurrency,
+        requestReason: transaction.requestReason,
+        dueDate: formatDate(transaction.dueDate),
+        paymentDate: formatDate(transaction.paymentDate),
+        status: transaction.status,
+        createdAt: transaction.createdAt,
+        updatedAt: transaction.updatedAt
+      })
+    );
 
     // Construct response
     return res.status(200).json({

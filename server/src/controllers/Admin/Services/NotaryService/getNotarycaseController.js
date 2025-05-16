@@ -23,7 +23,7 @@ export const getAllNotaryCases = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "customer_additionatransactions", // Match collection name in lowercase
+          from: "customer_additionatransactions", 
           let: { caseId: "$_id" },
           pipeline: [
             {
@@ -31,19 +31,19 @@ export const getAllNotaryCases = async (req, res, next) => {
                 $expr: {
                   $and: [
                     { $eq: ["$caseId", "$$caseId"] },
-                    { $eq: ["$status", "pending"] } // Check if any additional payment is pending
+                    { $eq: ["$status", "pending"] }
                   ]
                 }
               }
             },
-            { $limit: 1 } // If at least one pending payment exists, it's enough
+            { $limit: 1 } 
           ],
           as: "pendingPayments"
         }
       },
       {
         $addFields: {
-          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] } // Returns true if there are pending payments
+          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] }
         }
       },
       {
@@ -63,9 +63,9 @@ export const getAllNotaryCases = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
-          country:"$customer.country",
-          paymentAmount: "$totalAmountPaid", 
-          paymentCurrency: "$paidCurrency", 
+          country: "$customer.country",
+          paymentAmount: "$totalAmountPaid",
+          paymentCurrency: "$paidCurrency",
           hasPendingPayment: 1
         }
       },
@@ -88,7 +88,6 @@ export const getAllNotaryCases = async (req, res, next) => {
   }
 };
 
-
 export const getCaseDocs = async (req, res, next) => {
   try {
     const { caseId } = req.params;
@@ -110,7 +109,6 @@ export const getCaseDocs = async (req, res, next) => {
       }
     ]);
 
-
     // Format dates
     const formattedDocs = caseDocuments.map(doc => ({
       ...doc,
@@ -127,18 +125,15 @@ export const getCaseDocs = async (req, res, next) => {
   }
 };
 
-
-
 export const getNotaryCaseById = async (req, res, next) => {
   try {
     const { customerId } = req.params;
 
-        // Validate if customer exists
-        const customerExists = await customerProfileModel.findById(customerId);
-        if (!customerExists) {
-          return res.status(404).json({ message: "Customer not found" });
-        }
     
+    const customerExists = await customerProfileModel.findById(customerId);
+    if (!customerExists) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
 
     let notaryCases = await notaryCaseModel.aggregate([
       {
@@ -157,7 +152,7 @@ export const getNotaryCaseById = async (req, res, next) => {
       },
       {
         $lookup: {
-          from: "customer_additionatransactions", // Match collection name in lowercase
+          from: "customer_additionatransactions",
           let: { caseId: "$_id" },
           pipeline: [
             {
@@ -165,19 +160,19 @@ export const getNotaryCaseById = async (req, res, next) => {
                 $expr: {
                   $and: [
                     { $eq: ["$caseId", "$$caseId"] },
-                    { $eq: ["$status", "pending"] } // Check if any additional payment is pending
+                    { $eq: ["$status", "pending"] }
                   ]
                 }
               }
             },
-            { $limit: 1 } // If at least one pending payment exists, it's enough
+            { $limit: 1 }
           ],
           as: "pendingPayments"
         }
       },
       {
         $addFields: {
-          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] } // Returns true if there are pending payments
+          hasPendingPayment: { $gt: [{ $size: "$pendingPayments" }, 0] }
         }
       },
       {
@@ -197,9 +192,9 @@ export const getNotaryCaseById = async (req, res, next) => {
           customerEmail: "$customer.email",
           customerPhone: "$customer.phoneNumber",
           customerProfile: "$customer.profilePhoto",
-          country:"$customer.country",
-          paymentAmount: "$totalAmountPaid", 
-          paymentCurrency: "$paidCurrency", 
+          country: "$customer.country",
+          paymentAmount: "$totalAmountPaid",
+          paymentCurrency: "$paidCurrency",
           hasPendingPayment: 1
         }
       },
@@ -232,20 +227,31 @@ export const getAllNotaryPayments = async (req, res, next) => {
 
     const caseObjectId = new mongoose.Types.ObjectId(caseId);
 
-    // Fetch all transactions and additional payments in parallel
     const [paidTransactions, pendingTransactions] = await Promise.all([
-      // Fetch all "paid" transactions from both collections
       Promise.all([
-        CustomerTransaction.find({ caseId: caseObjectId, caseType: "NotaryService_Case", status: "paid" }),
-        AdditionalPayment.find({ caseId: caseObjectId, caseType: "NotaryService_Case", status: "paid" })
-      ]).then(([customerPaid, additionalPaid]) => [...customerPaid, ...additionalPaid]),
+        CustomerTransaction.find({
+          caseId: caseObjectId,
+          caseType: "NotaryService_Case",
+          status: "paid"
+        }),
+        AdditionalPayment.find({
+          caseId: caseObjectId,
+          caseType: "NotaryService_Case",
+          status: "paid"
+        })
+      ]).then(([customerPaid, additionalPaid]) => [
+        ...customerPaid,
+        ...additionalPaid
+      ]),
 
-      // Fetch all "pending" additional payments
-      AdditionalPayment.find({ caseId: caseObjectId, caseType: "NotaryService_Case", status: "pending" })
+      AdditionalPayment.find({
+        caseId: caseObjectId,
+        caseType: "NotaryService_Case",
+        status: "pending"
+      })
     ]);
 
-     // Format dates before sending response
-     const formattedPaidTransactions = paidTransactions.map((transaction) => ({
+    const formattedPaidTransactions = paidTransactions.map(transaction => ({
       _id: transaction._id,
       customerId: transaction.customerId,
       caseId: transaction.caseId,
@@ -254,32 +260,33 @@ export const getAllNotaryPayments = async (req, res, next) => {
       amountPaid: transaction.amount || transaction.amountPaid,
       currency: transaction.currency || transaction.paidCurrency,
       status: transaction.status,
-      paymentDate: formatDate(transaction.createdAt), 
+      paymentDate: formatDate(transaction.createdAt),
       createdAt: transaction.createdAt,
-      updatedAt: transaction.updatedAt,
+      updatedAt: transaction.updatedAt
     }));
 
+    const formattedPendingTransactions = pendingTransactions.map(
+      transaction => ({
+        _id: transaction._id,
+        customerId: transaction.customerId,
+        caseId: transaction.caseId,
+        caseType: transaction.caseType,
+        serviceType: transaction.serviceType,
+        amountPaid: transaction.amount || transaction.amountPaid,
+        currency: transaction.currency || transaction.paidCurrency,
+        requestReason: transaction.requestReason,
+        dueDate: formatDate(transaction.dueDate),
+        paymentDate: formatDate(transaction.paymentDate),
+        status: transaction.status,
+        createdAt: transaction.createdAt,
+        updatedAt: transaction.updatedAt
+      })
+    );
 
-    const formattedPendingTransactions = pendingTransactions.map((transaction) => ({
-      _id: transaction._id,
-      customerId: transaction.customerId,
-      caseId: transaction.caseId,
-      caseType: transaction.caseType,
-      serviceType: transaction.serviceType,
-      amountPaid: transaction.amount || transaction.amountPaid,
-      currency: transaction.currency || transaction.paidCurrency,
-      requestReason: transaction.requestReason,
-      dueDate: formatDate(transaction.dueDate),
-      paymentDate: formatDate(transaction.paymentDate),
-      status: transaction.status,
-      createdAt: transaction.createdAt,
-      updatedAt: transaction.updatedAt,
-    }));
-
-    // Construct response
+   
     return res.status(200).json({
       message: "Notary payments fetched successfully",
-      paidTransactions : formattedPaidTransactions,
+      paidTransactions: formattedPaidTransactions,
       pendingTransactions: formattedPendingTransactions
     });
   } catch (error) {

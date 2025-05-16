@@ -164,7 +164,6 @@ export const getConsultationDataById = async (req, res, next) => {
   }
 };
 
-
 export const getConsultationReviews = async (req, res, next) => {
   try {
     const consultantId = new mongoose.Types.ObjectId(req.params.ConsultantId);
@@ -198,16 +197,17 @@ export const getConsultationReviews = async (req, res, next) => {
 
     // Calculate average rating
 
-    const totalRating = reviews.reduce((sum, review) => sum + (review.consultationRating || 0), 0);
-    const averageRating = reviews.length > 0 ? (totalRating / reviews.length) : 0;
-
+    const totalRating = reviews.reduce(
+      (sum, review) => sum + (review.consultationRating || 0),
+      0
+    );
+    const averageRating = reviews.length > 0 ? totalRating / reviews.length : 0;
 
     res.status(200).json({
       message: "Consultation reviews retrieved successfully",
       averageRating: averageRating,
       data: reviews
     });
-
   } catch (error) {
     console.error("Error fetching consultation reviews:", error);
     next(error);

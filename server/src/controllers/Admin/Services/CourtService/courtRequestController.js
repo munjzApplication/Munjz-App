@@ -4,9 +4,8 @@ import CourtCase from "../../../../models/Customer/courtServiceModel/courtServic
 import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import mongoose from "mongoose";
-import { io } from "../../../../socket/socketController.js";
-import {emitAdminRequest} from "../../../../socket/emitAdminRequest.js";
-import {emitAdminPaymentRequest} from "../../../../socket/emitAdminRequest.js";
+import { emitAdminRequest } from "../../../../socket/emitAdminRequest.js";
+import { emitAdminPaymentRequest } from "../../../../socket/emitAdminRequest.js";
 import { formatDate } from "../../../../helper/dateFormatter.js";
 
 export const requestDocument = async (req, res) => {
@@ -23,7 +22,6 @@ export const requestDocument = async (req, res) => {
       return res.status(404).json({ message: "Court case not found." });
     }
 
-    // Extract customerId from court case
     const customerId = courtCase.customerId;
     if (!customerId) {
       await session.abortTransaction();
@@ -67,7 +65,7 @@ export const requestDocument = async (req, res) => {
     );
 
     // Emit real-time update to customer
-    const doc = documentRequest[0]; // 👈 get the actual document object
+    const doc = documentRequest[0];
 
     emitAdminRequest("court-admin-request", customerId, {
       message: `New document request pending for your case: ${courtCase.courtServiceID}`,
@@ -84,7 +82,6 @@ export const requestDocument = async (req, res) => {
         createdAt: formatDate(doc.createdAt)
       }
     });
-    
 
     res.status(201).json({
       message: "Document request created successfully.",
@@ -245,7 +242,7 @@ export const adminSubmittedDoc = async (req, res, next) => {
 
     await session.commitTransaction();
 
-    // ✅ Notify Customer
+    // Notify Customer
     await notificationService.sendToCustomer(
       customerId,
       "New Document Uploaded",
@@ -253,22 +250,21 @@ export const adminSubmittedDoc = async (req, res, next) => {
     );
 
     // Emit real-time update to customer
-emitAdminRequest("court-admin-request", customerId, {
-  message: "New documents uploaded for your case.",
-  notifications: {
-    _id: newAdminDocument[0]._id,
-    courtServiceCase: newAdminDocument[0].courtServiceCase,
-    uploadedBy: newAdminDocument[0].uploadedBy,
-    documentType: newAdminDocument[0].documentType,
-    status: newAdminDocument[0].status,
-    requestedAt: newAdminDocument[0].requestedAt,
-    requestReason: newAdminDocument[0].requestReason,
-    documents: newAdminDocument[0].documents,
-    uploadedAt: formatDate(newAdminDocument[0].uploadedAt),
-    createdAt: formatDate(newAdminDocument[0].createdAt)
-  }
-});
-
+    emitAdminRequest("court-admin-request", customerId, {
+      message: "New documents uploaded for your case.",
+      notifications: {
+        _id: newAdminDocument[0]._id,
+        courtServiceCase: newAdminDocument[0].courtServiceCase,
+        uploadedBy: newAdminDocument[0].uploadedBy,
+        documentType: newAdminDocument[0].documentType,
+        status: newAdminDocument[0].status,
+        requestedAt: newAdminDocument[0].requestedAt,
+        requestReason: newAdminDocument[0].requestReason,
+        documents: newAdminDocument[0].documents,
+        uploadedAt: formatDate(newAdminDocument[0].uploadedAt),
+        createdAt: formatDate(newAdminDocument[0].createdAt)
+      }
+    });
 
     res.status(201).json({
       message: "Admin document uploaded successfully.",

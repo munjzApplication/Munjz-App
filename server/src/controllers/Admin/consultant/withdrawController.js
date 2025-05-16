@@ -156,6 +156,15 @@ export const updateWithdrawalStatus = async (req, res, next) => {
     );
 
     // Emit Socket Event for Real-Time Update
+
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("withdrawal-status-update", {
+      consultantId: withdrawal.consultantId,
+      message: `Withdrawal request updated to ${status}`,
+      _id: withdrawal._id.toString(),
+      currentStatus: withdrawal.currentStatus
+    });
+
     const consultantNamespace = io.of("/consultant");
     consultantNamespace
       .to(withdrawal.consultantId.toString())

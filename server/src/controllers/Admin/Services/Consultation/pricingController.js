@@ -4,14 +4,12 @@ export const checkCountry = async (req, res, next) => {
   try {
     const { countryCode } = req.body;
 
-    // Validate input
     if (!countryCode) {
       return res.status(400).json({
         message: "Country code is required."
       });
     }
 
-    // Check if country exists in PricingModel
     const pricingData = await PricingModel.findOne({ countryCode });
 
     if (!pricingData) {
@@ -22,7 +20,7 @@ export const checkCountry = async (req, res, next) => {
 
     return res.status(200).json({
       message: "Pricing data for this country already exists.",
-      data:pricingData
+      data: pricingData
     });
   } catch (error) {
     next(error);
@@ -68,7 +66,8 @@ export const editPricing = async (req, res, next) => {
     if (!parses || typeof parses !== "object") {
       return res.status(400).json({
         success: false,
-        message: "Invalid input. Parses field is required and should be an object."
+        message:
+          "Invalid input. Parses field is required and should be an object."
       });
     }
 

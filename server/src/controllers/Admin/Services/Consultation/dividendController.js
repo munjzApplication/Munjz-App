@@ -5,7 +5,7 @@ export const checkCountry = async (req, res, next) => {
   try {
     const { countryCode } = req.body;
 
-    // Validate input
+
     if (!countryCode) {
       return res.status(400).json({
         message: "Country code is required."
@@ -48,13 +48,13 @@ export const createDividend = async (req, res, next) => {
     });
 
     await dividendData.save();
- 
+
     const consultantNamespace = io.of("/consultant");
     consultantNamespace.emit("dividendUpdated", {
       message: "Dividend data updated",
       data: dividendData
     });
-    
+
     res.status(201).json({
       success: true,
       message: "Dividend data successfully saved!",

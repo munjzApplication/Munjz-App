@@ -55,14 +55,14 @@ export const updateNotaryService = async (req, res, next) => {
     const { id } = req.params;
     const { ServiceNameArabic, ServiceNameEnglish } = req.body;
 
-    // Check if ID is a valid MongoDB ObjectId
+    
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid ID format" });
     }
 
     const existingService = await NotaryService.findOne({
       $or: [{ ServiceNameEnglish }, { ServiceNameArabic }],
-      _id: { $ne: id } // Exclude the current service being updated
+      _id: { $ne: id } 
     }).lean();
 
     if (existingService) {
@@ -100,7 +100,7 @@ export const deleteNotaryService = async (req, res, next) => {
       return res.status(404).json({ message: "Notary Service not found" });
     }
 
-    // Optionally, reassign service numbers after deletion to maintain order
+   
     const services = await NotaryService.find().sort({ serviceNo: 1 });
     for (let i = 0; i < services.length; i++) {
       services[i].serviceNo = i + 1;
