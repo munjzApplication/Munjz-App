@@ -35,7 +35,7 @@ export const createNews = async (req, res) => {
 
     const customerNamespace = io.of("/customer");
 
-    const emitData ={
+    const emitData = {
       message: "News created successfully",
       data: {
         _id: news._id,
@@ -46,7 +46,7 @@ export const createNews = async (req, res) => {
         createdAt: news.createdAt
       }
     };
-       console.log("Emitting to /customer namespace:", emitData);
+    console.log("Emitting to /customer namespace:", emitData);
     customerNamespace.emit("news-created", emitData);
 
     res.status(201).json({ message: "News created successfully", news });
@@ -64,7 +64,6 @@ export const updateNews = async (req, res) => {
 
   try {
     if (req.file) {
-      // Upload a single file to S3 and get its URL
       updates.image = await uploadFileToS3(req.file);
     }
 
@@ -100,10 +99,8 @@ export const updateNews = async (req, res) => {
 export const deleteNews = async (req, res) => {
   const { id } = req.params;
 
-
   try {
     const news = await News.findByIdAndDelete(id);
-
 
     if (!news)
       return res.status(404).json({ message: "News article not found" });
@@ -112,7 +109,7 @@ export const deleteNews = async (req, res) => {
     const emitData = {
       message: "News article deleted successfully",
       data: {
-        _id: news._id,
+        _id: news._id
       }
     };
 

@@ -3,7 +3,7 @@ import { formatDate } from "../../../helper/dateFormatter.js";
 
 export const getAdminEarnings = async (req, res, next) => {
   try {
-    // Parallel execution for better performance
+
     const [detailedEarnings, totalResult] = await Promise.all([
       AdminEarnings.aggregate([
         {
@@ -54,7 +54,6 @@ export const getAdminEarnings = async (req, res, next) => {
       ])
     ]);
 
-    // Format date (only if needed for frontend)
     const formattedData = detailedEarnings.map(entry => ({
       ...entry,
       createdAt: formatDate(entry.createdAt)

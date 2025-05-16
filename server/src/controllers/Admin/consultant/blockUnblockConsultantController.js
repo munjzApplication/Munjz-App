@@ -7,16 +7,14 @@ export const blockUnblockConsultant = async (req, res, next) => {
   const { action } = req.body;
 
   try {
-
     const consultant = await ConsultantProfile.findById(consultantId);
 
     if (!consultant) {
       return res.status(404).json({
         success: false,
-        message: "Consultant not found.",
+        message: "Consultant not found."
       });
     }
-
 
     if (action === "block") {
       consultant.isBlocked = true;
@@ -35,28 +33,30 @@ export const blockUnblockConsultant = async (req, res, next) => {
     } else {
       return res.status(400).json({
         success: false,
-        message: "Invalid action. Use 'block' or 'unblock'.",
+        message: "Invalid action. Use 'block' or 'unblock'."
       });
     }
 
     await consultant.save();
-   const customerNamespace = io.of("/customer");
+    const customerNamespace = io.of("/customer");
     customerNamespace.emit("consultant-block-status", {
       consultantId,
       message: consultant.isBlocked
         ? "Consultant has been blocked."
         : "Consultant has been unblocked.",
-      isBlocked: consultant.isBlocked,
+      isBlocked: consultant.isBlocked
     });
     // Emit Socket Event for Real-Time Update
     const consultantNamespace = io.of("/consultant");
-    consultantNamespace.to(consultantId.toString()).emit("consultant-block-status", {
-      consultantId,
-      message: consultant.isBlocked
-        ? "Consultant has been blocked."
-        : "Consultant has been unblocked.",
-      isBlockedStatus: consultant.isBlocked,
-    });
+    consultantNamespace
+      .to(consultantId.toString())
+      .emit("consultant-block-status", {
+        consultantId,
+        message: consultant.isBlocked
+          ? "Consultant has been blocked."
+          : "Consultant has been unblocked.",
+        isBlockedStatus: consultant.isBlocked
+      });
 
     const adminNamespace = io.of("/admin");
     adminNamespace.emit("consultant-block-status", {
@@ -64,17 +64,15 @@ export const blockUnblockConsultant = async (req, res, next) => {
       message: consultant.isBlocked
         ? "Consultant has been blocked."
         : "Consultant has been unblocked.",
-      isBlockedStatus: consultant.isBlocked,
+      isBlockedStatus: consultant.isBlocked
     });
 
     return res.status(200).json({
       message: consultant.isBlocked
         ? "Consultant has been blocked."
         : "Consultant has been unblocked.",
-      isBlockedStatus: consultant.isBlocked,
+      isBlockedStatus: consultant.isBlocked
     });
-
-    
   } catch (error) {
     console.error("Error in isBlockedckConsultant:", error.message);
     next(error);

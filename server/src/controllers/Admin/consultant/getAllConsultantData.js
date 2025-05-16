@@ -54,12 +54,11 @@ export const getAllConsultantData = async (req, res, next) => {
           profilePicture: "$profilePicture",
           idProofStatus: "$IdProof.status",
           isBlocked: "$ConsultantProfile.isBlocked"
-
         }
       }
     ]);
     // Function to format creationDate
-    consultantData.forEach((consultant) => {
+    consultantData.forEach(consultant => {
       if (consultant.creationDate) {
         consultant.creationDate = formatDate(consultant.creationDate);
       }
@@ -74,17 +73,14 @@ export const getAllConsultantData = async (req, res, next) => {
     consultantData.forEach(consultant => {
       if (consultant.isBlocked) {
         ConsultantDatas.declined.push(consultant);
-      } else
-        if (consultant.idProofStatus === "approved") {
-          ConsultantDatas.active.push(consultant);
-        } else if (consultant.idProofStatus === "pending") {
-          ConsultantDatas.pending.push(consultant);
-        } else if (consultant.idProofStatus === "rejected") {
-          ConsultantDatas.declined.push(consultant);
-        }
+      } else if (consultant.idProofStatus === "approved") {
+        ConsultantDatas.active.push(consultant);
+      } else if (consultant.idProofStatus === "pending") {
+        ConsultantDatas.pending.push(consultant);
+      } else if (consultant.idProofStatus === "rejected") {
+        ConsultantDatas.declined.push(consultant);
+      }
     });
-
-
 
     return res.status(200).json({
       message: "Consultant data fetched successfully.",
@@ -101,23 +97,18 @@ export const getConsultantDocs = async (req, res) => {
 
     const consultantDocs = await IdProof.findOne({ consultantId });
 
-    // If no documents found, return an error message
     if (!consultantDocs) {
       return res.status(404).json({
-
-        message: "Consultant not found.",
+        message: "Consultant not found."
       });
     }
 
-    // Return the consultant documents if found
     res.status(200).json({
-
       message: "Consultant Documents fetched successfully.",
-      consultantDocs,
+      consultantDocs
     });
   } catch (error) {
     next(error);
-
   }
 };
 
@@ -125,78 +116,61 @@ export const getConsultantDocuments = async (req, res, next) => {
   try {
     const { consultantId } = req.params;
 
-
-    // Now proceed with the query since the consultantId is valid
     const consultantDocs = await IdProof.findOne({ consultantId });
 
-
-    // If no documents found, return an error message
     if (!consultantDocs) {
       return res.status(404).json({
-
-        message: "Consultant not found.",
+        message: "Consultant not found."
       });
     }
 
-    // Return the consultant documents if found
     res.status(200).json({
-
       message: "Consultant Documents fetched successfully.",
-      consultantDocs,
+      consultantDocs
     });
   } catch (error) {
     next(error);
-
   }
-}
+};
 
 export const getConsultantBankDetails = async (req, res, next) => {
   try {
     const { consultantId } = req.params;
 
-
-    // Now proceed with the query since the consultantId is valid
     const bankDetails = await BankDetails.findOne({ consultantId });
 
-
-    // If no documents found, return an error message
     if (!bankDetails) {
       return res.status(404).json({
-
-        message: "Consultant not found.",
+        message: "Consultant not found."
       });
     }
 
-    // Return the consultant documents if found
     res.status(200).json({
-
       message: "Consultant Bank Details fetched successfully.",
-      bankDetails,
+      bankDetails
     });
   } catch (error) {
     next(error);
-
   }
-}
+};
 
 export const getConsultantData = async (req, res, next) => {
   try {
     const { consultantId } = req.params;
 
-    // Query consultant data excluding the "password" field
-    const consultantData = await consultantProfile.findOne({ _id: consultantId }).select(
-      "-password -resetOtpHash -resetOtpExpiry"
-    );
+    const consultantData = await consultantProfile
+      .findOne({ _id: consultantId })
+      .select("-password -resetOtpHash -resetOtpExpiry");
 
     if (!consultantData) {
       return res.status(404).json({
-        message: "Consultant not found.",
+        message: "Consultant not found."
       });
     }
 
     res.status(200).json({
       message: "Consultant Data fetched successfully.",
-      consultantData,
+      consultantData
     });
   } catch (error) {
     next(error);

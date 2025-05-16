@@ -31,9 +31,9 @@ export const getCustomerServices = async (req, res, next) => {
 
     if (category && serviceModels[category]) {
       const docs = await serviceModels[category]
-        .find({ customerId: customerObjectId }, "-__v") // Exclude __v
+        .find({ customerId: customerObjectId }, "-__v")
         .sort({ createdAt: -1 })
-        .lean(); // Lean improves performance (returns plain JS objects)
+        .lean();
 
       services = docs.map(doc => formatServiceData(doc, category));
     } else {
@@ -57,6 +57,6 @@ export const getCustomerServices = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Error fetching services:", error);
-   next(error);
+    next(error);
   }
 };

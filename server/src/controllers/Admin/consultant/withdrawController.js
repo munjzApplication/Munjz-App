@@ -1,7 +1,5 @@
 import WithdrawalRequest from "../../../models/Consultant/consultantModel/WithdrawRequest.js";
 import Earnings from "../../../models/Consultant/consultantModel/consultantEarnings.js";
-import PersonalDetails from "../../../models/Consultant/ProfileModel/personalDetails.js";
-import breakDetails from "../../../models/Consultant/ProfileModel/bankDetails.js";
 import WithhdrawalActivity from "../../../models/Consultant/consultantModel/withdrawalActivity .js";
 import { notificationService } from "../../../service/sendPushNotification.js";
 import { formatDate } from "../../../helper/dateFormatter.js";
@@ -85,7 +83,6 @@ export const updateWithdrawalStatus = async (req, res, next) => {
     const { requestId } = req.params;
     const { status, paymentMethod, transferId } = req.body;
 
-    // Find withdrawal request
     const withdrawal = await WithdrawalRequest.findById(requestId);
     if (!withdrawal) {
       return res.status(404).json({ message: "Withdrawal request not found" });
@@ -98,7 +95,6 @@ export const updateWithdrawalStatus = async (req, res, next) => {
         .json({ message: "Completed withdrawals cannot be changed" });
     }
 
-    // Fetch consultant earnings
     const earnings = await Earnings.findOne({
       consultantId: withdrawal.consultantId
     });
@@ -141,7 +137,6 @@ export const updateWithdrawalStatus = async (req, res, next) => {
 
     await withdrawal.save();
 
-    // Save withdrawal activity log
     const withdrawalActivity = new WithhdrawalActivity({
       consultantId: withdrawal.consultantId,
       amount: withdrawal.amount,

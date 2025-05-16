@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import customerProfile from "../../../models/Customer/customerModels/customerModel.js";
-import consultantProfile from "../../../models/Consultant/ProfileModel/User.js";
 import consultationDetails from "../../../models/Customer/consultationModel/consultationModel.js";
 import walletDetails from "../../../models/Customer/customerModels/walletModel.js";
 import notaryService from "../../../models/Customer/notaryServiceModel/notaryServiceDetailsModel.js";
@@ -15,44 +14,51 @@ export const getWalletDetails = async (req, res, next) => {
   const { customerId, actionType } = req.body;
 
   try {
-    // Fetch customer and wallet details
     const customer = await customerProfile.findById(customerId).lean();
     const wallet = await walletDetails.findOne({ customerId }).lean();
 
     let services = [];
 
-    // Fetch all services if actionType is "ALL" or specific services based on actionType
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
     if (actionType === "ALL" || actionType === "CONSULTATION") {
-      const consultations = await consultationDetails
-        .find({ customerId })
-        .select(
-          "consultantId consultationDate consultationDuration consultationRate"
-        )
-        .sort({ consultationDate: -1 }) 
-        .lean();
+      const consultations = await consultationDetails.aggregate([
+        { $match: { customerId: new mongoose.Types.ObjectId(customerId) } },
+        { $sort: { consultationDate: -1 } },
+        {
+          $lookup: {
+            from: "consultant_profiles",
+            localField: "consultantId",
+            foreignField: "_id",
+            as: "consultant"
+          }
+        },
+        {
+          $unwind: {
+            path: "$consultant",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $project: {
+            consultantName: "$consultant.Name",
+            consultationDate: 1,
+            consultationDuration: 1,
+            
+          }
+        },
+        { $skip: skip },
+        { $limit: limit }
+      ]);
 
-      // Extract consultantIds and fetch consultant names
-      const consultantIds = consultations.map(service => service.consultantId);
-      const consultants = await consultantProfile
-        .find({ _id: { $in: consultantIds } })
-        .select("Name")
-        .lean();
-
-      // Map consultantId to consultantName
-      const consultantMap = consultants.reduce((acc, consultant) => {
-        acc[consultant._id] = consultant.Name;
-        return acc;
-      }, {});
-
-      // Add consultantName, format date and duration, and map the necessary fields
       services = [
         ...services,
         ...consultations.map(service => ({
-          consultantName: consultantMap[service.consultantId] || "Unknown",
-          consultationDate: formatDate(service.consultationDate), 
-          consultationDuration: formatMinutesToMMSS(
-            service.consultationDuration
-          ), 
+          consultantName: service.consultantName || "Unknown",
+          consultationDate: formatDate(service.consultationDate),
+          consultationDuration: formatMinutesToMMSS(service.consultationDuration),
           consultationRate: service.consultationRating,
           serviceType: "CONSULTATION"
         }))
@@ -60,8 +66,12 @@ export const getWalletDetails = async (req, res, next) => {
     }
 
     if (actionType === "ALL" || actionType === "NOTARYSERVICE") {
-      // Fetch notary services
-      const notaryServices = await notaryService.find({ customerId }).lean();
+      const notaryServices = await notaryService
+        .find({ customerId })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
       services = [
         ...services,
         ...notaryServices.map(service => ({
@@ -72,8 +82,12 @@ export const getWalletDetails = async (req, res, next) => {
     }
 
     if (actionType === "ALL" || actionType === "COURTSERVICE") {
-      // Fetch court services
-      const courtServices = await courtService.find({ customerId }).lean();
+      const courtServices = await courtService
+        .find({ customerId })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
       services = [
         ...services,
         ...courtServices.map(service => ({
@@ -84,10 +98,12 @@ export const getWalletDetails = async (req, res, next) => {
     }
 
     if (actionType === "ALL" || actionType === "TRANSLATIONSERVICE") {
-      // Fetch translation services
       const translationServices = await translationService
         .find({ customerId })
+        .skip(skip)
+        .limit(limit)
         .lean();
+
       services = [
         ...services,
         ...translationServices.map(service => ({
@@ -97,12 +113,11 @@ export const getWalletDetails = async (req, res, next) => {
       ];
     }
 
-    // Send the response
     return res.status(200).json({
       customer: {
         name: customer.Name,
         email: customer.email,
-        walletBalance: wallet.balance
+        walletBalance: wallet?.balance || 0
       },
       services
     });

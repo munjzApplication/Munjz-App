@@ -1,6 +1,6 @@
 import courtServiceDetailsModel from "../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
 
-export const adminFollowerUpdate = async (req, res,next) => {
+export const adminFollowerUpdate = async (req, res, next) => {
   try {
     const { courtServiceID, followerName } = req.body;
 
@@ -12,9 +12,9 @@ export const adminFollowerUpdate = async (req, res,next) => {
 
 
     const updatedCase = await courtServiceDetailsModel.findOneAndUpdate(
-      { courtServiceID }, 
-      { $set: { follower: followerName } }, 
-      { new: true } 
+      { courtServiceID },
+      { $set: { follower: followerName } },
+      { new: true }
     );
 
     if (!updatedCase) {

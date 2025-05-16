@@ -9,11 +9,10 @@ export const getAllCustomerData = async (req, res, next) => {
           from: "customer_wallets",
           localField: "_id",
           foreignField: "customerId",
-          as: "wallet",
-        },
+          as: "wallet"
+        }
       },
       {
-
         $project: {
           _id: 1,
           customerUniqueId: 1,
@@ -26,12 +25,11 @@ export const getAllCustomerData = async (req, res, next) => {
           countryCode: 1,
           country: 1,
           walletBalance: {
-            $ifNull: [{ $arrayElemAt: ["$wallet.balance", 0] }, 0], 
-          },
-         
+            $ifNull: [{ $arrayElemAt: ["$wallet.balance", 0] }, 0]
+          }
         }
       },
-      { $sort: { creationDate: -1 } } 
+      { $sort: { creationDate: -1 } }
     ]);
 
     const customersData = {
@@ -39,16 +37,15 @@ export const getAllCustomerData = async (req, res, next) => {
       declined: []
     };
 
-
-    customerData.forEach((customer) => {
+    customerData.forEach(customer => {
       // Format wallet balance in JavaScript
       const balance = parseFloat(customer.walletBalance).toFixed(2);
       const [whole, decimal] = balance.split(".");
 
       const formattedCustomer = {
         ...customer,
-        creationDate: formatDate(customer.creationDate), 
-        walletBalance: `${whole}:${decimal}`, 
+        creationDate: formatDate(customer.creationDate),
+        walletBalance: `${whole}:${decimal}`
       };
 
       if (!customer.isBlocked) {
@@ -57,7 +54,6 @@ export const getAllCustomerData = async (req, res, next) => {
         customersData.declined.push(formattedCustomer);
       }
     });
-
 
     res.status(200).json({
       message: "Customer data fetched successfully.",

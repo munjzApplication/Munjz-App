@@ -1,7 +1,6 @@
 import CustomerTransaction from "../../../models/Customer/customerModels/transaction.js";
 import AdditionalPayment from "../../../models/Customer/customerModels/additionalTransaction.js";
 
-
 export const getAllPayments = async (req, res, next) => {
   try {
     // Fetch payments directly from the models
@@ -19,7 +18,6 @@ export const getAllPayments = async (req, res, next) => {
   }
 };
 
-
 export const deletePendingPayment = async (req, res, next) => {
   const { paymentId } = req.params;
   try {
@@ -29,10 +27,14 @@ export const deletePendingPayment = async (req, res, next) => {
     ]);
 
     if (!deletedPayment) {
-      return res.status(404).json({ success: false, message: "Payment not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Payment not found." });
     }
 
-    res.status(200).json({ success: true, message: "Payment deleted successfully." });
+    res
+      .status(200)
+      .json({ success: true, message: "Payment deleted successfully." });
   } catch (error) {
     next(error);
   }
@@ -43,11 +45,17 @@ export const editPendingPayment = async (req, res, next) => {
   const { amount, markPaid } = req.body;
 
   try {
-    let payment = await CustomerTransaction.findOne({ _id: paymentId, status: "pending" }) ||
-      await AdditionalPayment.findOne({ _id: paymentId, status: "pending" });
+    let payment =
+      (await CustomerTransaction.findOne({
+        _id: paymentId,
+        status: "pending"
+      })) ||
+      (await AdditionalPayment.findOne({ _id: paymentId, status: "pending" }));
 
     if (!payment) {
-      return res.status(404).json({ success: false, message: "Pending payment not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Pending payment not found." });
     }
 
     if (amount !== undefined) payment.amountPaid = amount;
@@ -60,7 +68,9 @@ export const editPendingPayment = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: markPaid ? "Payment marked as 'paid'." : "Amount updated successfully.",
+      message: markPaid
+        ? "Payment marked as 'paid'."
+        : "Amount updated successfully.",
       data: payment
     });
   } catch (error) {

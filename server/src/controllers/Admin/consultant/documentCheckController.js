@@ -9,7 +9,7 @@ export const handleDocumentStatus = async (req, res, next) => {
   const { consultantId } = req.params;
 
   try {
-    // Validate consultantId format and fetch the consultant and IDProof in one go
+   
     if (!mongoose.Types.ObjectId.isValid(consultantId)) {
       return res.status(400).json({
         error: "Invalid consultant ID format."
@@ -30,7 +30,8 @@ export const handleDocumentStatus = async (req, res, next) => {
     // Validate action type and documentType
     if (!["approve", "reject"].includes(action)) {
       return res.status(400).json({
-        error: "Invalid action. The action must be either 'approve' or 'reject'."
+        error:
+          "Invalid action. The action must be either 'approve' or 'reject'."
       });
     }
 
@@ -76,7 +77,8 @@ export const handleDocumentStatus = async (req, res, next) => {
     );
 
     // Emit Socket Event for Real-Time Update
-    io.of("/consultant")
+    io
+      .of("/consultant")
       .to(consultantId.toString())
       .emit("consultant-doc-status-update", {
         message: responseMessage,
