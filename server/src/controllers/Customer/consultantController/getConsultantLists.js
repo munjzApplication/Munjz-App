@@ -17,6 +17,7 @@ export const getConsultantLists = async (req, res, next) => {
       {
         $match: {
           Name: { $ne: "Deleted_User" }, 
+          isBlocked: { $ne: true },
         },
       },
       {
