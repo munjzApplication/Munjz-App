@@ -64,10 +64,6 @@ export const getWithdrawalDatas = async (req, res, next) => {
       withdrawal.time = formatDate(withdrawal.time);
     });
 
-    if (!withdrawals.length) {
-      return res.status(404).json({ message: "No withdrawal requests found" });
-    }
-
     res.status(200).json({
       message: "Withdrawal requests retrieved successfully",
       withdrawals
