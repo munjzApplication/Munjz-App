@@ -7,6 +7,7 @@ import consultantRoute from "./routes/Consultant/consultantRoute.js";
 import customerRoute from "./routes/Customer/customerRoutes.js";
 import adminRoute from "./routes/Admin/adminRoutes.js";
 import http from "http";
+import helmet from "helmet";
 import { setupSocket } from "./socket/socketController.js";
 
 
@@ -16,6 +17,7 @@ const app = express();
 
 const server = http.createServer(app);
 
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
@@ -50,5 +52,6 @@ setupSocket(server);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log("DEBUG - Mongo URI:", process.env.MONGO_URL);
   connectDB();
 });
