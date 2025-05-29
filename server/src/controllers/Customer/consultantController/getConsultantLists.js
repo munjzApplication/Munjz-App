@@ -122,3 +122,93 @@ export const getConsultantLists = async (req, res, next) => {
     next(error);
   }
 };
+
+
+export const getTopRatedConsultants = async (req, res, next) => {
+  try {
+    const consultants = await ConsultantProfile.aggregate([
+      {
+        $match: {
+          Name: { $ne: "Deleted_User" },
+          isBlocked: { $ne: true },
+        },
+      },
+      {
+        $lookup: {
+          from: "consultant_personaldetails",
+          localField: "_id",
+          foreignField: "consultantId",
+          as: "personalDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$personalDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          profilePicture: "$personalDetails.profilePicture",
+          country: "$personalDetails.country",
+          languages: "$personalDetails.languages",
+          areaOfPractices: "$personalDetails.areaOfPractices",
+          experience: "$personalDetails.experience",
+          biography: "$personalDetails.biography",
+        },
+      },
+      {
+        $project: {
+          personalDetails: 0,
+          password: 0,
+          phoneNumber: 0,
+          emailVerified: 0,
+          __v: 0,
+        },
+      },
+      {
+        $lookup: {
+          from: "consultant_idproofs",
+          localField: "_id",
+          foreignField: "consultantId",
+          as: "idProof",
+        },
+      },
+      {
+        $unwind: {
+          path: "$idProof",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          "idProof.status": "approved",
+        },
+      },
+      {
+        $project: {
+          idProof: 0,
+        },
+      },
+      {
+        $sort: { creationDate: -1 }, // sort by latest
+      },
+      {
+        $limit: 10, // only latest 10 consultants
+      },
+    ]);
+
+    const formattedConsultants = consultants.map((consultant) => {
+      consultant.creationDate = formatDate(consultant.creationDate);
+      return consultant;
+    });
+
+    res.status(200).json({
+      message: "Latest consultants fetched successfully",
+      data: formattedConsultants,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
