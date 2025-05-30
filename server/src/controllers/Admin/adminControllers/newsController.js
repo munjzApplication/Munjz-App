@@ -23,16 +23,18 @@ export const createNews = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-     console.log("Uploaded file size (bytes):", req.file.size);
+    console.log("Uploaded file size (bytes):", req.file.size);
 
     // Enforce manual check in case multer size check is bypassed
     const maxFileSize = 1 * 1024 * 1024; // 1MB
     if (req.file.size > maxFileSize) {
-      return res.status(413).json({ message: "File too large. Try with another." });
+      return res
+        .status(413)
+        .json({ message: "File too large. try with another" });
     }
 
     // Upload a single file to S3 and get its URL
-    const imageUrl = await uploadFileToS3(req.file);
+    const imageUrl = await uploadFileToS3(req.file, "news-images");
 
     const news = await News.create({
       image: imageUrl,
@@ -72,7 +74,7 @@ export const updateNews = async (req, res) => {
 
   try {
     if (req.file) {
-      updates.image = await uploadFileToS3(req.file);
+      updates.image = await uploadFileToS3(req.file, "news-images");
     }
 
     const news = await News.findByIdAndUpdate(id, updates, {
