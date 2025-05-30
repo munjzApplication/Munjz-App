@@ -4,19 +4,26 @@ const customerProfileSchema = new mongoose.Schema({
   Name: { type: String, required: true },
   email: {
     type: String,
-    unique: true,
     sparse: true,
     match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
-    default: null
+    default: null,
+     index: {
+      unique: true,
+      sparse: true,
+      partialFilterExpression: { isDeleted: false }
+    }
   },
   profilePhoto: {
     type: String
   },
   phoneNumber: {
     type: String,
-    unique: true,
-    sparse: true,
-    default: null
+    default: null,
+    index: {
+      unique: true,
+      sparse: true,
+      partialFilterExpression: { isDeleted: false }
+    }
   },
   customerUniqueId: {
     type: String,
@@ -39,18 +46,27 @@ const customerProfileSchema = new mongoose.Schema({
   },
   googleId: {
     type: String,
-    unique: true,
-    sparse: true
+    index: {
+      unique: true,
+      sparse: true,
+      partialFilterExpression: { isDeleted: false }
+    }
   },
   facebookId: {
     type: String,
-    unique: true,
-    sparse: true
+    index: {
+      unique: true,
+      sparse: true,
+      partialFilterExpression: { isDeleted: false }
+    }
   },
   appleId: {
     type: String,
-    unique: true,
-    sparse: true
+   index: {
+      unique: true,
+      sparse: true,
+      partialFilterExpression: { isDeleted: false }
+    }
   },
   countryCode: {
     type: String,
@@ -78,6 +94,10 @@ const customerProfileSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isDeleted: {
+  type: Boolean,
+  default: false
+},
 
   isLoggedIn: { type: Boolean, default: false },
 

@@ -5,6 +5,11 @@ export const getAllCustomerData = async (req, res, next) => {
   try {
     const customerData = await customerProfile.aggregate([
       {
+        $match: {
+        isDeleted: { $ne: true } 
+       }
+      },
+      {
         $lookup: {
           from: "customer_wallets",
           localField: "_id",

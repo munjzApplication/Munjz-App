@@ -106,7 +106,7 @@ export const countrySetup = async (req, res, next) => {
     if (phoneNumber) {
       const isPhoneExists = await CustomerProfile.findOne({
         phoneNumber,
-        _id: { $ne: userId }
+        _id: { $ne: userId } 
       });
 
       if (isPhoneExists) {
@@ -123,10 +123,10 @@ export const countrySetup = async (req, res, next) => {
       {
         country,
         countryCode,
-        phoneNumber: phoneNumber || null,
+        phoneNumber: phoneNumber || null ,
         isRegistrationComplete: true
       },
-      { new: true, upsert: true, runValidators: true }
+      { new: true, upsert: true, runValidators: true } 
     );
 
     // Notify on registration
@@ -383,7 +383,7 @@ export const getAllServices = async (req, res) => {
 export const deleteProfile = async (req, res, next) => {
   const session = await mongoose.startSession();
   try {
-    session.startTransaction();
+     session.startTransaction();
     const userId = req.user._id;
 
     const user = await CustomerProfile.findById(userId).session(session);
@@ -391,67 +391,68 @@ export const deleteProfile = async (req, res, next) => {
       return res.status(404).json({ message: "Profile not found." });
     }
 
-    // Prepare update to unset PII fields and mark as deleted
+    // Prepare update fields (conditionally remove social logins)
     const updateFields = {
-      $set: {
-        Name: "Deleted_User",
-        deletedAt: new Date(),
-      },
-      $unset: {
-        email: "",
-        phoneNumber: "",
-        password: "",
-        profilePhoto: "",
-        ...(user.googleId && { googleId: "" }),
-        ...(user.facebookId && { facebookId: "" }),
-        ...(user.appleId && { appleId: "" }),
-      },
+      Name: "Deleted_User",
+      profilePhoto: null,
+      email: null,
+      phoneNumber: null,
+      password: null,
+       isDeleted: true,
+      deletedAt: new Date()
     };
 
-    // Update user with soft delete fields
-    await CustomerProfile.updateOne(
-      { _id: userId },
-      updateFields,
-      { session }
-    );
+    if (user.googleId) updateFields.googleId = null;
+    if (user.facebookId) updateFields.facebookId = null;
+    if (user.appleId) updateFields.appleId = null;
 
-    const walletBalance = await wallet.findOne({ userId: userId });
+    // Update user with the soft delete fields
+    const updatedProfile = await CustomerProfile.findByIdAndUpdate(
+      userId,
+      { $set: updateFields },
+      { new: true, session }
+    );
 
     await session.commitTransaction();
 
-    // Send notifications asynchronously
-    Promise.all([
-      notificationService.sendToCustomer(
+    // Push Notifications
+    try {
+      // Notify customer
+      await notificationService.sendToCustomer(
         userId,
         "Account Deleted",
-        "Your personal information has been successfully deleted. If this was not you, please contact support immediately."
-      ),
-      notificationService.sendToAdmin(
-        "Customer PII Deleted",
-        `Customer ${user.Name} (ID: ${user.customerUniqueId}) has deleted their personal information.`
-      ),
-    ]).catch((pushError) => {
+        "Your account has been successfully deleted. If this was not you, please contact support immediately."
+      );
+
+      // Notify admin
+      await notificationService.sendToAdmin(
+        "Customer Profile Deleted",
+        `Customer ${user.Name} (${user.email}) has deleted their account.`
+      );
+    } catch (pushError) {
       console.error("Error sending account deletion notification:", pushError);
-    });
+    }
+    const walletBalance = await wallet.findOne({ userId: userId });
 
     // Emit event to admin namespace
-    io.of("/admin").emit("customer-deleted", {
+    const adminNamespace = io.of("/admin");
+    adminNamespace.emit("customer-deleted", {
       profile: {
-        _id: userId,
-        Name: "Deleted_User",
-        email: null,
-        phoneNumber: null,
-        customerUniqueId: user.customerUniqueId, // Unchanged
-        countryCode: user.countryCode,
-        country: user.country,
-        isBlocked: user.isBlocked,
-        creationDate: formatDate(user.createdAt),
-        profilePhoto: null,
-        walletBalance: formatMinutesToMMSS(walletBalance?.balance || 0),
-      },
+        _id: updatedProfile._id,
+        Name: updatedProfile.Name,
+        email: updatedProfile.email,
+        phoneNumber: updatedProfile.phoneNumber,
+        customerUniqueId: updatedProfile.customerUniqueId,
+        countryCode: updatedProfile.countryCode,
+        country: updatedProfile.country,
+        isBlocked: updatedProfile.isBlocked,
+        creationDate: formatDate(updatedProfile.createdAt),
+        profilePhoto: updatedProfile.profilePhoto,
+        walletBalance: formatMinutesToMMSS(walletBalance?.balance) || "0:00"
+      }
     });
 
-    res.status(200).json({ message: "Personal information deleted successfully." });
+    res.status(200).json({ message: "Profile deleted successfully." });
   } catch (error) {
     try {
       await session.abortTransaction();
