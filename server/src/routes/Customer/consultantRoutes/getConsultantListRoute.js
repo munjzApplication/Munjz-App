@@ -1,10 +1,8 @@
-import express from 'express';
-import { getConsultantLists ,getTopRatedConsultants} from '../../../controllers/Customer/consultantController/getConsultantLists.js';
+import express from "express";
+import { getConsultantLists } from "../../../controllers/Customer/consultantController/getConsultantLists.js";
 
 const router = express.Router();
 
-router.get('/getDatas',getConsultantLists);
-router.get('/top-rated', getTopRatedConsultants);
-
+router.get("/getDatas", getConsultantLists);
 
 export default router;

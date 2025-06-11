@@ -1,38 +1,58 @@
 import ConsultantProfile from "../../../models/Consultant/ProfileModel/User.js";
-import PersonalDetails from "../../../models/Consultant/ProfileModel/personalDetails.js";
-import ConsultationDetails from "../../../models/Customer/consultationModel/consultationModel.js";
 import Favorite from "../../../models/Customer/customerModels/customerFavorites.js";
 import { formatDate } from "../../../helper/dateFormatter.js";
 
+const getPaginationStages = (page = 1, limit = 10) => {
+  const skip = (page - 1) * limit;
+  return [{ $skip: skip }, { $limit: limit }];
+};
+
 export const getConsultantLists = async (req, res, next) => {
   try {
-   
     const customerId = req.user._id;
+    const {
+      searchTerm = "",
+      category = "",
+      topRated = false,
+      page = 1,
+      limit = 10
+    } = req.query;
 
-    const favorites = await Favorite.find({ customerId }).select("consultantId");
+    const favorites = await Favorite.find({ customerId }).select(
+      "consultantId"
+    );
+    const favoriteIds = favorites.map(f => f.consultantId.toString());
 
-    const favoriteConsultantIds = favorites.map(fav => fav.consultantId.toString());
+    const matchStage = {
+      Name: { $ne: "Deleted_User" },
+      isBlocked: { $ne: true },
+      ...(searchTerm && {
+        Name: { $regex: searchTerm, $options: "i" }
+      })
+    };
 
-    const consultants = await ConsultantProfile.aggregate([
-      {
-        $match: {
-          Name: { $ne: "Deleted_User" }, 
-          isBlocked: { $ne: true },
-        },
-      },
+    const pipeline = [
+      { $match: matchStage },
       {
         $lookup: {
           from: "consultant_personaldetails",
           localField: "_id",
           foreignField: "consultantId",
-          as: "personalDetails",
-        },
+          as: "personalDetails"
+        }
       },
       {
-        $unwind: {
-          path: "$personalDetails",
-          preserveNullAndEmptyArrays: true,
-        },
+        $unwind: { path: "$personalDetails", preserveNullAndEmptyArrays: true }
+      },
+      {
+        $match: {
+          ...(category && {
+            "personalDetails.areaOfPractices": {
+              $regex: category,
+              $options: "i"
+            }
+          })
+        }
       },
       {
         $addFields: {
@@ -41,8 +61,8 @@ export const getConsultantLists = async (req, res, next) => {
           languages: "$personalDetails.languages",
           areaOfPractices: "$personalDetails.areaOfPractices",
           experience: "$personalDetails.experience",
-          biography: "$personalDetails.biography",
-        },
+          biography: "$personalDetails.biography"
+        }
       },
       {
         $project: {
@@ -50,165 +70,68 @@ export const getConsultantLists = async (req, res, next) => {
           password: 0,
           phoneNumber: 0,
           emailVerified: 0,
-          __v: 0,
-          
-        },
+          __v: 0
+        }
       },
       {
         $lookup: {
           from: "consultant_idproofs",
           localField: "_id",
           foreignField: "consultantId",
-          as: "idProof",
-        },
+          as: "idProof"
+        }
       },
-      {
-        $unwind: {
-          path: "$idProof",
-          preserveNullAndEmptyArrays: false,
-        },
-      },
-      {
-        $match: {
-          "idProof.status": "approved",
-        },
-      },
-      {
-        $project: {
-          idProof: 0,
-        },
-      },
+      { $unwind: { path: "$idProof", preserveNullAndEmptyArrays: false } },
+      { $match: { "idProof.status": "approved" } },
       {
         $lookup: {
           from: "consultationdetails",
           localField: "_id",
           foreignField: "consultantId",
-          as: "consultations",
-        },
+          as: "consultations"
+        }
       },
       {
         $addFields: {
           consultationRating: {
             $cond: {
-              if: { $gt: [{ $size: "$consultations" }, 0] }, 
-              then: { $round: [{ $avg: "$consultations.consultationRating" }, 2] }, 
-              else: 0, 
-            },
-          },
-        },
+              if: { $gt: [{ $size: "$consultations" }, 0] },
+              then: {
+                $round: [{ $avg: "$consultations.consultationRating" }, 2]
+              },
+              else: 0
+            }
+          }
+        }
       },
       {
         $project: {
           consultations: 0,
-        },
+          idProof: 0
+        }
       },
-      { $sort: { creationDate: -1 } },
-    ]);
+      {
+        $sort:
+          topRated === "true"
+            ? { consultationRating: -1 }
+            : { creationDate: -1 }
+      },
+      ...getPaginationStages(parseInt(page), parseInt(limit))
+    ];
 
-    
-    const formattedConsultants = consultants.map((consultant) => {
+    const consultants = await ConsultantProfile.aggregate(pipeline);
 
-      const isFav = favoriteConsultantIds.includes(consultant._id.toString());
-      consultant.creationDate = formatDate(consultant.creationDate);
-      consultant.isFav = isFav; 
-      return consultant;
-    });
-
-    res.status(200).json({
-      message: "Consultant Lists fetched successfully",
-      data: formattedConsultants,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-export const getTopRatedConsultants = async (req, res, next) => {
-  try {
-    const consultants = await ConsultantProfile.aggregate([
-      {
-        $match: {
-          Name: { $ne: "Deleted_User" },
-          isBlocked: { $ne: true },
-        },
-      },
-      {
-        $lookup: {
-          from: "consultant_personaldetails",
-          localField: "_id",
-          foreignField: "consultantId",
-          as: "personalDetails",
-        },
-      },
-      {
-        $unwind: {
-          path: "$personalDetails",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $addFields: {
-          profilePicture: "$personalDetails.profilePicture",
-          country: "$personalDetails.country",
-          languages: "$personalDetails.languages",
-          areaOfPractices: "$personalDetails.areaOfPractices",
-          experience: "$personalDetails.experience",
-          biography: "$personalDetails.biography",
-        },
-      },
-      {
-        $project: {
-          personalDetails: 0,
-          password: 0,
-          phoneNumber: 0,
-          emailVerified: 0,
-          __v: 0,
-        },
-      },
-      {
-        $lookup: {
-          from: "consultant_idproofs",
-          localField: "_id",
-          foreignField: "consultantId",
-          as: "idProof",
-        },
-      },
-      {
-        $unwind: {
-          path: "$idProof",
-          preserveNullAndEmptyArrays: false,
-        },
-      },
-      {
-        $match: {
-          "idProof.status": "approved",
-        },
-      },
-      {
-        $project: {
-          idProof: 0,
-        },
-      },
-      {
-        $sort: { creationDate: -1 }, // sort by latest
-      },
-      {
-        $limit: 10, // only latest 10 consultants
-      },
-    ]);
-
-    const formattedConsultants = consultants.map((consultant) => {
-      consultant.creationDate = formatDate(consultant.creationDate);
-      return consultant;
-    });
+    const formatted = consultants.map(c => ({
+      ...c,
+      creationDate: formatDate(c.creationDate),
+      isFav: favoriteIds.includes(c._id.toString())
+    }));
 
     res.status(200).json({
-      message: "Latest consultants fetched successfully",
-      data: formattedConsultants,
+      message: "Consultants fetched successfully",
+      data: formatted
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
-

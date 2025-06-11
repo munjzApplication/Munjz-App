@@ -241,6 +241,7 @@ export const deleteProfile = async (req, res, next) => {
       email: null,
       phoneNumber: null,
       password: null,
+      isDeleted: true,
       deletedAt: new Date()
     };
 

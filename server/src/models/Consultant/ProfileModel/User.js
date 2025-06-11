@@ -4,18 +4,25 @@ const consultantProfileSchema = new mongoose.Schema({
   Name: { type: String, required: true },
   email: {
     type: String,
-    unique: true,
     sparse: true,
     match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"],
-
+    index: {
+      unique: true,
+      sparse: true,
+      partialFilterExpression: { isDeleted: false }
+    }
   },
   profilePhoto: {
     type: String
   },
   phoneNumber: {
     type: String,
-    unique: true,
     sparse: true,
+    index: {
+      unique: true,
+      sparse: true,
+      partialFilterExpression: { isDeleted: false }
+    }
   },
   countryCode: {
     type: String
@@ -37,55 +44,66 @@ const consultantProfileSchema = new mongoose.Schema({
   password: {
     type: String,
     required: function() {
-      return !this.googleId && !this.facebookId  && !this.appleId;;
+      return !this.googleId && !this.facebookId && !this.appleId;
     }
   },
   googleId: {
     type: String,
-    unique: true,
-    sparse: true
+    index: {
+      unique: true,
+      sparse: true,
+      partialFilterExpression: { isDeleted: false }
+    }
   },
   facebookId: {
     type: String,
-    unique: true,
-    sparse: true
+    index: {
+      unique: true,
+      sparse: true,
+      partialFilterExpression: { isDeleted: false }
+    }
   },
   appleId: {
     type: String,
-    unique: true,
-    sparse: true
+    index: {
+      unique: true,
+      sparse: true,
+      partialFilterExpression: { isDeleted: false }
+    }
   },
   resetOtpHash: {
     type: String,
-    default: undefined,
+    default: undefined
   },
   resetOtpExpiry: {
     type: Date,
-    default: undefined,
+    default: undefined
   },
 
   isBlocked: {
     type: Boolean,
     default: false
   },
-    // ✅ Soft Delete Field
-    deletedAt: {
-      type: Date,
-      default: null // NULL means the account is active
-    },
-    
-    isOnline: { type: Boolean, default: false },
-      personalDetails: {
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+ 
+  deletedAt: {
+    type: Date,
+    default: null 
+  },
+
+  isOnline: { type: Boolean, default: false },
+  personalDetails: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Consultant_PersonalDetails"
   },
 
-  // optionally add this if needed
   consultationDetails: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "ConsultationDetails"
-  },
-
+  }
 });
 
 const ConsultantProfile = mongoose.model(
