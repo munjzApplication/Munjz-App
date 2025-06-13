@@ -14,6 +14,7 @@ export const getConsultantLists = async (req, res, next) => {
       searchTerm = "",
       category = "",
       topRated = false,
+      isOnline = false,
       page = 1,
       limit = 10
     } = req.query;
@@ -28,8 +29,14 @@ export const getConsultantLists = async (req, res, next) => {
       isBlocked: { $ne: true },
       ...(searchTerm && {
         Name: { $regex: searchTerm, $options: "i" }
-      })
+      }),
+      ...(isOnline === "true" && { isOnline: true }) 
     };
+    
+    if (isOnline === "true") {
+      matchStage.isOnline = true; 
+    }
+    
 
     const pipeline = [
       { $match: matchStage },
