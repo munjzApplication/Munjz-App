@@ -135,7 +135,7 @@ export const getConsultantLists = async (req, res, next) => {
     }));
 
     res.status(200).json({
-      message: "Consultants fetched successfully",
+      message: "Consultant Lists fetched successfully",
       data: formatted
     });
   } catch (err) {
