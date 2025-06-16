@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+import Stripe from "stripe";
 import {
   saveCourtCase,
   saveCourtDocuments,
@@ -6,7 +8,6 @@ import {
 
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import CourtCase from "../../../../models/Customer/courtServiceModel/courtServiceDetailsModel.js";
-import mongoose from "mongoose";
 import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import {
   formatDatewithmonth,
@@ -15,6 +16,8 @@ import {
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import { io } from "../../../../socket/socketController.js";
 import { emitAdminEarningsSocket } from "../../../../socket/emitAdminEarningsSocket.js";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const saveCourtServiceDetails = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -27,8 +30,15 @@ export const saveCourtServiceDetails = async (req, res, next) => {
       selectedServiceCountry,
       caseDescription,
       paymentAmount,
-      paidCurrency
+      paidCurrency,
+      paymentIntentId
     } = req.body;
+
+    //Verify PaymentIntent from Stripe
+    const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (!intent || intent.status !== "succeeded") {
+      throw new Error("Payment not confirmed by Stripe.");
+    }
 
     // Validate customer
     const customer = await Customer.findById(customerId).lean();
@@ -61,7 +71,8 @@ export const saveCourtServiceDetails = async (req, res, next) => {
         paymentAmount,
         paidCurrency,
         paymentDate: new Date(),
-        customerId
+        customerId,
+        paymentIntentId
       },
       session
     );
@@ -75,7 +86,7 @@ export const saveCourtServiceDetails = async (req, res, next) => {
       createdAt: new Date()
     });
     await earnings.save({ session });
-    
+
     await session.commitTransaction();
     session.endSession();
 

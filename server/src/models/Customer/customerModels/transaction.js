@@ -47,7 +47,9 @@ const CustomerTransactionSchema = new mongoose.Schema(
     paymentDate: { 
       type: Date, 
       default: Date.now 
-    }
+    },
+    paymentIntentId: { type: String, required: true },
+
   },
   {
     timestamps: true

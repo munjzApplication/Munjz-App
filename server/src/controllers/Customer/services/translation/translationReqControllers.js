@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+import Stripe from "stripe";
 import DocumentModel from "../../../../models/Customer/translationModel/translationDocument.js";
 import Payment from "../../../../models/Customer/customerModels/transaction.js";
 import AdditionalPayment from "../../../../models/Customer/customerModels/additionalTransaction.js";
@@ -5,8 +7,9 @@ import { uploadFileToS3 } from "../../../../utils/s3Uploader.js";
 import TranslationCase from "../../../../models/Customer/translationModel/translationDetails.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
-import mongoose from "mongoose";
 import { emitAdminEarningsSocket } from "../../../../socket/emitAdminEarningsSocket.js";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const uploadCustomerAdditionalDocument = async (req, res) => {
   const session = await mongoose.startSession();
@@ -157,7 +160,7 @@ export const submitAdditionalPayment = async (req, res, next) => {
   
   try {
     const { caseId } = req.params;
-    const { amount, paidCurrency } = req.body;
+    const { amount, paidCurrency ,paymentIntentId} = req.body;
 
     if (!amount || !paidCurrency) {
       return res
@@ -211,7 +214,8 @@ export const submitAdditionalPayment = async (req, res, next) => {
           amount,
           paidCurrency,
           status: "paid",
-          paymentDate: new Date()
+          paymentDate: new Date(),
+          paymentIntentId
         }
       },
       { new: true, session }

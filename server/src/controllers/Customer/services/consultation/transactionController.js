@@ -1,15 +1,16 @@
+import Stripe from "stripe";
 import Transaction from "../../../../models/Customer/customerModels/transaction.js";
 import Wallet from "../../../../models/Customer/customerModels/walletModel.js";
 import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import CustomerProfile from "../../../../models/Customer/customerModels/customerModel.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
-import {emitAdminEarningsSocket} from "../../../../socket/emitAdminEarningsSocket.js";
+import { emitAdminEarningsSocket } from "../../../../socket/emitAdminEarningsSocket.js";
 
-
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const createTransaction = async (req, res, next) => {
   try {
-    const customerId = req.user.id; // Get customerId from token
+    const customerId = req.user.id;
 
     // Fetch customer details
     const customer = await CustomerProfile.findById(customerId);
@@ -26,7 +27,8 @@ export const createTransaction = async (req, res, next) => {
       paymentReason,
       payerID,
       paymentStatus,
-      purchasedMinutes // Minutes purchased
+      purchasedMinutes,
+      paymentIntentId
     } = req.body;
 
     // Validate required fields
@@ -37,9 +39,16 @@ export const createTransaction = async (req, res, next) => {
       !paymentReason ||
       !payerID ||
       !paymentStatus ||
-      purchasedMinutes === undefined
+      purchasedMinutes === undefined ||
+      !paymentIntentId
     ) {
       return res.status(400).json({ message: "Missing required fields." });
+    }
+
+    // Verify Stripe PaymentIntent
+    const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (!intent || intent.status !== "succeeded") {
+      return res.status(400).json({ message: "Payment not confirmed by Stripe." });
     }
 
     // Validate purchased minutes
@@ -62,7 +71,8 @@ export const createTransaction = async (req, res, next) => {
       payerId: payerID,
       status: paymentStatus,
       purchasedMinutes,
-      paymentDate : new Date()
+      paymentIntentId,
+      paymentDate: new Date()
     });
 
     await newTransaction.save();

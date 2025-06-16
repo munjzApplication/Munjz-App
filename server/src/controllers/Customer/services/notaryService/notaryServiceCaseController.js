@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+import Stripe from "stripe";
 import {
   saveNotaryCase,
   saveNotaryDocuments,
@@ -8,9 +10,10 @@ import NotaryCase from "../../../../models/Customer/notaryServiceModel/notarySer
 import { formatDatewithmonth, formatDate } from "../../../../helper/dateFormatter.js";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
-import mongoose from "mongoose";
 import { io } from "../../../../socket/socketController.js";
 import { emitAdminEarningsSocket } from "../../../../socket/emitAdminEarningsSocket.js";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const saveNotaryServiceDetails = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -24,7 +27,14 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
       caseDescription,
       paymentAmount,
       paidCurrency,
+      paymentIntentId
     } = req.body;
+
+    //Verify PaymentIntent from Stripe
+    const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (!intent || intent.status !== "succeeded") {
+      throw new Error("Payment not confirmed by Stripe.");
+    }
 
     // Validate customer
     const customer = await Customer.findById(customerId).lean();
@@ -63,7 +73,8 @@ export const saveNotaryServiceDetails = async (req, res, next) => {
         paymentAmount,
         paidCurrency,
         paymentDate: new Date(),
-        customerId
+        customerId,
+        paymentIntentId
       },
       session
     );

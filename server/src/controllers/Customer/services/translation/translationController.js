@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+import Stripe from "stripe";
 import {
   saveTranslationCase,
   saveTranslationDocuments,
@@ -5,12 +7,13 @@ import {
 } from "../../../../helper/translation/translationHelper.js";
 import Customer from "../../../../models/Customer/customerModels/customerModel.js";
 import TranslationCase from "../../../../models/Customer/translationModel/translationDetails.js";
-import mongoose from "mongoose";
 import { notificationService } from "../../../../service/sendPushNotification.js";
 import AdminEarnings from "../../../../models/Admin/adminModels/earningsModel.js";
 import { formatDatewithmonth, formatDate } from "../../../../helper/dateFormatter.js";
 import { io } from "../../../../socket/socketController.js";
 import { emitAdminEarningsSocket } from "../../../../socket/emitAdminEarningsSocket.js";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const submitTranslationRequest = async (req, res, next) => {
   const session = await mongoose.startSession();
@@ -24,8 +27,15 @@ export const submitTranslationRequest = async (req, res, next) => {
       translationLanguage,
       paymentAmount,
       paidCurrency,
-      noOfPage
+      noOfPage,
+      paymentIntentId
     } = req.body;
+
+    //Verify PaymentIntent from Stripe
+    const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (!intent || intent.status !== "succeeded") {
+      throw new Error("Payment not confirmed by Stripe.");
+    }
 
 
     // Validate customer existence
@@ -73,12 +83,13 @@ export const submitTranslationRequest = async (req, res, next) => {
           paymentAmount,
           paidCurrency,
           customerName,
-          customerId
+          customerId,
+          paymentIntentId
         },
         session
       );
 
-       earnings = new AdminEarnings({
+      earnings = new AdminEarnings({
         customerId,
         currency: paidCurrency,
         serviceAmount: paymentAmount,
@@ -95,9 +106,9 @@ export const submitTranslationRequest = async (req, res, next) => {
 
     await session.commitTransaction();
     session.endSession();
-    
-     if (earnings) {
-      await emitAdminEarningsSocket(earnings); 
+
+    if (earnings) {
+      await emitAdminEarningsSocket(earnings);
     }
 
     // Send Notifications

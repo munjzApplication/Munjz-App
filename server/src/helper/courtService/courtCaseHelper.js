@@ -8,21 +8,21 @@ import mongoose from "mongoose";
 /**
  * Save Court Case Details
  */
-export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus, status,paymentAmount ,paidCurrency}, session) => {
+export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCountry, caseDescription, casePaymentStatus, status, paymentAmount, paidCurrency }, session) => {
   try {
     const courtServiceID = await generateUniqueServiceID("court");
 
 
 
     const courtCase = await CourtCase.create([
-      { 
-        customerId, 
-        courtServiceID, 
-        serviceName, 
-        selectedServiceCountry, 
-        caseDescription, 
-        casePaymentStatus, 
-        status ,
+      {
+        customerId,
+        courtServiceID,
+        serviceName,
+        selectedServiceCountry,
+        caseDescription,
+        casePaymentStatus,
+        status,
         totalAmountPaid: paymentAmount,
         paidCurrency
       }
@@ -39,7 +39,7 @@ export const saveCourtCase = async ({ customerId, serviceName, selectedServiceCo
  * Save Court Documents
  */
 export const saveCourtDocuments = async (files, courtCaseId, session) => {
- 
+
   if (!files?.length) throw new Error("No files provided for document upload.");
 
   try {
@@ -73,22 +73,32 @@ export const saveCourtDocuments = async (files, courtCaseId, session) => {
 /**
  * Save Court Payment
  */
-export const saveCourtPayment = async ({ customerId,courtCaseId, paymentAmount, paidCurrency, paymentDate, session }) => {
-  if (!paymentAmount || !paidCurrency) throw new Error("Missing required payment details.");
+export const saveCourtPayment = async ({
+  customerId,
+  courtCaseId,
+  paymentAmount,
+  paidCurrency,
+  paymentDate,
+  paymentIntentId,
+  session
+}) => {
+  if (!paymentAmount || !paidCurrency || !paymentIntentId)
+    throw new Error("Missing required payment details.");
 
   try {
     const payment = await Transaction.create([
-      { 
+      {
         customerId,
-        caseId: courtCaseId, 
-        caseType:"CourtService_Case",
-        serviceType :"CourtService",
-        amountPaid: paymentAmount, 
-        currency :paidCurrency, 
-        paymentDate: paymentDate || new Date(), 
-        status: "paid" 
+        caseId: courtCaseId,
+        caseType: "CourtService_Case",
+        serviceType: "CourtService",
+        amountPaid: paymentAmount,
+        currency: paidCurrency,
+        paymentDate: paymentDate || new Date(),
+        status: "paid",
+        paymentIntentId
       }
-      ],{ session });
+    ], { session });
 
 
     return payment;

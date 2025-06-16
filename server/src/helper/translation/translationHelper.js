@@ -66,13 +66,13 @@ export const saveTranslationDocuments = async (
     );
 
     const documentData = documentUploads.map(url => ({
-      documentUrl: url, 
+      documentUrl: url,
     }));
 
     const document = await TranslationDocument.create(
       [
-        { 
-          translationCase: translationCaseId, 
+        {
+          translationCase: translationCaseId,
           noOfPage,
           documents: documentData,  // Store all documents inside the array
           uploadedBy: "customer",
@@ -100,20 +100,22 @@ export const saveTranslationPayment = async ({
   paymentAmount,
   paidCurrency,
   paymentDate,
+  paymentIntentId,
   session
 }) => {
   try {
     const translationPayment = await Transaction.create(
       [
-        { 
+        {
           customerId,
-          caseId: translationCaseId, 
+          caseId: translationCaseId,
           caseType: "Translation_Case",
           serviceType: "Translation",
-          amountPaid: paymentAmount || 0, 
-          currency: paidCurrency || "AED", 
-          paymentDate: paymentDate || new Date(), 
-          status: paymentAmount ? "paid" : "unpaid" 
+          amountPaid: paymentAmount || 0,
+          currency: paidCurrency || "AED",
+          paymentDate: paymentDate || new Date(),
+          status: paymentAmount ? "paid" : "unpaid",
+          paymentIntentId
         }
       ],
       { session }

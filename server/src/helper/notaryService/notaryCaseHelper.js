@@ -78,10 +78,15 @@ export const saveNotaryDocuments = async (files, notaryCaseId, session) => {
 /**
  * Save Notary Payment
  */
-export const saveNotaryPayment = async (
-  { customerId,notaryCaseId, paymentAmount, paidCurrency, paymentDate },
+export const saveNotaryPayment = async ({ 
+  customerId,
+  notaryCaseId, 
+  paymentAmount, 
+  paidCurrency, 
+  paymentDate,
+  paymentIntentId,
   session
-) => {
+}) => {
   if (!paymentAmount || !paidCurrency) throw new Error("Missing required payment details.");
 
   try {
@@ -95,7 +100,8 @@ export const saveNotaryPayment = async (
           amountPaid: paymentAmount,
           currency:paidCurrency,
           paymentDate: paymentDate || new Date(),
-          status: "paid" 
+          status: "paid" ,
+          paymentIntentId
         },
       ],
       { session }
