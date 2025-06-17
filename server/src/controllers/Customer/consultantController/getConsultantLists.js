@@ -30,14 +30,11 @@ export const getConsultantLists = async (req, res, next) => {
       ...(searchTerm && {
         Name: { $regex: searchTerm, $options: "i" }
       }),
-      ...(isOnline === "true" && { isOnline: true }) 
+      ...(isOnline === "true" && { isOnline: true })
     };
-    
     if (isOnline === "true") {
-      matchStage.isOnline = true; 
+      matchStage.isOnline = true;
     }
-    
-
     const pipeline = [
       { $match: matchStage },
       {
@@ -123,7 +120,16 @@ export const getConsultantLists = async (req, res, next) => {
             ? { consultationRating: -1 }
             : { creationDate: -1 }
       },
-      ...getPaginationStages(parseInt(page), parseInt(limit))
+      ...(topRated === "true"
+        ? [
+          { $match: { consultationRating: { $gt: 0 } } },
+          { $sort: { consultationRating: -1 } },
+          { $limit: 5 }
+        ]
+        : [
+          { $sort: { creationDate: -1 } },
+          ...getPaginationStages(parseInt(page), parseInt(limit))
+        ])
     ];
 
     const consultants = await ConsultantProfile.aggregate(pipeline);
