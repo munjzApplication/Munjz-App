@@ -26,4 +26,12 @@ const NotaryServiceDocumentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// 🔍 Add indexes for performance
+NotaryServiceDocumentSchema.index({ notaryServiceCase: 1 });
+NotaryServiceDocumentSchema.index({ notaryServiceCase: 1, status: 1 });
+NotaryServiceDocumentSchema.index({ documentType: 1 });
+NotaryServiceDocumentSchema.index({ uploadedAt: -1 });
+NotaryServiceDocumentSchema.index({ requestedAt: -1 });
+NotaryServiceDocumentSchema.index({ createdAt: -1 });
+
 export default mongoose.model("NotaryService_Document", NotaryServiceDocumentSchema);

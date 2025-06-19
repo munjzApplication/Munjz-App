@@ -31,4 +31,12 @@ const TranslationDocumentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// 🔍 Add indexes for performance
+TranslationDocumentSchema.index({ translationCase: 1 });
+TranslationDocumentSchema.index({ translationCase: 1, status: 1 });
+TranslationDocumentSchema.index({ documentType: 1 });
+TranslationDocumentSchema.index({ uploadedAt: -1 });
+TranslationDocumentSchema.index({ requestedAt: -1 });
+TranslationDocumentSchema.index({ createdAt: -1 });
+
 export default mongoose.model("Translation_Document", TranslationDocumentSchema);

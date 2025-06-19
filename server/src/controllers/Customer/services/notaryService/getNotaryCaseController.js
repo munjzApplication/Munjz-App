@@ -41,30 +41,50 @@ export const getCaseDetails = async (req, res, next) => {
         });
 
          // Merge initial payments and additional payments into a single array
-                const payments = [
-                    ...initialPayments,
-                    ...additionalPayment.map(payment => ({
-                        _id: payment._id,
-                        customerId: payment.customerId,
-                        caseId: payment.caseId,
-                        caseType: payment.caseType,
-                        serviceType: payment.serviceType,
-                        amountPaid: payment.amount,
-                        currency: payment.paidCurrency,
-                        requestReason: payment.requestReason,
-                        dueDate: payment.dueDate,
-                        status: payment.status,
-                        requestedAt: formatDate(payment.requestedAt),
-                        createdAt: formatDate(payment.createdAt),
-                        updatedAt: formatDate(payment.updatedAt),
-                        paymentDate: formatDate(payment.paymentDate || payment.updatedAt)
-                    }))
-                ];
+        const payments = [
+            ...initialPayments.map(payment => {
+                const rawDate = payment.paymentDate;
+                return {
+                    _id: payment._id,
+                    customerId: payment.customerId,
+                    caseId: payment.caseId,
+                    caseType: payment.caseType,
+                    serviceType: payment.serviceType,
+                    amountPaid: payment.amountPaid,
+                    currency: payment.currency,
+                    status: payment.status,
+                    createdAt: formatDate(payment.createdAt),
+                    updatedAt: formatDate(payment.updatedAt),
+                    paymentDate: rawDate && !isNaN(new Date(rawDate))
+                        ? formatDate(rawDate)
+                        : formatDate(payment.updatedAt)
+                };
 
-    // Format payment dates
-    payments.forEach(payment => {
-        payment.paymentDate = payment.paymentDate ? formatDate(payment.paymentDate) : formatDate(payment.updatedAt);
-    });
+            }),
+            ...additionalPayment.map(payment => {
+                const rawDate = payment.paymentDate;
+                return {
+                    _id: payment._id,
+                    customerId: payment.customerId,
+                    caseId: payment.caseId,
+                    caseType: payment.caseType,
+                    serviceType: payment.serviceType,
+                    amountPaid: payment.amount,
+                    currency: payment.paidCurrency,
+                    requestReason: payment.requestReason,
+                    dueDate: payment.dueDate,
+                    status: payment.status,
+                    requestedAt: formatDate(payment.requestedAt),
+                    createdAt: formatDate(payment.createdAt),
+                    updatedAt: formatDate(payment.updatedAt),
+                    paymentDate: rawDate && !isNaN(new Date(rawDate))
+                        ? formatDate(rawDate)
+                        : formatDate(payment.updatedAt)
+                };
+            })
+        ];
+
+
 
     // Format dates for notifications
     const notifications = [...pendingDocs, ...pendingPayments, ...adminUploads].map(notification => {
