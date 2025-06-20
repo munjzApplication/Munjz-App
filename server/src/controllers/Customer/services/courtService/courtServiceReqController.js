@@ -232,7 +232,13 @@ export const submitAdditionalPayment = async (req, res, next) => {
     // Update totalAmount in CourtCase
     const updatedCourtCase = await CourtCase.findOneAndUpdate(
       { _id: caseId },
-      { $inc: { totalAmountPaid: amount } },
+      {
+        $inc: { totalAmountPaid: amount },
+        $set: {
+          paidCurrency: paidCurrency,
+          casePaymentStatus: "paid"
+        }
+      },
       { new: true, session }
     );
 

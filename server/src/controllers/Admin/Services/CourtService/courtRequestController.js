@@ -155,7 +155,7 @@ export const requestAdditionalPayment = async (req, res, next) => {
     await notificationService.sendToCustomer(
       customerId,
       "New Payment Request",
-      `An admin has requested an additional payment of ${amount} ${paidCurrency} for your case: ${courtCase.courtServiceID}. Please complete the payment before ${dueDate}.`
+      `An admin has requested an additional payment of ${amount} ${paidCurrency} for your case. Please complete the payment before ${dueDate}.`
     );
 
     // Emit real-time update to customer
@@ -178,8 +178,6 @@ export const requestAdditionalPayment = async (req, res, next) => {
         updatedAt: formatDate(newAdditionalPayment.updatedAt)
       }
     });
-
-    emitAdminPaymentRequest("court-payment-request", newAdditionalPayment);
 
     res.status(201).json({
       message: "Additional payment requested successfully.",

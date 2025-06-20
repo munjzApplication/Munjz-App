@@ -232,7 +232,10 @@ export const submitAdditionalPayment = async (req, res, next) => {
       { _id: caseId },
       {
         $inc: { totalAmountPaid: amount },
-        $set: { PaymentStatus: "paid" } // Ensure the payment status is updated
+          $set: {
+          paidCurrency: paidCurrency,
+          casePaymentStatus: "paid"
+        }
       },
       { new: true, session }
     );

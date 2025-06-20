@@ -234,7 +234,13 @@ export const submitAdditionalPayment = async (req, res, next) => {
     // Update totalAmount in NotaryCase
     const updatedNotaryCase = await NotaryCase.findOneAndUpdate(
       { _id: caseId },
-      { $inc: { totalAmountPaid: amount } },
+      {
+        $inc: { totalAmountPaid: amount },
+        $set: {
+          paidCurrency: paidCurrency,
+          casePaymentStatus: "paid"
+        }
+      },
       { new: true, session }
     );
 
