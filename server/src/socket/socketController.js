@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import consultantHandlers from "./consultantSocket.js";
 import customerHandlers from "./customerSocket.js";
 import adminHandlers from "./adminSocket.js"; 
+import chatSocketHandler from "./chatSocketHandler.js";
 
 let io;
 
@@ -21,6 +22,7 @@ export const setupSocket = (server) => {
   consultantNamespace.on("connection", (socket) => {
     console.log("Consultant connected:", socket.id);
     consultantHandlers(consultantNamespace, socket);
+    chatSocketHandler(consultantNamespace, socket, io);
   });
 
   // Customer Namespace
@@ -28,6 +30,7 @@ export const setupSocket = (server) => {
   customerNamespace.on("connection", (socket) => {
     console.log("Customer connected:", socket.id);
     customerHandlers(customerNamespace, socket);
+    chatSocketHandler(consultantNamespace, socket, io);
   });
 
   // Admin Namespace (optional)
@@ -35,6 +38,7 @@ export const setupSocket = (server) => {
   adminNamespace.on("connection", (socket) => {
     console.log("Admin connected:", socket.id);
     adminHandlers(adminNamespace, socket);
+    chatSocketHandler(consultantNamespace, socket, io);
   });
 };
 
