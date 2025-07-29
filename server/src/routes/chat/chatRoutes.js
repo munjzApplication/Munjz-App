@@ -8,9 +8,9 @@ import {
 
 const router = express.Router();
 
-router.get("/room/:roomName", getMessagesByRoom);
-router.post("/send", sendMessage);
-router.patch("/mark-read", markMessagesAsRead);
-router.delete("/:id", softDeleteMessage);
+router.get("/chat-room/:roomId/getmessages", getMessagesByRoom);
+router.post("/send-message", sendMessage);
+router.patch("/mark-messages-read", markMessagesAsRead);
+router.delete("/delete-message/:messageId", softDeleteMessage);
 
 export default router;
