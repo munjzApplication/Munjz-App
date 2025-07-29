@@ -1,3 +1,8 @@
+import jwt from "jsonwebtoken"; // ✅ This was missing
+import Customer from "../models/Customer/customerModels/customerModel.js";
+import Consultant from "../models/Consultant/ProfileModel/User.js";
+import Admin from "../models/Admin/adminModels/adminModel.js";
+
 export const verifySocketUser = async (socket) => {
   try {
     const auth = socket?.handshake?.auth;
@@ -6,6 +11,7 @@ export const verifySocketUser = async (socket) => {
     const { token, role } = auth;
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
     let model;
     switch (role) {
       case "customer":
