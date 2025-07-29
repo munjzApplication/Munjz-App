@@ -6,9 +6,11 @@ import { connectDB } from "./config/db.js";
 import consultantRoute from "./routes/Consultant/consultantRoute.js";
 import customerRoute from "./routes/Customer/customerRoutes.js";
 import adminRoute from "./routes/Admin/adminRoutes.js";
+import chatRoutes from "./routes/chat/chatRoutes.js";
 import http from "http";
 import helmet from "helmet";
 import { setupSocket } from "./socket/socketController.js";
+
 
 
 dotenv.config();
@@ -35,6 +37,7 @@ app.get("/", (req, res) => {
 app.use("/api/consultant", consultantRoute);
 app.use("/api/customer", customerRoute);
 app.use("/api/admin", adminRoute);
+app.use("/api/chat", chatRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
