@@ -31,24 +31,7 @@ const chatMessageSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Indexes for performance
 chatMessageSchema.index({ roomName: 1 });
-chatMessageSchema.index({ senderId: 1 });
-chatMessageSchema.index({ receiverId: 1 });
-chatMessageSchema.index({ roomName: 1, createdAt: -1 }); // For fetching recent messages
-
-// Optional: Validate sender and receiver IDs
-chatMessageSchema.pre("save", async function (next) {
-  try {
-    const senderExists = await mongoose.model(this.senderRole).findById(this.senderId);
-    const receiverExists = await mongoose.model(this.receiverRole).findById(this.receiverId);
-    if (!senderExists || !receiverExists) {
-      throw new Error("Invalid sender or receiver ID");
-    }
-    next();
-  } catch (err) {
-    next(err);
-  }
-});
+chatMessageSchema.index({ roomName: 1, createdAt: -1 });
 
 export default mongoose.model("ChatMessage", chatMessageSchema);
