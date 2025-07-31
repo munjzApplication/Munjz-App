@@ -41,11 +41,21 @@ socket.on("send-message", async (data) => {
       messageType,
     });
 
+    // ✅ Send ONLY to the sender
     socket.emit("message-sent", message);
+    
+    // ✅ Send ONLY to receiver by namespace
+    const namespaces = {
+      admin: "/admin",
+      customer: "/customer",
+      consultant: "/consultant",
+    };
 
-    const namespaces = ["/customer", "/consultant", "/admin"];
-    for (const ns of namespaces) {
-      io.of(ns).to(roomName).emit("receive-message", message);
+    const receiverNamespace = namespaces[receiverRole];
+    if (receiverNamespace) {
+      io.of(receiverNamespace).to(roomName).emit("receive-message", message);
+    } else {
+      console.warn(`⚠️ Unknown receiver role: ${receiverRole}`);
     }
 
   } catch (err) {
@@ -53,6 +63,7 @@ socket.on("send-message", async (data) => {
     socket.emit("message-send-error", { error: err.message });
   }
 });
+
 
 
   // Typing
