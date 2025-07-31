@@ -22,7 +22,7 @@ export const setupSocket = (server) => {
   consultantNamespace.on("connection", (socket) => {
     console.log("Consultant connected:", socket.id);
     consultantHandlers(consultantNamespace, socket);
-    registerChatHandlers(consultantNamespace, socket);
+    registerChatHandlers( io,socket);
 
   });
 
@@ -31,7 +31,7 @@ export const setupSocket = (server) => {
   customerNamespace.on("connection", (socket) => {
     console.log("Customer connected:", socket.id);
     customerHandlers(customerNamespace, socket);
-    registerChatHandlers(customerNamespace, socket);
+    registerChatHandlers(io, socket);
   
   });
 
@@ -40,7 +40,7 @@ export const setupSocket = (server) => {
   adminNamespace.on("connection", (socket) => {
     console.log("Admin connected:", socket.id);
     adminHandlers(adminNamespace, socket);
-    registerChatHandlers(adminNamespace, socket);
+    registerChatHandlers(io, socket);
 
   });
 };
