@@ -42,11 +42,7 @@ console.log(` ${chatUser.role} connected:`, socket.id);
     console.log("Message saved to DB:", message);
 
     socket.emit("message-sent", message);
-    socket.nsp.to(roomName).emit("receive-message", message);
-
-    
-console.log(`[EMIT] Emitted to namespace: ${namespace.name} and room: ${roomName}`);
-
+    socket.to(roomName).emit("receive-message", message);
   });
 
   // Typing
