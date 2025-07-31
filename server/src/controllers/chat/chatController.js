@@ -1,4 +1,5 @@
 import ChatMessage from "../../models/chat/chatMessage.js";
+import Customer from "../../models/Customer/customerModels/customerModel.js";
 
 export const getMessagesByRoom = async (req, res) => {
   const { roomName } = req.params;
@@ -44,5 +45,69 @@ export const softDeleteMessage = async (req, res) => {
     res.status(200).json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete message." });
+  }
+};
+
+export const getCustomerRoomListForAdmin = async (req, res) => {
+  try {
+    const adminId = req.user._id;
+
+    if (!adminId) {
+      return res.status(400).json({ error: "Missing adminId." });
+    }
+
+    // Step 1: Find distinct customerId and roomName
+    const customerRooms = await ChatMessage.aggregate([
+      {
+        $match: {
+          $or: [
+            { senderId: adminId, senderRole: "admin" },
+            { receiverId: adminId, receiverRole: "admin" }
+          ]
+        }
+      },
+      {
+        $project: {
+          userId: {
+            $cond: [
+              { $eq: ["$senderId", adminId] },
+              "$receiverId",
+              "$senderId"
+            ]
+          },
+          roomName: 1
+        }
+      },
+      {
+        $group: {
+          _id: "$userId",
+          roomName: { $first: "$roomName" } // just grab one roomName per user
+        }
+      }
+    ]);
+
+    const customerIds = customerRooms.map(entry => entry._id);
+
+    // Step 2: Get customer info
+    const customers = await Customer.find(
+      { _id: { $in: customerIds } },
+      "_id Name profilePhoto"
+    );
+
+    // Step 3: Map roomName into customer list
+    const customersWithRoom = customers.map(customer => {
+      const matchingRoom = customerRooms.find(room => room._id.toString() === customer._id.toString());
+      return {
+        _id: customer._id,
+        Name: customer.Name,
+        imageUrl: customer.profilePhoto || null,
+        roomName: matchingRoom?.roomName || null
+      };
+    });
+
+    res.status(200).json(customersWithRoom);
+  } catch (err) {
+    console.error("Failed to fetch admin chat customers:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };

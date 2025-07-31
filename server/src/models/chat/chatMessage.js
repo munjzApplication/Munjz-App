@@ -33,5 +33,8 @@ const chatMessageSchema = new mongoose.Schema(
 
 chatMessageSchema.index({ roomName: 1 });
 chatMessageSchema.index({ roomName: 1, createdAt: -1 });
+chatMessageSchema.index({ senderId: 1 });
+chatMessageSchema.index({ receiverId: 1 });
+
 
 export default mongoose.model("ChatMessage", chatMessageSchema);

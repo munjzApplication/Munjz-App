@@ -2,24 +2,32 @@ import ChatMessage from "../models/chat/chatMessage.js";
 import { verifySocketUser } from "../middlewares/chatAuth.js";
 
 const registerChatHandlers = async (io, socket) => {
-  const chatUser = await verifySocketUser(socket); // ✅ Auth done here ONLY
+  const chatUser = await verifySocketUser(socket); //  Auth done here ONLY
 
   if (!chatUser) {
-    console.log("❌ Chat socket unauthorized:", socket.id);
+    console.log("Chat socket unauthorized:", socket.id);
     return; // Don't register chat events if not authenticated
   }
+console.log(` ${chatUser.role} connected:`, socket.id);
+  socket.chatUser = chatUser; // Attach user to socket
 
-  socket.chatUser = chatUser; // ✅ Attach user to socket
-
-  // ✅ Join Room
+  // oin Room
   socket.on("join-room", ({ roomName }) => {
-    if (roomName) socket.join(roomName);
+    if (roomName) {
+      socket.join(roomName);
+      console.log(` ${chatUser.role} (${chatUser.id}) joined room: ${roomName}`);
+    }
+
   });
 
-  // ✅ Send message
+  //Send message
   socket.on("send-message", async (data) => {
     const { roomName, receiverId, receiverRole, messageContent, messageType = "text" } = data;
-    if (!roomName || !receiverId || !receiverRole || !messageContent) return;
+      console.log("send-message received from frontend:", data);
+  if (!roomName || !receiverId || !receiverRole || !messageContent) {
+      console.log("Missing fields in send-message");
+      return;
+    }
 
     const message = await ChatMessage.create({
       roomName,
@@ -31,37 +39,45 @@ const registerChatHandlers = async (io, socket) => {
       messageType
     });
 
+    console.log("Message saved to DB:", message);
+
     socket.emit("message-sent", message);
     socket.to(roomName).emit("receive-message", message);
   });
 
-  // ✅ Typing
+  // Typing
   socket.on("typing", ({ roomName }) => {
+    console.log(` Typing from ${chatUser.id} in room ${roomName}`);
     socket.to(roomName).emit("typing", { senderId: chatUser.id });
   });
 
-  // ✅ Mark as Read
+  // Mark as Read
   socket.on("mark-read", async ({ messageIds = [] }) => {
+    console.log(" mark-read for:", messageIds);
     await ChatMessage.updateMany({ _id: { $in: messageIds } }, { status: "read" });
   });
 
-  // ✅ Delete message
+  // Delete message
   socket.on("delete-message", async ({ messageId }) => {
     try {
+      console.log(" delete-message:", messageId);
       await ChatMessage.findByIdAndUpdate(messageId, { isDeleted: true });
       socket.emit("message-deleted", { messageId });
     } catch (err) {
+      console.log(" delete-message error:", err.message);
       socket.emit("message-delete-error", { messageId, error: err.message });
     }
   });
 
-  // ✅ Delivered
+  // Delivered
   socket.on("delivered", async ({ messageIds = [] }) => {
+    console.log(" delivered:", messageIds);
     await ChatMessage.updateMany({ _id: { $in: messageIds } }, { status: "delivered" });
   });
 
+  // Disconnect
   socket.on("disconnect", () => {
-    console.log("Disconnected:", socket.id);
+    console.log(` Disconnected: ${socket.id}`);
   });
 };
 
