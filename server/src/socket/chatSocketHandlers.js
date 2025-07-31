@@ -21,29 +21,48 @@ console.log(` ${chatUser.role} connected:`, socket.id);
   });
 
   //Send message
-  socket.on("send-message", async (data) => {
-    const { roomName, receiverId, receiverRole, messageContent, messageType = "text" } = data;
-      console.log("send-message received from frontend:", data);
+
+socket.on("send-message", async (data) => {
+  const { roomName, receiverId, receiverRole, messageContent, messageType = "text" } = data;
+  console.log("💬 send-message received from frontend:", data);
+
   if (!roomName || !receiverId || !receiverRole || !messageContent) {
-      console.log("Missing fields in send-message");
-      return;
-    }
+    console.log("❌ Missing fields in send-message");
+    return;
+  }
 
-    const message = await ChatMessage.create({
-      roomName,
-      senderId: chatUser.id,
-      senderRole: chatUser.role,
-      receiverId,
-      receiverRole,
-      messageContent,
-      messageType
-    });
-
-    console.log("Message saved to DB:", message);
-
-    socket.emit("message-sent", message);
-    socket.to(roomName).emit("receive-message", message);
+  // Save message to DB
+  const message = await ChatMessage.create({
+    roomName,
+    senderId: chatUser.id,
+    senderRole: chatUser.role,
+    receiverId,
+    receiverRole,
+    messageContent,
+    messageType,
   });
+
+  console.log("✅ Message saved to DB:", message);
+
+  // Emit back to sender (confirm send)
+  socket.emit("message-sent", message);
+
+  // ✅ Emit to room in ALL namespaces (admin, consultant, customer)
+  const namespaces = ["/customer", "/consultant", "/admin"];
+
+  console.log(`📢 Broadcasting message to room '${roomName}' across namespaces...`);
+
+  for (const ns of namespaces) {
+    const nsp = io.of(ns);
+    if (nsp) {
+      nsp.to(roomName).emit("receive-message", message);
+      console.log(`✅ Emitted to namespace '${ns}' room '${roomName}'`);
+    } else {
+      console.log(`⚠️ Namespace '${ns}' not found or has no connected sockets`);
+    }
+  }
+});
+
 
   // Typing
   socket.on("typing", ({ roomName }) => {
