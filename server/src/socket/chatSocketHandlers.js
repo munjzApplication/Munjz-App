@@ -62,16 +62,18 @@ socket.on("send-message", async (data) => {
 
     // ✅ Send push notification to the receviver
 
-    console.log("////////",chatUser.id, chatUser.name, chatUser.profilePicture, receiverRole, receiverId, messageContent);
-    
-    await sendChatNotification({
-      senderId: chatUser.id,
-      senderName: chatUser.name,
-      senderProfile: chatUser.profilePicture,
-      recipientRole: receiverRole,
-      recipientId: receiverId,
-      messageText: messageContent,
-    })
+    try {
+      await sendChatNotification({
+        senderId: chatUser.id,
+        senderName: chatUser.name || "MUNJZ User",
+        senderProfile: chatUser.profilePicture || "",
+        recipientRole: receiverRole,
+        recipientId: receiverId,
+        messageText: messageContent,
+      });
+    } catch (notiErr) {
+      console.warn("⚠️ Notification failed but message sent:", notiErr.message);
+    }
 
   } catch (err) {
     console.error("❌ Error in send-message:", err.message);
