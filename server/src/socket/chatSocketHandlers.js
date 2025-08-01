@@ -1,7 +1,5 @@
 import ChatMessage from "../models/chat/chatMessage.js";
 import { verifySocketUser } from "../middlewares/chatAuth.js";
-import { sendChatNotification } from "../service/chatNotificationService.js";
-
 
 const registerChatHandlers = async (io, socket) => {
   const chatUser = await verifySocketUser(socket); //  Auth done here ONLY
@@ -58,21 +56,6 @@ socket.on("send-message", async (data) => {
       io.of(receiverNamespace).to(roomName).emit("receive-message", message);
     } else {
       console.warn(`⚠️ Unknown receiver role: ${receiverRole}`);
-    }
-
-    // ✅ Send push notification to the receviver
-
-    try {
-      await sendChatNotification({
-        senderId: chatUser.id,
-        senderName: chatUser.name || "MUNJZ User",
-        senderProfile: chatUser.profilePicture || "",
-        recipientRole: receiverRole,
-        recipientId: receiverId,
-        messageText: messageContent,
-      });
-    } catch (notiErr) {
-      console.warn("⚠️ Notification failed but message sent:", notiErr.message);
     }
 
   } catch (err) {
