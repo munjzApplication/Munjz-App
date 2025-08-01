@@ -1,3 +1,6 @@
+
+import { notificationService } from "../service/sendPushNotification.js";
+
 export const sendChatNotification = async ({
   senderId,
   senderName = "",
@@ -6,6 +9,11 @@ export const sendChatNotification = async ({
   recipientId,
   messageText,
 }) => {
+  if (!recipientRole || !recipientId || !senderId || !messageText) {
+    console.warn("❗Missing required fields in sendChatNotification");
+    return;
+  }
+
   const dataPayload = {
     type: "chat",
     senderId: String(senderId),
@@ -17,30 +25,38 @@ export const sendChatNotification = async ({
   const titleMap = {
     customer: "MUNJZ Support",
     consultant: "MUNJZ Support",
-    admin: senderName,
+    admin: senderName || "MUNJZ User",
   };
 
   const body = messageText;
 
-  if (recipientRole === "customer") {
-    return notificationService.sendToCustomer(
-      recipientId,
-      titleMap.customer,
-      body,
-      dataPayload
-    );
-  } else if (recipientRole === "consultant") {
-    return notificationService.sendToConsultant(
-      recipientId,
-      titleMap.consultant,
-      body,
-      dataPayload
-    );
-  } else if (recipientRole === "admin") {
-    return notificationService.sendToAdmin(
-      titleMap.admin,
-      body,
-      dataPayload
-    );
+  try {
+    switch (recipientRole) {
+      case "customer":
+        return await notificationService.sendToCustomer(
+          recipientId,
+          titleMap.customer,
+          body,
+          dataPayload
+        );
+      case "consultant":
+        return await notificationService.sendToConsultant(
+          recipientId,
+          titleMap.consultant,
+          body,
+          dataPayload
+        );
+      case "admin":
+        return await notificationService.sendToAdmin(
+          recipientId, // Ensure this matches expected param in `sendToAdmin`
+          titleMap.admin,
+          body,
+          dataPayload
+        );
+      default:
+        console.warn(`❗Unsupported recipientRole: ${recipientRole}`);
+    }
+  } catch (error) {
+    console.error("❌ Error in sendChatNotification:", error);
   }
 };
