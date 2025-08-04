@@ -8,63 +8,67 @@ const registerChatHandlers = async (io, socket) => {
     console.log("Chat socket unauthorized:", socket.id);
     return; // Don't register chat events if not authenticated
   }
-console.log(` ${chatUser.role} connected:`, socket.id);
+  console.log(` ${chatUser.role} connected:`, socket.id);
   socket.chatUser = chatUser; // Attach user to socket
 
   // oin Room
   socket.on("join-room", ({ roomName }) => {
     if (roomName) {
       socket.join(roomName);
-      console.log(` ${chatUser.role} (${chatUser.id}) joined room: ${roomName}`);
+      console.log(
+        ` ${chatUser.role} (${chatUser.id}) joined room: ${roomName}`
+      );
     }
-
   });
 
   //Send message
 
-socket.on("send-message", async (data) => {
-  try {
-    const { roomName, receiverId, receiverRole, messageContent, messageType = "text" } = data;
+  socket.on("send-message", async data => {
+    try {
+      const {
+        roomName,
+        receiverId,
+        receiverRole,
+        messageContent,
+        messageType = "text"
+      } = data;
 
-    if (!roomName || !receiverId || !receiverRole || !messageContent) {
-      console.log("❌ Missing fields in send-message");
-      return;
+      if (!roomName || !receiverId || !receiverRole || !messageContent) {
+        console.log("❌ Missing fields in send-message");
+        return;
+      }
+
+      const message = await ChatMessage.create({
+        roomName,
+        senderId: chatUser.id,
+        senderRole: chatUser.role,
+        receiverId,
+        receiverRole,
+        messageContent,
+        messageType
+      });
+
+      // ✅ Send ONLY to the sender
+      socket.emit("message-sent", message);
+
+      // ✅ Send ONLY to receiver by namespace
+      const namespaces = {
+        admin: "/admin",
+        customer: "/customer",
+        consultant: "/consultant"
+      };
+
+      const receiverNamespace = namespaces[receiverRole];
+      if (receiverNamespace) {
+        io.of(receiverNamespace).to(roomName).emit("receive-message", message);
+      } else {
+        console.warn(`⚠️ Unknown receiver role: ${receiverRole}`);
+      }
+    } catch (err) {
+      console.error("❌ Error in send-message:", err.message);
+      socket.emit("message-send-error", { error: err.message });
     }
-
-    const message = await ChatMessage.create({
-      roomName,
-      senderId: chatUser.id,
-      senderRole: chatUser.role,
-      receiverId,
-      receiverRole,
-      messageContent,
-      messageType,
-    });
-
-    // ✅ Send ONLY to the sender
-    socket.emit("message-sent", message);
-    
-    // ✅ Send ONLY to receiver by namespace
-    const namespaces = {
-      admin: "/admin",
-      customer: "/customer",
-      consultant: "/consultant",
-    };
-
-    const receiverNamespace = namespaces[receiverRole];
-    if (receiverNamespace) {
-      io.of(receiverNamespace).to(roomName).emit("receive-message", message);
-    } else {
-      console.warn(`⚠️ Unknown receiver role: ${receiverRole}`);
-    }
-
-  } catch (err) {
-    console.error("❌ Error in send-message:", err.message);
-    socket.emit("message-send-error", { error: err.message });
-  }
-});
-
-
+  });
 
   // Typing
   socket.on("typing", ({ roomName }) => {
@@ -75,7 +79,10 @@ socket.on("send-message", async (data) => {
   // Mark as Read
   socket.on("mark-read", async ({ messageIds = [] }) => {
     console.log(" mark-read for:", messageIds);
-    await ChatMessage.updateMany({ _id: { $in: messageIds } }, { status: "read" });
+    await ChatMessage.updateMany(
+      { _id: { $in: messageIds } },
+      { status: "read" }
+    );
   });
 
   // Delete message
@@ -93,7 +100,10 @@ socket.on("send-message", async (data) => {
   // Delivered
   socket.on("delivered", async ({ messageIds = [] }) => {
     console.log(" delivered:", messageIds);
-    await ChatMessage.updateMany({ _id: { $in: messageIds } }, { status: "delivered" });
+    await ChatMessage.updateMany(
+      { _id: { $in: messageIds } },
+      { status: "delivered" }
+    );
   });
 
   // Disconnect

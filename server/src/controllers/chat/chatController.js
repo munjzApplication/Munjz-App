@@ -1,10 +1,14 @@
 import ChatMessage from "../../models/chat/chatMessage.js";
 import Customer from "../../models/Customer/customerModels/customerModel.js";
+import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
 
 export const getMessagesByRoom = async (req, res) => {
   const { roomName } = req.params;
   try {
-    const messages = await ChatMessage.find({ roomName, isDeleted: false }).sort({ createdAt: 1 });
+    const messages = await ChatMessage.find({
+      roomName,
+      isDeleted: false
+    }).sort({ createdAt: 1 });
     res.status(200).json(messages);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch messages." });
@@ -14,13 +18,27 @@ export const getMessagesByRoom = async (req, res) => {
 export const sendMessage = async (req, res) => {
   console.log("Received message data:", req.body);
 
-  const { roomName, senderId, senderRole, receiverId, receiverRole, messageContent, messageType = "text" } = req.body;
+  const {
+    roomName,
+    senderId,
+    senderRole,
+    receiverId,
+    receiverRole,
+    messageContent,
+    messageType = "text"
+  } = req.body;
   if (!roomName || !senderId || !receiverId || !messageContent) {
     return res.status(400).json({ error: "Missing required fields." });
   }
   try {
     const message = await ChatMessage.create({
-      roomName, senderId, senderRole, receiverId, receiverRole, messageContent, messageType
+      roomName,
+      senderId,
+      senderRole,
+      receiverId,
+      receiverRole,
+      messageContent,
+      messageType
     });
     res.status(200).json(message);
   } catch (err) {
@@ -31,7 +49,10 @@ export const sendMessage = async (req, res) => {
 export const markMessagesAsRead = async (req, res) => {
   const { messageIds = [] } = req.body;
   try {
-    await ChatMessage.updateMany({ _id: { $in: messageIds } }, { $set: { status: "read" } });
+    await ChatMessage.updateMany(
+      { _id: { $in: messageIds } },
+      { $set: { status: "read" } }
+    );
     res.status(200).json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to update message status." });
@@ -48,7 +69,7 @@ export const softDeleteMessage = async (req, res) => {
   }
 };
 
-export const getCustomerRoomListForAdmin = async (req, res) => {
+export const getAdminChatRooms = async (req, res) => {
   try {
     const adminId = req.user._id;
 
@@ -56,8 +77,8 @@ export const getCustomerRoomListForAdmin = async (req, res) => {
       return res.status(400).json({ error: "Missing adminId." });
     }
 
-    // Step 1: Find distinct customerId and roomName
-    const customerRooms = await ChatMessage.aggregate([
+    // Step 1: Get latest chat room entries grouped by other user
+    const chatUsers = await ChatMessage.aggregate([
       {
         $match: {
           $or: [
@@ -67,47 +88,78 @@ export const getCustomerRoomListForAdmin = async (req, res) => {
         }
       },
       {
-        $project: {
+        $addFields: {
           userId: {
+            $cond: [{ $eq: ["$senderId", adminId] }, "$receiverId", "$senderId"]
+          },
+          userRole: {
             $cond: [
               { $eq: ["$senderId", adminId] },
-              "$receiverId",
-              "$senderId"
+              "$receiverRole",
+              "$senderRole"
             ]
-          },
-          roomName: 1
+          }
         }
       },
+      { $sort: { createdAt: -1 } },
       {
         $group: {
-          _id: "$userId",
-          roomName: { $first: "$roomName" } // just grab one roomName per user
+          _id: { userId: "$userId", userRole: "$userRole" },
+          roomName: { $first: "$roomName" },
+          latestAt: { $first: "$createdAt" },
+          latestMessage: { $first: "$messageContent" } 
         }
-      }
+      },
+      { $sort: { latestAt: -1 } } // Final sort
     ]);
 
-    const customerIds = customerRooms.map(entry => entry._id);
+    // Step 2: Collect user IDs
+    const customerIds = chatUsers
+      .filter(r => r._id.userRole === "customer")
+      .map(r => r._id.userId);
 
-    // Step 2: Get customer info
-    const customers = await Customer.find(
-      { _id: { $in: customerIds } },
-      "_id Name profilePhoto"
-    );
+    const consultantIds = chatUsers
+      .filter(r => r._id.userRole === "consultant")
+      .map(r => r._id.userId);
 
-    // Step 3: Map roomName into customer list
-    const customersWithRoom = customers.map(customer => {
-      const matchingRoom = customerRooms.find(room => room._id.toString() === customer._id.toString());
-      return {
-        _id: customer._id,
-        Name: customer.Name,
-        imageUrl: customer.profilePhoto || null,
-        roomName: matchingRoom?.roomName || null
-      };
+    // Step 3: Get user details
+    const [customers, consultants] = await Promise.all([
+      Customer.find({ _id: { $in: customerIds } }, "_id Name profilePhoto"),
+      ConsultantProfile.find({ _id: { $in: consultantIds } }, "_id Name profilePhoto")
+    ]);
+
+    const userMap = new Map();
+
+    customers.forEach(c => userMap.set(c._id.toString(), { name: c.Name, imageUrl: c.profilePhoto, role: "customer" }));
+    consultants.forEach(c => userMap.set(c._id.toString(), { name: c.Name, imageUrl: c.profilePhoto, role: "consultant" }));
+
+    // Step 4: Final output
+    const result = chatUsers
+      .map(r => {
+        const userIdStr = r._id.userId.toString();
+        const user = userMap.get(userIdStr);
+        if (!user) return null;
+
+        return {
+          _id: r._id.userId,
+          name: user.name,
+          role: user.role,
+          imageUrl: user.imageUrl || "/asset/profile.jpg",
+          roomName: r.roomName,
+          lastMessageAt: r.latestAt,
+          lastMessage: r.latestMessage || "",
+        };
+      })
+      .filter(Boolean);
+
+    return res.status(200).json({
+      message: "Chat room list fetched successfully.",
+      data: result
     });
 
-    res.status(200).json(customersWithRoom);
   } catch (err) {
-    console.error("Failed to fetch admin chat customers:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Admin chat room fetch error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+

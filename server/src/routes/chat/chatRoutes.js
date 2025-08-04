@@ -4,7 +4,7 @@ import {
   sendMessage,
   markMessagesAsRead,
   softDeleteMessage,
-  getCustomerRoomListForAdmin
+  getAdminChatRooms
 } from "../../controllers/chat/chatController.js";
 import { protectAdmin } from "../../middlewares/adminMiddleware.js";
 
@@ -14,6 +14,6 @@ router.get("/room/:roomName", getMessagesByRoom);
 router.post("/send", sendMessage);
 router.patch("/mark-read", markMessagesAsRead);
 router.delete("/:id", softDeleteMessage);
-router.get("/customer/rooms", protectAdmin, getCustomerRoomListForAdmin);
+router.get("/admin/chat-rooms", protectAdmin, getAdminChatRooms);
 
 export default router;
