@@ -186,16 +186,17 @@ export const Login = async (req, res, next) => {
       return res.status(401).json({ message: "Incorrect password." });
     }
 
-       // ✅ Check registration completeness
+    // ✅ Check registration completeness
     const { isComplete } = await isConsultantRegistrationComplete(user._id);
 
-    let message;
+     let message;
     if (!isComplete) {
-      message = "Registration successful"; // Same as in Google auth
+      console.log("User registration incomplete. Allowing login with limited access.");
+      message = "Registration successful";
     } else {
+      console.log("User registration complete. Full login successful.");
       message = "Login successful";
 
-      // Send notifications only if fully registered
       await notificationService.sendToCustomer(
         user._id,
         "Login Successful",
@@ -209,30 +210,20 @@ export const Login = async (req, res, next) => {
     }
 
     const token = generateToken(user._id, user.emailVerified);
-    await notificationService.sendToCustomer(
-      user._id,
-      "Login Successful",
-      "You have successfully logged in. If this wasn't you, secure your account by resetting your password immediately."
-    );
 
+res.status(200).json({
+  message, // ✅ Use the one decided based on registration check
+  token,
+  user: {
+    id: user._id,
+    Name: user.Name,
+    email: user.email,
+    phoneNumber: user.phoneNumber,
+    consultantUniqueId: user.consultantUniqueId,
+    creationDate: user.creationDate
+  }
+});
 
-    await notificationService.sendToAdmin(
-      "Consultant Login Alert",
-      `Consultant ${user.Name} (${user.email}) has logged in.`
-    );
-
-    res.status(200).json({
-      message,
-      token,
-      user: {
-        id: user._id,
-        Name: user.Name,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        consultantUniqueId: user.consultantUniqueId,
-        creationDate: user.creationDate
-      }
-    });
   } catch (error) {
     next(error);
   }

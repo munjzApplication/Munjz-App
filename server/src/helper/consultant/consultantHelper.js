@@ -24,13 +24,15 @@ export const isConsultantRegistrationComplete = async (consultantId) => {
     IDProof.findOne({ consultantId }),
   ]);
 
-  const isComplete = !!(personalDetails && bankDetails && idProof);
+  console.log("=== Consultant Registration Check ===");
+  console.log("Consultant ID:", consultantId);
+  console.log("PersonalDetails found:", !!personalDetails);
+  console.log("BankDetails found:", !!bankDetails);
+  console.log("IDProof found:", !!idProof);
 
-  return {
-    isComplete,
-    personalDetails,
-    bankDetails,
-    idProof
-  };
+  const isComplete = !!(personalDetails && bankDetails && idProof);
+  console.log("Registration isComplete:", isComplete);
+
+  return { isComplete };
 };
 
