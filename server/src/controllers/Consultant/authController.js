@@ -11,6 +11,7 @@ import axios from "axios";
 import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetails.js";
 import IDProof from "../../models/Consultant/ProfileModel/idProof.js";
 import BankDetails from "../../models/Consultant/ProfileModel/bankDetails.js";
+import { isConsultantRegistrationComplete } from "../../helper/consultant/consultantHelper.js";
 
 const client = new OAuth2Client(process.env.CONSULTANT_GOOGLE_CLIENT_ID);
 
