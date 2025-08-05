@@ -222,7 +222,7 @@ export const Login = async (req, res, next) => {
     );
 
     res.status(200).json({
-      message: "Login successful",
+      message,
       token,
       user: {
         id: user._id,
