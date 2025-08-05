@@ -180,13 +180,6 @@ export const Login = async (req, res, next) => {
         .json({ message: "Email not verified. Please verify your email to log in." });
     }
 
-    if (!user.isRegistrationComplete) {
-      return res.status(403).json({
-        message: "Registration incomplete. Please complete your profile to log in."
-      });
-    }
-
-
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Incorrect password." });
