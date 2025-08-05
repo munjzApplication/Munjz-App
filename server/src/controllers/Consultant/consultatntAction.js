@@ -56,7 +56,7 @@ export const handleConsultantAction = async (req, res, next) => {
       });
     }
 
-  const consultationData = await consultationDetails.findOne({ consultantId });
+    const consultationData = await consultationDetails.findOne({ consultantId });
 
     // Check if ConsultantProfile already exists (to avoid redundant creation)
     const existingProfile = await ConsultantProfile.findOne({
@@ -196,7 +196,7 @@ export const handleConsultantAction = async (req, res, next) => {
       experience: experience,
       biography: biography,
       consultationRating: consultationData?.consultationRating ?? null,
-      isFav: false  
+      isFav: false
 
 
     });
@@ -233,12 +233,19 @@ export const handleConsultantAction = async (req, res, next) => {
         }
       }
     });
-    
- 
+
+    await ConsultantProfile.findByIdAndUpdate(
+      consultantId,
+      { isRegistrationComplete: true },
+      { session }
+    );
+
+
+
     res.status(201).json({
       message: "Consultant Registered successfully.",
-      user:{
-        id :consultantId
+      user: {
+        id: consultantId
       }
     });
   } catch (error) {
