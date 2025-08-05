@@ -185,6 +185,28 @@ export const Login = async (req, res, next) => {
       return res.status(401).json({ message: "Incorrect password." });
     }
 
+       // ✅ Check registration completeness
+    const { isComplete } = await isConsultantRegistrationComplete(user._id);
+
+    let message;
+    if (!isComplete) {
+      message = "Registration successful"; // Same as in Google auth
+    } else {
+      message = "Login successful";
+
+      // Send notifications only if fully registered
+      await notificationService.sendToCustomer(
+        user._id,
+        "Login Successful",
+        "You have successfully logged in. If this wasn't you, secure your account by resetting your password immediately."
+      );
+
+      await notificationService.sendToAdmin(
+        "Consultant Login Alert",
+        `Consultant ${user.Name} (${user.email}) has logged in.`
+      );
+    }
+
     const token = generateToken(user._id, user.emailVerified);
     await notificationService.sendToCustomer(
       user._id,
