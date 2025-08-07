@@ -1,6 +1,7 @@
 import ChatMessage from "../../models/chat/chatMessage.js";
 import Customer from "../../models/Customer/customerModels/customerModel.js";
 import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
+import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetails.js";
 
 export const getMessagesByRoom = async (req, res) => {
   const { roomName } = req.params;
@@ -107,50 +108,68 @@ export const getAdminChatRooms = async (req, res) => {
           _id: { userId: "$userId", userRole: "$userRole" },
           roomName: { $first: "$roomName" },
           latestAt: { $first: "$createdAt" },
-          latestMessage: { $first: "$messageContent" } 
+          latestMessage: { $first: "$messageContent" }
         }
       },
       { $sort: { latestAt: -1 } } // Final sort
     ]);
 
-    // Step 2: Collect user IDs
-    const customerIds = chatUsers
-      .filter(r => r._id.userRole === "customer")
-      .map(r => r._id.userId);
+    // Step 2: Separate user IDs
+    const customerIds = [];
+    const consultantIds = [];
+    chatUsers.forEach(({ _id }) => {
+      _id.userRole === "customer" && customerIds.push(_id.userId);
+      _id.userRole === "consultant" && consultantIds.push(_id.userId);
+    });
 
-    const consultantIds = chatUsers
-      .filter(r => r._id.userRole === "consultant")
-      .map(r => r._id.userId);
-
-    // Step 3: Get user details
-    const [customers, consultants] = await Promise.all([
+    // Step 3: Fetch customer + consultant info
+    const [customers, consultants, personalDetails] = await Promise.all([
       Customer.find({ _id: { $in: customerIds } }, "_id Name profilePhoto"),
-      ConsultantProfile.find({ _id: { $in: consultantIds } }, "_id Name profilePhoto")
+      ConsultantProfile.find({ _id: { $in: consultantIds } }, "_id Name profilePhoto"),
+      PersonalDetails.find({ consultantId: { $in: consultantIds } }, "consultantId profilePicture")
     ]);
 
+    // Step 4: Build userMap for fast access
     const userMap = new Map();
 
-    customers.forEach(c => userMap.set(c._id.toString(), { name: c.Name, imageUrl: c.profilePhoto, role: "customer" }));
-    consultants.forEach(c => userMap.set(c._id.toString(), { name: c.Name, imageUrl: c.profilePhoto, role: "consultant" }));
+    customers.forEach(user => {
+      userMap.set(user._id.toString(), {
+        name: user.Name,
+        imageUrl: user.profilePhoto || null,
+        role: "customer"
+      });
+    });
 
-    // Step 4: Final output
-    const result = chatUsers
-      .map(r => {
-        const userIdStr = r._id.userId.toString();
-        const user = userMap.get(userIdStr);
-        if (!user) return null;
+    const profilePhotoFallback = new Map();
+    personalDetails.forEach(p => {
+      profilePhotoFallback.set(p.consultantId.toString(), p.profilePicture);
+    });
 
-        return {
-          _id: r._id.userId,
-          name: user.name,
-          role: user.role,
-          imageUrl: user.imageUrl || "/asset/profile.jpg",
-          roomName: r.roomName,
-          lastMessageAt: r.latestAt,
-          lastMessage: r.latestMessage || "",
-        };
-      })
-      .filter(Boolean);
+    consultants.forEach(user => {
+      const id = user._id.toString();
+      userMap.set(id, {
+        name: user.Name,
+        imageUrl: user.profilePhoto || profilePhotoFallback.get(id) || null,
+        role: "consultant"
+      });
+    });
+
+    // Step 5: Construct final response
+    const result = chatUsers.map(r => {
+      const idStr = r._id.userId.toString();
+      const user = userMap.get(idStr);
+      if (!user) return null;
+
+      return {
+        _id: idStr,
+        name: user.name,
+        role: user.role,
+        imageUrl: user.imageUrl,
+        roomName: r.roomName,
+        lastMessageAt: r.latestAt,
+        lastMessage: r.latestMessage || ""
+      };
+    }).filter(Boolean);
 
     return res.status(200).json({
       message: "Chat room list fetched successfully.",

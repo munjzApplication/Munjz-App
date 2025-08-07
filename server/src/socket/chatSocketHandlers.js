@@ -64,6 +64,9 @@ const registerChatHandlers = async (io, socket) => {
       } else {
         console.warn(`⚠️ Unknown receiver role: ${receiverRole}`);
       }
+
+      //Emit event to admin to refresh chat list
+      io.of("/admin").emit("refresh-chat-list");
     } catch (err) {
       console.error("❌ Error in send-message:", err.message);
       socket.emit("message-send-error", { error: err.message });
