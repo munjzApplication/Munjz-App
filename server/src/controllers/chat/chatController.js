@@ -74,13 +74,18 @@ export const softDeleteMessage = async (req, res) => {
 
 export const getAdminChatRooms = async (req, res) => {
   try {
+     console.log("🔍 [DEBUG] getAdminChatRooms API called");
     const adminId = req.user?._id;
+     console.log("🔍 [DEBUG] Extracted adminId:", adminId);
     if (!adminId) {
       return res.status(400).json({ error: "Missing adminId." });
     }
+    console.log("🔍 [DEBUG] Fetching chat rooms for adminId:", adminId);
 
     const result = await getAdminChatRoomsList(adminId);
+     console.log("✅ [DEBUG] Chat rooms fetched:", result?.length || 0);
 
+     
     return res.status(200).json({
       message: "Chat room list fetched successfully.",
       data: result
