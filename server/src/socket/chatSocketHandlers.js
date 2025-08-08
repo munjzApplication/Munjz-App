@@ -1,6 +1,6 @@
 import ChatMessage from "../models/chat/chatMessage.js";
 import { verifySocketUser } from "../middlewares/chatAuth.js";
-import { getAdminChatRoomsList} from "../helper/chat/chatHelper.js";
+import { getAdminChatRoomsList } from "../helper/chat/chatHelper.js";
 
 const registerChatHandlers = async (io, socket) => {
   const chatUser = await verifySocketUser(socket); //  Auth done here ONLY
@@ -48,7 +48,7 @@ const registerChatHandlers = async (io, socket) => {
         messageContent,
         messageType
       });
-    console.log("✅ [DEBUG] Message saved:", message);
+      console.log("✅ [DEBUG] Message saved:", message);
       // ✅ Send ONLY to the sender
       socket.emit("message-sent", message);
 
@@ -66,28 +66,28 @@ const registerChatHandlers = async (io, socket) => {
         console.warn(`⚠️ Unknown receiver role: ${receiverRole}`);
       }
 
-     // 🔍 Admin chat list update
-    if (receiverRole === "admin") {
-      console.log("🔄  Receiver is admin, updating list for:", receiverId);
-      const updatedList = await getAdminChatRoomsList(receiverId);
-      console.log("📦  Updated Admin Chat List (receiver):", updatedList);
-      io.of("/admin").emit("refresh-chat-list", {
-        message: "Chat room list fetched successfully.",
-        data: updatedList
-      });
-    } else if (chatUser.role === "admin") {
-      console.log("🔄  Sender is admin, updating list for:", chatUser.id);
-      const updatedList = await getAdminChatRoomsList(chatUser.id);
-      console.log("📦  Updated Admin Chat List (sender):", updatedList);
-      io.of("/admin").emit("refresh-chat-list", {
-        message: "Chat room list fetched successfully.",
-        data: updatedList
-      });
-    } else {
-      console.log("ℹ️  No admin involved in this message, skipping refresh-chat-list emit.");
-    }
-
-
+      // 🔍 Admin chat list update
+      if (receiverRole === "admin") {
+        console.log("🔄  Receiver is admin, updating list for:", receiverId);
+        const updatedList = await getAdminChatRoomsList(receiverId);
+        console.log("📦  Updated Admin Chat List (receiver):", updatedList);
+        io.of("/admin").emit("refresh-chat-list", {
+          message: "Chat room list fetched successfully.",
+          data: updatedList
+        });
+      } else if (chatUser.role === "admin") {
+        console.log("🔄  Sender is admin, updating list for:", chatUser.id);
+        const updatedList = await getAdminChatRoomsList(chatUser.id);
+        console.log("📦  Updated Admin Chat List (sender):", updatedList);
+        io.of("/admin").emit("refresh-chat-list", {
+          message: "Chat room list fetched successfully.",
+          data: updatedList
+        });
+      } else {
+        console.log(
+          "ℹ️  No admin involved in this message, skipping refresh-chat-list emit."
+        );
+      }
     } catch (err) {
       console.error("❌ Error in send-message:", err.message);
       socket.emit("message-send-error", { error: err.message });

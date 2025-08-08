@@ -1,9 +1,13 @@
-import ChatMessage from "../../models/chat/chatMessage.js";;
+import ChatMessage from "../../models/chat/chatMessage.js";
 import Customer from "../../models/Customer/customerModels/customerModel.js";
 import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
 import PersonalDetails from "../../models/Consultant/ProfileModel/personalDetails.js";
-
-export const getAdminChatRoomsList = async (adminId) => {
+import mongoose from "mongoose";
+export const getAdminChatRoomsList = async adminId => {
+  // Convert string id to ObjectId if needed
+  if (!(adminId instanceof mongoose.Types.ObjectId)) {
+    adminId = new mongoose.Types.ObjectId(adminId);
+  }
   const chatUsers = await ChatMessage.aggregate([
     {
       $match: {
@@ -48,8 +52,14 @@ export const getAdminChatRoomsList = async (adminId) => {
 
   const [customers, consultants, personalDetails] = await Promise.all([
     Customer.find({ _id: { $in: customerIds } }, "_id Name profilePhoto"),
-    ConsultantProfile.find({ _id: { $in: consultantIds } }, "_id Name profilePhoto"),
-    PersonalDetails.find({ consultantId: { $in: consultantIds } }, "consultantId profilePicture")
+    ConsultantProfile.find(
+      { _id: { $in: consultantIds } },
+      "_id Name profilePhoto"
+    ),
+    PersonalDetails.find(
+      { consultantId: { $in: consultantIds } },
+      "consultantId profilePicture"
+    )
   ]);
 
   const userMap = new Map();
