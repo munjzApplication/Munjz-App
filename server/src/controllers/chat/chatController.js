@@ -74,7 +74,7 @@ export const softDeleteMessage = async (req, res) => {
 
 export const getAdminChatRooms = async (req, res) => {
   try {
-    const adminId = req.user._id;
+    const adminId = req.user?._id;
     if (!adminId) {
       return res.status(400).json({ error: "Missing adminId." });
     }

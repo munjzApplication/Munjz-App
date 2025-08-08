@@ -76,18 +76,20 @@ export const getAdminChatRoomsList = async (adminId) => {
     });
   });
 
-  return chatUsers.map(r => {
-    const idStr = r._id.userId.toString();
-    const user = userMap.get(idStr);
-    if (!user) return null;
-    return {
-      _id: idStr,
-      name: user.name,
-      role: user.role,
-      imageUrl: user.imageUrl,
-      roomName: r.roomName,
-      lastMessageAt: r.latestAt,
-      lastMessage: r.latestMessage || ""
-    };
-  }).filter(Boolean);
+  return chatUsers
+    .map(r => {
+      const idStr = r._id.userId.toString();
+      const user = userMap.get(idStr);
+      if (!user) return null;
+      return {
+        _id: idStr,
+        name: user.name,
+        role: user.role,
+        imageUrl: user.imageUrl,
+        roomName: r.roomName,
+        lastMessageAt: r.latestAt,
+        lastMessage: r.latestMessage || ""
+      };
+    })
+    .filter(Boolean);
 };

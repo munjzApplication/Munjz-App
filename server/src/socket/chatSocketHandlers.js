@@ -66,12 +66,25 @@ const registerChatHandlers = async (io, socket) => {
         console.warn(`⚠️ Unknown receiver role: ${receiverRole}`);
       }
 
-     // Send updated chat list to admin with payload (Frontend will get it as Map<String, dynamic>)
-    const updatedList = await getAdminChatRoomsList(chatUser.id);
-    io.of("/admin").emit("refresh-chat-list", {
-      message: "Chat room list fetched successfully.",
-      data: updatedList
-    });
+    // 🔍 Admin chat list update
+    if (receiverRole === "admin") {
+      console.log("🔄 Updating chat list for admin:", receiverId);
+      const updatedList = await getAdminChatRoomsList(receiverId);
+      console.log("📦 Updated Admin Chat List:", updatedList);
+      io.of("/admin").emit("refresh-chat-list", {
+        message: "Chat room list fetched successfully.",
+        data: updatedList
+      });
+    } else if (chatUser.role === "admin") {
+      console.log("🔄 Updating chat list for admin:", chatUser.id);
+      const updatedList = await getAdminChatRoomsList(chatUser.id);
+      console.log("📦 Updated Admin Chat List:", updatedList);
+      io.of("/admin").emit("refresh-chat-list", {
+        message: "Chat room list fetched successfully.",
+        data: updatedList
+      });
+    }
+
 
     } catch (err) {
       console.error("❌ Error in send-message:", err.message);
