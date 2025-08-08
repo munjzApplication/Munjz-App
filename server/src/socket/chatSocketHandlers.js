@@ -1,5 +1,6 @@
 import ChatMessage from "../models/chat/chatMessage.js";
 import { verifySocketUser } from "../middlewares/chatAuth.js";
+import { getAdminChatRoomsList} from "../helper/chat/chatHelper.js";
 
 const registerChatHandlers = async (io, socket) => {
   const chatUser = await verifySocketUser(socket); //  Auth done here ONLY
@@ -65,8 +66,13 @@ const registerChatHandlers = async (io, socket) => {
         console.warn(`⚠️ Unknown receiver role: ${receiverRole}`);
       }
 
-      //Emit event to admin to refresh chat list
-      io.of("/admin").emit("refresh-chat-list");
+     // Send updated chat list to admin with payload (Frontend will get it as Map<String, dynamic>)
+    const updatedList = await getAdminChatRoomsList(chatUser.id);
+    io.of("/admin").emit("refresh-chat-list", {
+      message: "Chat room list fetched successfully.",
+      data: updatedList
+    });
+
     } catch (err) {
       console.error("❌ Error in send-message:", err.message);
       socket.emit("message-send-error", { error: err.message });
