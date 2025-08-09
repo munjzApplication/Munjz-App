@@ -20,32 +20,28 @@ const server = http.createServer(app);
 app.use(helmet());
 
 const allowedOrigins = [process.env.PRODUCTION_BASE_URL];
-const mobileAppKey = process.env.MOBILE_APP_KEY; // Secret key for mobile requests
+const mobileAppKey = process.env.MOBILE_APP_KEY;
 
-// CORS middleware for domain & mobile app key security
+// Custom CORS middleware
 app.use((req, res, next) => {
-  cors({
-    origin: function (origin, callback) {
-      // Case 1: Browser request (with origin header)
-      if (origin) {
-        if (allowedOrigins.includes(origin)) {
-          return callback(null, true);
-        } else {
-          return callback(new Error("CORS: Not allowed by policy"));
-        }
-      }
+  const origin = req.headers.origin;
 
-      // Case 2: Mobile app or Postman (no origin header)
-      if (req.headers["x-mobile-key"] === mobileAppKey) {
-        return callback(null, true);
-      }
+  // Mobile app requests (no origin)
+  if (!origin) {
+    if (req.headers["x-mobile-key"] === mobileAppKey) {
+      return cors({ credentials: true })(req, res, next);
+    } else {
+      return res.status(403).json({ message: "CORS: Origin missing or invalid mobile key" });
+    }
+  }
 
-      return callback(new Error("CORS: Origin missing or invalid mobile key"));
-    },
-    credentials: true
-  })(req, res, next);
+  // Web requests
+  if (allowedOrigins.includes(origin)) {
+    return cors({ origin: origin, credentials: true })(req, res, next);
+  }
+
+  return res.status(403).json({ message: "CORS: Not allowed by policy" });
 });
-
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
