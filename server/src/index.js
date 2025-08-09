@@ -19,27 +19,32 @@ const server = http.createServer(app);
 
 app.use(helmet());
 
-// CORS configuration - allow only your frontend domain
 const allowedOrigins = [process.env.PRODUCTION_BASE_URL];
+const mobileAppKey = process.env.MOBILE_APP_KEY; // Secret key for mobile requests
 
-app.use(
+// CORS middleware for domain & mobile app key security
+app.use((req, res, next) => {
   cors({
     origin: function (origin, callback) {
-      // Reject if origin is missing (Postman, curl, etc.)
-      if (!origin) {
-        return callback(new Error("CORS: Origin missing - Request blocked"));
+      // Case 1: Browser request (with origin header)
+      if (origin) {
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        } else {
+          return callback(new Error("CORS: Not allowed by policy"));
+        }
       }
 
-      // Allow only if origin matches your frontend domain
-      if (allowedOrigins.includes(origin)) {
+      // Case 2: Mobile app or Postman (no origin header)
+      if (req.headers["x-mobile-key"] === mobileAppKey) {
         return callback(null, true);
-      } else {
-        return callback(new Error("CORS: Not allowed by policy"));
       }
+
+      return callback(new Error("CORS: Origin missing or invalid mobile key"));
     },
     credentials: true
-  })
-);
+  })(req, res, next);
+});
 
 app.use(express.json());
 app.use(bodyParser.json());
