@@ -103,8 +103,36 @@ export const Register = async (req, res, next) => {
   try {
     const { Name, email, phoneNumber, password, countryCode } = req.body;
 
+    // Trim inputs to prevent leading/trailing spaces
+    Name = Name?.trim();
+    email = email?.trim().toLowerCase();
+    phoneNumber = phoneNumber?.trim();
+    countryCode = countryCode?.trim();
+
+    // ===== Validation =====
+
+    // Name validation (only alphabets, spaces, length 2–50)
+    if (!Name || !/^[A-Za-z\s]{2,50}$/.test(Name)) {
+      return res.status(400).json({
+        message: "Invalid name. Only letters and spaces allowed (2–50 characters)."
+      });
+    }
+
+    // Email validation
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
+
     if (!phoneNumber) {
       return res.status(400).json({ message: "Phone number is required." });
+    }
+
+    // Phone validation (digits only, 7–15 length)
+    const phoneRegex = /^[0-9]{7,15}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      return res.status(400).json({
+        message: "Invalid phone number. Only digits allowed, length between 7–15."
+      });
     }
 
     // Check if the customer is already registered
