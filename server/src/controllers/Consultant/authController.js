@@ -25,6 +25,23 @@ export const TempConsultantRegister = async (req, res, next) => {
   const { Name, email } = req.body;
 
   try {
+     if (!Name || !email) {
+      return res.status(400).json({ message: "Name and email are required." });
+    }
+    // Name validation (only alphabets, spaces, length 2–50)
+    if (!Name || !/^[A-Za-z\s]{2,50}$/.test(Name)) {
+      return res.status(400).json({
+        message: "Invalid name. Only letters and spaces allowed (2–50 characters)."
+      });
+    }
+    // Email validation
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        message: "Invalid email format. Please enter a valid email address."
+      });
+    }
+    
     const existingTempUser = await TempConsultant.findOne({ email });
     const existingUser = await ConsultantProfile.findOne({ email });
     if (existingTempUser || existingUser) {
@@ -103,29 +120,24 @@ export const Register = async (req, res, next) => {
   try {
     const { Name, email, phoneNumber, password, countryCode } = req.body;
 
-     // Validate required fields
-    if (!Name || !email || !password || !phoneNumber) {
-      return res.status(400).json({ error: "Name, email, and password are required." });
+   if (!Name || !email || !password || !phoneNumber ) {
+      return res.status(400).json({ message: "Phone number is required." });
     }
 
- // Name validation (only letters & spaces, min 2 chars, max 50)
-    const nameRegex = /^[a-zA-Z\s]{2,50}$/;
-    if (!nameRegex.test(Name)) {
-      return res.status(400).json({ error: "Name must be 2-50 characters and contain only letters and spaces." });
+        // Name validation (only alphabets, spaces, length 2–50)
+    if (!Name || !/^[A-Za-z\s]{2,50}$/.test(Name)) {
+      return res.status(400).json({
+        message: "Invalid name. Only letters and spaces allowed (2–50 characters)."
+      });
     }
 
-   // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: "Invalid email format." });
-    }
-
-   // 3. Phone number validation (10–15 digits only)
+      // Validate phone number format (only digits, length 7–15)
     const phoneRegex = /^[0-9]{7,15}$/;
-    if (!phone || !phoneRegex.test(phoneNumber)) {
-      return res.status(400).json({ error: "Phone number must be 10–15 digits." });
+    if (!phoneRegex.test(phoneNumber)) {
+      return res.status(400).json({
+        message: "Invalid phone number format. Only digits allowed, length between 7–15."
+      });
     }
-
 
     // Check if the customer is already registered
     const existingCustomer = await ConsultantProfile.findOne({ email });
