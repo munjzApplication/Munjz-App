@@ -11,8 +11,6 @@ import http from "http";
 import helmet from "helmet";
 import { setupSocket } from "./socket/socketController.js";
 
-
-
 dotenv.config();
 
 const app = express();
@@ -20,18 +18,34 @@ const app = express();
 const server = http.createServer(app);
 
 app.use(helmet());
-app.use(cors());
+
+//CORS configuration - allow only your frontend
+const allowedOrigins = [
+  process.env.PRODUCTION_BASE_URL
+];
+app.use(
+  cors({
+    origin: function(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true
+  })
+);
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 3000;
 
-// ✅ Root Route for testing
+// Root Route for testing
 app.get("/", (req, res) => {
-  res.send("Munjz Backend is Running ✅");
+  res.send("Munjz Backend is Running");
 });
-
 
 // Routes
 app.use("/api/consultant", consultantRoute);
@@ -51,7 +65,6 @@ app.use((err, req, res, next) => {
 
 // 🔌 Setup Socket.io
 setupSocket(server);
-
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

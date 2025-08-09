@@ -116,6 +116,14 @@ export const Register = async (req, res, next) => {
       return res.status(400).json({ message: "Phone number is required." });
     }
 
+      // Validate phone number format (only digits, length 7–15)
+    const phoneRegex = /^[0-9]{7,15}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      return res.status(400).json({
+        message: "Invalid phone number format. Only digits allowed, length between 7–15."
+      });
+    }
+
     // Check if the customer is already registered
     const existingCustomer = await CustomerProfile.findOne({ email });
     if (existingCustomer) {
