@@ -131,7 +131,7 @@ export const Register = async (req, res, next) => {
 
    // 3. Phone number validation (10–15 digits only)
     const phoneRegex = /^[0-9]{7,15}$/;
-    if (!phone || !phoneRegex.test(phoneNumber)) {
+    if (!phoneNumber || !phoneRegex.test(phoneNumber)) {
       return res.status(400).json({ error: "Phone number must be 10–15 digits." });
     }
 
