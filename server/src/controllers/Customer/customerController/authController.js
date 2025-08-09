@@ -38,7 +38,7 @@ export const TempCustomerRegister = async (req, res, next) => {
         message: "Invalid email format. Please enter a valid email address."
       });
     }
-    
+
     const existingTempUser = await TempCustomer.findOne({ email });
     const existingUser = await CustomerProfile.findOne({ email });
     if (existingTempUser || existingUser) {
@@ -141,12 +141,12 @@ export const Register = async (req, res, next) => {
     }
 
       // Validate phone number format (only digits, length 7–15)
-    const phoneRegex = /^[0-9]{7,15}$/;
-    if (!phoneRegex.test(phoneNumber)) {
-      return res.status(400).json({
-        message: "Invalid phone number format. Only digits allowed, length between 7–15."
-      });
-    }
+const phoneRegex = /^\+[1-9]\d{6,14}$/;
+if (!phoneRegex.test(phoneNumber)) {
+  return res.status(400).json({
+    message: "Invalid phone number format. Must include country code (e.g., +971501234567)."
+  });
+}
 
     // Check if the customer is already registered
     const existingCustomer = await CustomerProfile.findOne({ email });
