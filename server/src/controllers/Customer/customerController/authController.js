@@ -22,23 +22,6 @@ export const TempCustomerRegister = async (req, res, next) => {
   const { Name, email } = req.body;
 
   try {
-    if (!Name || !email) {
-      return res.status(400).json({ message: "Name and email are required." });
-    }
-    // Name validation (only alphabets, spaces, length 2–50)
-    if (!Name || !/^[A-Za-z\s]{2,50}$/.test(Name)) {
-      return res.status(400).json({
-        message: "Invalid name. Only letters and spaces allowed (2–50 characters)."
-      });
-    }
-    // Email validation
-    const emailRegex = /^\S+@\S+\.\S+$/;
-    if (!email || !emailRegex.test(email)) {
-      return res.status(400).json({
-        message: "Invalid email format. Please enter a valid email address."
-      });
-    }
-
     const existingTempUser = await TempCustomer.findOne({ email });
     const existingUser = await CustomerProfile.findOne({ email });
     if (existingTempUser || existingUser) {
@@ -128,25 +111,10 @@ export const isEmailVerified = async (req, res, next) => {
 export const Register = async (req, res, next) => {
   try {
     const { Name, email, phoneNumber, password, countryCode } = req.body;
-console.log("//////",req.body);
-    if (!Name || !email || !password || !phoneNumber ) {
+
+    if (!phoneNumber) {
       return res.status(400).json({ message: "Phone number is required." });
     }
-
-        // Name validation (only alphabets, spaces, length 2–50)
-    if (!Name || !/^[A-Za-z\s]{2,50}$/.test(Name)) {
-      return res.status(400).json({
-        message: "Invalid name. Only letters and spaces allowed (2–50 characters)."
-      });
-    }
-
-      // Validate phone number format (only digits, length 7–15)
-const phoneRegex = /^\+[1-9]\d{6,14}$/;
-if (!phoneRegex.test(phoneNumber)) {
-  return res.status(400).json({
-    message: "Invalid phone number format. Must include country code (e.g., +971501234567)."
-  });
-}
 
     // Check if the customer is already registered
     const existingCustomer = await CustomerProfile.findOne({ email });
