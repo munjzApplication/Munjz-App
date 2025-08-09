@@ -120,6 +120,9 @@ export const Register = async (req, res, next) => {
   try {
     const { Name, email, phoneNumber, password, countryCode } = req.body;
 
+    console.log("//////",req.body);
+    
+
    if (!Name || !email || !password || !phoneNumber ) {
       return res.status(400).json({ message: "Phone number is required." });
     }
