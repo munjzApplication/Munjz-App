@@ -131,7 +131,6 @@ export const verifyEmail = async (req, res, next) => {
     }
 
     tempCustomerUser.emailVerified = true;
-    tempCustomerUser.verificationToken = undefined; // clear token
     await tempCustomerUser.save();
 
     await notificationService.sendToCustomer(
