@@ -18,8 +18,49 @@ const generateToken = (id, emailVerified) => {
   });
 };
 
+
+// Common validation function
+export const validateCustomerData = ({ Name, email, phoneNumber, countryCode }, isRegister = false) => {
+  const errors = [];
+
+  // Name: only letters/spaces, min 2 chars, max 50
+  if (!Name || !/^[A-Za-z\s]{2,50}$/.test(Name.trim())) {
+    errors.push("Name must contain only letters and spaces, 2-50 characters.");
+  }
+
+  // Email: RFC 5322 simplified
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim().toLowerCase())) {
+    errors.push("Invalid email address.");
+  }
+
+  if (isRegister) {
+    // Phone: numeric, 6–15 digits
+    if (!phoneNumber || !/^\d{6,15}$/.test(phoneNumber)) {
+      errors.push("Phone number must be 6-15 digits.");
+    }
+
+    // // Password: min 6 chars
+    // if (!password || password.length < 6) {
+    //   errors.push("Password must be at least 6 characters long.");
+    // }
+
+    // Country code: should not be empty
+    if (!countryCode) {
+      errors.push("Country code is required.");
+    }
+  }
+
+  return errors;
+};
+
 export const TempCustomerRegister = async (req, res, next) => {
   const { Name, email } = req.body;
+
+  const errors = validateCustomerData({ Name, email });
+  if (errors.length > 0) {
+    return res.status(400).json({ errors });
+  }
+
 
   try {
 
@@ -33,13 +74,21 @@ export const TempCustomerRegister = async (req, res, next) => {
     // Check for temp user
     const existingTempUser = await TempCustomer.findOne({ email });
 
-    // If temp user exists and is already verified but no permanent account → allow restart
-    if (existingTempUser && existingTempUser.emailVerified) {
-      await TempCustomer.deleteOne({ email });
-    } else if (existingTempUser) {
-      return res
-        .status(400)
-        .json({ message: "The provided email is already registered." });
+    if (existingTempUser) {
+      // If already verified but not registered → delete and allow new signup
+      if (existingTempUser.emailVerified) {
+        await TempCustomer.deleteOne({ email });
+      }
+      // If not verified → allow retry only if older than 1 hour
+      else {
+        const createdAgo = Date.now() - new Date(existingTempUser.createdAt).getTime();
+        const oneHour = 60 * 60 * 1000; // 1 hour in ms
+        if (createdAgo > oneHour) {
+          await TempCustomer.deleteOne({ email });
+        } else {
+          return res.status(400).json({ message: "The provided email is already registered." });
+        }
+      }
     }
 
     const token = crypto.randomBytes(32).toString("hex");
@@ -125,11 +174,12 @@ export const Register = async (req, res, next) => {
     const { Name, email, phoneNumber, password, countryCode } = req.body;
 
     console.log("Registering user:", req.body);
-    
 
-    if (!phoneNumber) {
-      return res.status(400).json({ message: "Phone number is required." });
+    const errors = validateCustomerData({ Name, email, phoneNumber, countryCode }, true);
+    if (errors.length > 0) {
+      return res.status(400).json({ errors });
     }
+
 
     // Check if the customer is already registered
     const existingCustomer = await CustomerProfile.findOne({ email });
