@@ -74,19 +74,23 @@ export const TempCustomerRegister = async (req, res, next) => {
     // Check for temp user
     const existingTempUser = await TempCustomer.findOne({ email });
 
-    if (existingTempUser) {
-      // If already verified but not registered → delete and allow new signup
+   if (existingTempUser) {
       if (existingTempUser.emailVerified) {
+        // Already verified but not registered → delete so they can register again
         await TempCustomer.deleteOne({ email });
-      }
-      // If not verified → allow retry only if older than 1 hour
-      else {
+      } else {
+        // Not verified → allow retry only if record is older than 1 hour
         const createdAgo = Date.now() - new Date(existingTempUser.createdAt).getTime();
-        const oneHour = 60 * 60 * 1000; // 1 hour in ms
+        const oneHour = 60 * 60 * 1000;
         if (createdAgo > oneHour) {
           await TempCustomer.deleteOne({ email });
         } else {
-          return res.status(400).json({ message: "The provided email is already registered." });
+          // Resend verification email instead of blocking
+          const verificationUrl = process.env.BASE_URL_CUSTOMER;
+          await sendVerificationEmail(existingTempUser, verificationUrl);
+          return res.status(200).json({
+            message: "Email already registered but not verified. Verification email resent."
+          });
         }
       }
     }
@@ -127,6 +131,7 @@ export const verifyEmail = async (req, res, next) => {
     }
 
     tempCustomerUser.emailVerified = true;
+    tempCustomerUser.verificationToken = undefined; // clear token
     await tempCustomerUser.save();
 
     await notificationService.sendToCustomer(
