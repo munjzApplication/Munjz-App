@@ -22,9 +22,21 @@ export const TempCustomerRegister = async (req, res, next) => {
   const { Name, email } = req.body;
 
   try {
-    const existingTempUser = await TempCustomer.findOne({ email });
+
+    // Check for permanent user first
     const existingUser = await CustomerProfile.findOne({ email });
-    if (existingTempUser || existingUser) {
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "The provided email is already registered." });
+    }
+    // Check for temp user
+    const existingTempUser = await TempCustomer.findOne({ email });
+
+    // If temp user exists and is already verified but no permanent account → allow restart
+    if (existingTempUser && existingTempUser.emailVerified) {
+      await TempCustomer.deleteOne({ email });
+    } else if (existingTempUser) {
       return res
         .status(400)
         .json({ message: "The provided email is already registered." });
@@ -111,6 +123,9 @@ export const isEmailVerified = async (req, res, next) => {
 export const Register = async (req, res, next) => {
   try {
     const { Name, email, phoneNumber, password, countryCode } = req.body;
+
+    console.log("Registering user:", req.body);
+    
 
     if (!phoneNumber) {
       return res.status(400).json({ message: "Phone number is required." });
