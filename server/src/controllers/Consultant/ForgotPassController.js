@@ -1,8 +1,8 @@
 import ConsultantProfile from "../../models/Consultant/ProfileModel/User.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
 import { notificationService } from "../../service/sendPushNotification.js";
+import transporter from "../../utils/emailTransporter.js";
 
 export const sendPasswordResetOTP = async (req, res, next) => {
   try {
@@ -26,16 +26,18 @@ export const sendPasswordResetOTP = async (req, res, next) => {
     consultant.resetOtpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
     await consultant.save();
 
-    // Send the OTP via email
-    const transporter = nodemailer.createTransport({
-      service: "Gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-
+    // Check SMTP connection
+        try {
+          await transporter.verify();
+        } catch (smtpErr) {
+          console.error("SMTP connection failed:", smtpErr);
+          return res.status(500).json({ message: "Email server connection failed" });
+        }
+    
+        
+    // Send OTP email
     await transporter.sendMail({
+      from: process.env.EMAIL_USER,
       to: email,
       subject: "Password Reset OTP",
       html: `

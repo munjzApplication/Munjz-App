@@ -1,10 +1,10 @@
 import Customer from "../../../models/Customer/customerModels/customerModel.js";
 import PromotionalEmail from "../../../models/Admin/adminModels/promotionEmail.js";
 import PromotionalNotification from "../../../models/Admin/adminModels/promotionNotification.js";
-import Nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import { notificationService } from "../../../service/sendPushNotification.js";
 import { uploadFileToS3 } from "../../../utils/s3Uploader.js";
+import Nodemailer from "nodemailer";
 
 dotenv.config();
 

@@ -1,8 +1,8 @@
 import CustomerProfile from "../../../models/Customer/customerModels/customerModel.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
 import { notificationService } from "../../../service/sendPushNotification.js";
+import transporter from "../../../utils/emailTransporter.js";
 
 export const sendPasswordResetOTP = async (req, res, next) => {
   try {
@@ -26,16 +26,17 @@ export const sendPasswordResetOTP = async (req, res, next) => {
     customer.resetOtpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
     await customer.save();
 
-    // Send the OTP via email
-    const transporter = nodemailer.createTransport({
-      service: "Gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
+    // Check SMTP connection
+    try {
+      await transporter.verify();
+    } catch (smtpErr) {
+      console.error("SMTP connection failed:", smtpErr);
+      return res.status(500).json({ message: "Email server connection failed" });
+    }
 
-    await transporter.sendMail({
+    // Send OTP email
+      await transporter.sendMail({
+      from: process.env.EMAIL_USER,
       to: email,
       subject: "Password Reset OTP",
       html: `
@@ -104,6 +105,7 @@ export const sendPasswordResetOTP = async (req, res, next) => {
           </html>
         `
     });
+
     await notificationService.sendToCustomer(
       customer._id,
       "Password Reset Request",
@@ -221,15 +223,15 @@ export const resetPassword = async (req, res, next) => {
     } catch (pushError) {
       console.error("Error sending password reset notification:", pushError);
     }
-// Notify Admin (Optional)
-try {
-  await notificationService.sendToAdmin(
-    "Customer Password Reset",
-    `Customer ${customer.email} has reset their password.`,
-  );
-} catch (adminNotifyError) {
-  console.error("Error sending password reset notification to admin:", adminNotifyError);
-}
+    // Notify Admin (Optional)
+    try {
+      await notificationService.sendToAdmin(
+        "Customer Password Reset",
+        `Customer ${customer.email} has reset their password.`,
+      );
+    } catch (adminNotifyError) {
+      console.error("Error sending password reset notification to admin:", adminNotifyError);
+    }
     res.status(200).json({
       message:
         "Password has been reset successfully. You can now log in with your new password."

@@ -1,16 +1,7 @@
 import dotenv from "dotenv";
-import Nodemailer from "nodemailer";
+import transporter from "../utils/emailTransporter.js";
 
 dotenv.config();
-
-// Configure Nodemailer transport with Gmail credentials
-const transport = Nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
 
 export const sendVerificationEmail = async (user, verificationUrl) => {
   const Name = typeof user.Name === "string" ? user.Name : "User";
@@ -45,16 +36,15 @@ export const sendVerificationEmail = async (user, verificationUrl) => {
 `;
 
   try {
-    await transport.sendMail({
+    // Test connection before sending
+    await transporter.verify();
+    await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Email Verification",
       html: htmlContent
     });
-
-    
   } catch (error) {
-    console.error("Error sending email:", error);
-    throw new Error("Could not send verification email");
+    next(error);
   }
 };

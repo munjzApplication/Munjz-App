@@ -74,7 +74,7 @@ export const TempCustomerRegister = async (req, res, next) => {
     // Check for temp user
     const existingTempUser = await TempCustomer.findOne({ email });
 
-   if (existingTempUser) {
+    if (existingTempUser) {
       if (existingTempUser.emailVerified) {
         // Already verified but not registered → delete so they can register again
         await TempCustomer.deleteOne({ email });
