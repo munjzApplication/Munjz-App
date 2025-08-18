@@ -19,38 +19,52 @@ export const createNews = async (req, res) => {
   const { titleEn, titleAr, descriptionEn, descriptionAr, readTime } = req.body;
 
   try {
+    console.log("=== [DEBUG] Incoming Create News Request ===");
+    console.log("Request Body:", req.body);
+    console.log("Uploaded File:", req.file);
+
     if (!req.file) {
+      console.error("[DEBUG] No file uploaded!");
       return res.status(400).json({ message: "No file uploaded" });
     }
 
     console.log("Uploaded file size (bytes):", req.file.size);
 
-    // Enforce manual check in case multer size check is bypassed
+    // Enforce manual size check
     const maxFileSize = 1 * 1024 * 1024; // 1MB
     if (req.file.size > maxFileSize) {
+      console.error("[DEBUG] File too large:", req.file.size);
       return res
         .status(413)
-        .json({ message: "File too large. try with another" });
+        .json({ message: "File too large. Try with another file" });
     }
 
-    // Upload a single file to S3 and get its URL
+    // Upload to S3
+    console.log("[DEBUG] Uploading file to S3...");
     const imageUrl = await uploadFileToS3(req.file, "news-images");
+    console.log("[DEBUG] File uploaded to S3:", imageUrl);
 
-    const news = await News.create({
+    // Construct News payload
+    const payload = {
       image: imageUrl,
       title: {
         en: titleEn,
-        ar: titleAr
+        ar: titleAr,
       },
       description: {
         en: descriptionEn,
-        ar: descriptionAr
+        ar: descriptionAr,
       },
-      readTime
-    });
+      readTime,
+    };
+
+    console.log("[DEBUG] Final News Payload before saving:", payload);
+
+    const news = await News.create(payload);
+
+    console.log("[DEBUG] News saved in DB with _id:", news._id);
 
     const customerNamespace = io.of("/customer");
-
     const emitData = {
       message: "News created successfully",
       data: {
@@ -59,19 +73,22 @@ export const createNews = async (req, res) => {
         description: news.description,
         readTime: news.readTime,
         image: news.image,
-        createdAt: news.createdAt
-      }
+        createdAt: news.createdAt,
+      },
     };
-    console.log("Emitting to /customer namespace:", emitData);
+
+    console.log("[DEBUG] Emitting to /customer namespace:", emitData);
     customerNamespace.emit("news-created", emitData);
 
     res.status(201).json({ message: "News created successfully", news });
   } catch (error) {
+    console.error("[DEBUG] Error in createNews:", error);
     res
       .status(400)
       .json({ message: "Failed to create news", error: error.message });
   }
 };
+
 
 // Update a news article with optional S3 image upload
 export const updateNews = async (req, res) => {
