@@ -3,7 +3,7 @@ import transporter from "../utils/emailTransporter.js";
 
 dotenv.config();
 
-export const sendVerificationEmail = async (user, verificationUrl) => {
+export const sendVerificationEmail = async (user, verificationUrl,next) => {
   const Name = typeof user.Name === "string" ? user.Name : "User";
   const email = user.email;
   const token = user.verificationToken;
