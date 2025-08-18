@@ -3,7 +3,7 @@ import { formatDates } from "../../../helper/dateFormatter.js";
 
 export const getNews = async (req, res, next) => {
   try {
-    const newses = await News.find();
+    const newses = await News.find().sort({ createdAt: -1 });
 
     const Newses = newses.map(news => ({
       ...news._doc,
