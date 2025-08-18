@@ -16,7 +16,7 @@ export const getAllNews = async (req, res) => {
 
 // Create a news article with S3 image upload
 export const createNews = async (req, res) => {
-  const { title, description, readTime } = req.body;
+  const { titleEn, titleAr, descriptionEn, descriptionAr, readTime } = req.body;
 
   try {
     if (!req.file) {
@@ -38,8 +38,14 @@ export const createNews = async (req, res) => {
 
     const news = await News.create({
       image: imageUrl,
-      title,
-      description,
+      title: {
+        en: titleEn,
+        ar: titleAr
+      },
+      description: {
+        en: descriptionEn,
+        ar: descriptionAr
+      },
       readTime
     });
 
@@ -70,9 +76,15 @@ export const createNews = async (req, res) => {
 // Update a news article with optional S3 image upload
 export const updateNews = async (req, res) => {
   const { id } = req.params;
-  const updates = req.body;
+  const { titleEn, titleAr, descriptionEn, descriptionAr, readTime } = req.body;
 
   try {
+    const updates = {
+      title: { en: titleEn, ar: titleAr },
+      description: { en: descriptionEn, ar: descriptionAr },
+      readTime
+    };
+
     if (req.file) {
       updates.image = await uploadFileToS3(req.file, "news-images");
     }
@@ -81,9 +93,10 @@ export const updateNews = async (req, res) => {
       new: true,
       runValidators: true
     });
-    if (!news)
-      return res.status(404).json({ message: "News article not found" });
 
+    if (!news) return res.status(404).json({ message: "News article not found" });
+
+    // Emit socket event to admins
     const adminNamespace = io.of("/admin");
     adminNamespace.emit("news-update", {
       message: "News article updated",
@@ -99,9 +112,7 @@ export const updateNews = async (req, res) => {
 
     res.status(200).json({ message: "News updated successfully", news });
   } catch (error) {
-    res
-      .status(400)
-      .json({ message: "Failed to update news", error: error.message });
+    res.status(400).json({ message: "Failed to update news", error: error.message });
   }
 };
 
