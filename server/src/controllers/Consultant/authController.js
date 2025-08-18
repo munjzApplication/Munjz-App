@@ -189,7 +189,7 @@ export const Login = async (req, res, next) => {
     // ✅ Check registration completeness
     const { isComplete } = await isConsultantRegistrationComplete(user._id);
 
-     let message;
+    let message;
     if (!isComplete) {
       console.log("User registration incomplete. Allowing login with limited access.");
       message = "Registration successful";
@@ -203,26 +203,23 @@ export const Login = async (req, res, next) => {
         "You have successfully logged in. If this wasn't you, secure your account by resetting your password immediately."
       );
 
-      await notificationService.sendToAdmin(
-        "Consultant Login Alert",
-        `Consultant ${user.Name} (${user.email}) has logged in.`
-      );
+
     }
 
     const token = generateToken(user._id, user.emailVerified);
 
-res.status(200).json({
-  message, // ✅ Use the one decided based on registration check
-  token,
-  user: {
-    id: user._id,
-    Name: user.Name,
-    email: user.email,
-    phoneNumber: user.phoneNumber,
-    consultantUniqueId: user.consultantUniqueId,
-    creationDate: user.creationDate
-  }
-});
+    res.status(200).json({
+      message, // ✅ Use the one decided based on registration check
+      token,
+      user: {
+        id: user._id,
+        Name: user.Name,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        consultantUniqueId: user.consultantUniqueId,
+        creationDate: user.creationDate
+      }
+    });
 
   } catch (error) {
     next(error);
@@ -299,10 +296,7 @@ export const googleAuthWithToken = async (req, res, next) => {
           "Welcome back!",
           "You have successfully logged in using Google."
         );
-        await notificationService.sendToAdmin(
-          "Consultant Login Alert",
-          `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
-        );
+
       }
 
       // **Update Google ID and login status**
@@ -440,10 +434,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
           "Welcome back!",
           "You have successfully logged in using Google."
         );
-        await notificationService.sendToAdmin(
-          "Consultant Login Alert",
-          `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
-        );
+
       }
 
       // If the user exists, update their profile
@@ -554,10 +545,7 @@ export const appleAuthWithToken = async (req, res, next) => {
           "Welcome back",
           "You have successfully logged in using Apple."
         );
-        await notificationService.sendToAdmin(
-          "Consultant Login Alert",
-          `Consultant ${existingUser.Name} (${existingUser.email}) just logged in using Apple.`
-        );
+
       }
 
       // If the user exists, update their profile

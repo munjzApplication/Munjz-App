@@ -296,12 +296,6 @@ export const Login = async (req, res, next) => {
     );
 
 
-    await notificationService.sendToAdmin(
-      "Customer Login Alert",
-      `Customer ${user.Name} (${user.email}) has logged in.`
-    );
-
-
     res.status(200).json({
       message: "Login successful.",
       token,
@@ -405,10 +399,7 @@ export const googleAuthWithToken = async (req, res, next) => {
           "Welcome back!",
           "You have successfully logged in using Google."
         );
-        await notificationService.sendToAdmin(
-          "Customer Login Alert",
-          `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Google.`
-        );
+
       }
     }
 
@@ -559,10 +550,7 @@ export const facebookAuthWithToken = async (req, res, next) => {
           "Welcome back!",
           "You have successfully logged in using Facebook."
         );
-        await notificationService.sendToAdmin(
-          "Customer Login Alert",
-          `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Facebook.`
-        );
+
       }
     }
 
@@ -692,10 +680,7 @@ export const appleAuthWithToken = async (req, res, next) => {
           "Welcome back!",
           "You have successfully logged in using Apple."
         );
-        await notificationService.sendToAdmin(
-          "Customer Login Alert",
-          `Customer ${existingUser.Name} (${existingUser.email}) just logged in using Apple.`
-        );
+
       }
     }
 
