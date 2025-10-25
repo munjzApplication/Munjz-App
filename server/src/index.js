@@ -20,14 +20,17 @@ const server = http.createServer(app);
 app.use(helmet());
 
 //CORS configuration - allow only your frontend
-const allowedOrigins = [process.env.PRODUCTION_BASE_URL];
+const allowedOrigins = ['https://munjzapp.site'];
 
 app.use(
   cors({
     origin: function (origin, callback) {
       console.log("Incoming request origin:", origin);
       console.log("Allowed origins:", allowedOrigins);
+
+      // Allow requests with no origin (like Postman or server-side calls)
       if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       } else {
