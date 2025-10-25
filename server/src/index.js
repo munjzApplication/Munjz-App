@@ -20,22 +20,25 @@ const server = http.createServer(app);
 app.use(helmet());
 
 //CORS configuration - allow only your frontend
-const allowedOrigins = [
-  process.env.PRODUCTION_BASE_URL
-];
+const allowedOrigins = [process.env.PRODUCTION_BASE_URL];
+
 app.use(
   cors({
-    origin: function(origin, callback) {
+    origin: function (origin, callback) {
+      console.log("Incoming request origin:", origin);
+      console.log("Allowed origins:", allowedOrigins);
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       } else {
+        console.log("❌ CORS Blocked for:", origin);
         return callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true
+    credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
